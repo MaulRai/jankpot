@@ -1,0 +1,91 @@
+[gd_scene load_steps=3 format=3 uid="uid://c1w3e3a3e3a3e"]
+
+[ext_resource type="Script" path="res://scripts/ui/CardView.gd" id="1_abc12"]
+[ext_resource type="Texture2D" uid="uid://m86ruytpj7og" path="res://assets/ui/card-base.png" id="2_def34"]
+
+[node name="CardView" type="Control"]
+custom_minimum_size = Vector2(160, 240)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 160.0
+offset_bottom = 240.0
+pivot_offset = Vector2(80, 120)
+script = ExtResource("1_abc12")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_def34")
+expand_mode = 1
+stretch_mode = 1
+
+[node name="TypeBackground" type="ColorRect" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 150.0
+offset_bottom = 150.0
+
+[node name="ArtTexture" type="TextureRect" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 144.0
+offset_bottom = 144.0
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ArtSeparator" type="ColorRect" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 0
+offset_left = 10.0
+offset_top = 150.0
+offset_right = 150.0
+offset_bottom = 152.0
+color = Color(0.15, 0.15, 0.15, 1)
+
+[node name="NameLabel" type="Label" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 0
+offset_left = 10.0
+offset_top = 156.0
+offset_right = 150.0
+offset_bottom = 178.0
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.1, 0.1, 0.1, 1)
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DescriptionLabel" type="RichTextLabel" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 0
+offset_left = 12.0
+offset_top = 182.0
+offset_right = 148.0
+offset_bottom = 232.0
+theme_override_font_sizes/normal_font_size = 12
+theme_override_colors/default_color = Color(0.15, 0.15, 0.15, 1)
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+
+[node name="Outline" type="Panel" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2

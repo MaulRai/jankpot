@@ -1,0 +1,60 @@
+[gd_scene load_steps=3 format=3 uid="uid://b1w3e3a3e3a3h"]
+
+[ext_resource type="PackedScene" uid="uid://s1w3e3a3e3a3f" path="res://scenes/ui/CardSlot.tscn" id="1_abc12"]
+
+[node name="BattleBoard" type="Control"]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -150.0
+offset_right = 200.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PlayerSlot" parent="." instance=ExtResource("1_abc12")]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = -180.0
+offset_top = -120.0
+offset_right = -20.0
+offset_bottom = 120.0
+grow_vertical = 2
+
+[node name="EnemySlot" parent="." instance=ExtResource("1_abc12")]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = 20.0
+offset_top = -120.0
+offset_right = 180.0
+offset_bottom = 120.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="VSLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -24.0
+offset_top = -20.0
+offset_right = 24.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 28
+text = "VS"
+horizontal_alignment = 1
+vertical_alignment = 1

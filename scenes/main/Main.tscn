@@ -1,0 +1,237 @@
+[gd_scene load_steps=10 format=3 uid="uid://m1w3e3a3e3a3i"]
+
+[ext_resource type="Script" path="res://scripts/game/GameController.gd" id="1_abc12"]
+[ext_resource type="Script" path="res://scripts/game/DeckManager.gd" id="2_def34"]
+[ext_resource type="Script" path="res://scripts/game/BattleResolver.gd" id="3_ghi56"]
+[ext_resource type="Script" path="res://scripts/game/EnemyController.gd" id="4_jkl78"]
+[ext_resource type="PackedScene" uid="uid://b1w3e3a3e3a3h" path="res://scenes/game/BattleBoard.tscn" id="5_mno90"]
+[ext_resource type="Script" path="res://scripts/ui/HandView.gd" id="6_pqr12"]
+[ext_resource type="PackedScene" uid="uid://c1w3e3a3e3a3e" path="res://scenes/ui/CardView.tscn" id="7_stu34"]
+[ext_resource type="Script" path="res://scripts/ui/TooltipManager.gd" id="8_vwx56"]
+[ext_resource type="PackedScene" uid="uid://t1w3e3a3e3a3g" path="res://scenes/ui/TooltipBox.tscn" id="9_yz123"]
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0980392, 0.0980392, 0.0980392, 1)
+
+[node name="GameController" type="Node" parent="."]
+script = ExtResource("1_abc12")
+
+[node name="DeckManager" type="Node" parent="GameController"]
+script = ExtResource("2_def34")
+
+[node name="BattleResolver" type="Node" parent="GameController"]
+script = ExtResource("3_ghi56")
+
+[node name="EnemyController" type="Node" parent="GameController"]
+script = ExtResource("4_jkl78")
+
+[node name="LeftPanel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_right = 200.0
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="LeftPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="RunInfoLabel" type="Label" parent="LeftPanel/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Run Info"
+
+[node name="HPLabel" type="Label" parent="LeftPanel/VBoxContainer"]
+layout_mode = 2
+text = "HP: 10 / 10"
+
+[node name="RoundLabel" type="Label" parent="LeftPanel/VBoxContainer"]
+layout_mode = 2
+text = "Round: 1"
+
+[node name="CoinsLabel" type="Label" parent="LeftPanel/VBoxContainer"]
+layout_mode = 2
+text = "Coins: 0"
+
+[node name="TurnLabel" type="Label" parent="LeftPanel/VBoxContainer"]
+layout_mode = 2
+text = "Turn: 0"
+
+[node name="TopPanel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 200.0
+offset_right = -200.0
+offset_bottom = 80.0
+grow_horizontal = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="TopPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="ItemSlot1" type="Panel" parent="TopPanel/HBoxContainer"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+
+[node name="ItemSlot2" type="Panel" parent="TopPanel/HBoxContainer"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+
+[node name="ItemSlot3" type="Panel" parent="TopPanel/HBoxContainer"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+
+[node name="CenterBoard" parent="." instance=ExtResource("5_mno90")]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -120.0
+offset_right = 200.0
+offset_bottom = 120.0
+
+[node name="BottomHand" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 14
+anchor_left = 0.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 40.0
+offset_top = -300.0
+offset_right = -40.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+script = ExtResource("6_pqr12")
+card_scene = ExtResource("7_stu34")
+
+[node name="RightPanel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -200.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="RightPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 16
+
+[node name="DrawPileSection" type="VBoxContainer" parent="RightPanel/VBoxContainer"]
+layout_mode = 2
+
+[node name="DrawPileLabel" type="Label" parent="RightPanel/VBoxContainer/DrawPileSection"]
+layout_mode = 2
+text = "Draw Pile"
+horizontal_alignment = 1
+
+[node name="DrawPilePanel" type="Panel" parent="RightPanel/VBoxContainer/DrawPileSection"]
+custom_minimum_size = Vector2(80, 120)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="DrawPileCount" type="Label" parent="RightPanel/VBoxContainer/DrawPileSection/DrawPilePanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "9"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DiscardPileSection" type="VBoxContainer" parent="RightPanel/VBoxContainer"]
+layout_mode = 2
+
+[node name="DiscardPileLabel" type="Label" parent="RightPanel/VBoxContainer/DiscardPileSection"]
+layout_mode = 2
+text = "Discard"
+horizontal_alignment = 1
+
+[node name="DiscardPilePanel" type="Panel" parent="RightPanel/VBoxContainer/DiscardPileSection"]
+custom_minimum_size = Vector2(80, 120)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="DiscardPileCount" type="Label" parent="RightPanel/VBoxContainer/DiscardPileSection/DiscardPilePanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ConsumableSection" type="VBoxContainer" parent="RightPanel/VBoxContainer"]
+layout_mode = 2
+
+[node name="ConsumableLabel" type="Label" parent="RightPanel/VBoxContainer/ConsumableSection"]
+layout_mode = 2
+text = "Item"
+horizontal_alignment = 1
+
+[node name="ConsumablePanel" type="Panel" parent="RightPanel/VBoxContainer/ConsumableSection"]
+custom_minimum_size = Vector2(80, 80)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="TooltipManager" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+script = ExtResource("8_vwx56")
+tooltip_scene = ExtResource("9_yz123")

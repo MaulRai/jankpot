@@ -1,0 +1,73 @@
+class_name CardView
+extends Control
+
+signal card_hovered(card: CardView)
+signal card_unhovered(card: CardView)
+signal card_play_requested(card: CardView)
+
+@export var card_data: CardDef
+
+@onready var art_texture: TextureRect = %ArtTexture
+@onready var name_label: Label = %NameLabel
+@onready var description_label: RichTextLabel = %DescriptionLabel
+@onready var type_background: ColorRect = %TypeBackground
+@onready var art_separator: ColorRect = %ArtSeparator
+@onready var outline: Panel = %Outline
+
+var base_position: Vector2
+var base_z_index: int = 0
+
+func _ready() -> void:
+	if card_data:
+		render()
+	mouse_entered.connect(_on_mouse_entered)
+	mouse_exited.connect(_on_mouse_exited)
+	gui_input.connect(_on_gui_input)
+
+func set_card_data(data: CardDef) -> void:
+	card_data = data
+	render()
+
+func render() -> void:
+	if not card_data:
+		return
+	if art_texture and ResourceLoader.exists(card_data.art_path):
+		art_texture.texture = load(card_data.art_path)
+	if name_label:
+		name_label.text = card_data.card_name
+	if description_label:
+		description_label.text = _format_description(card_data.brief_description, card_data.keywords)
+	if type_background:
+		type_background.color = card_data.background_color
+	if art_separator:
+		art_separator.color = card_data.background_color.darkened(0.3)
+
+func _format_description(text: String, keywords: Array[String]) -> String:
+	var formatted := text
+	for kw in keywords:
+		var color := EffectKeyword.get_color(kw)
+		formatted = formatted.replace(kw, "[color=%s]%s[/color]" % [color, kw])
+	return formatted
+
+func _on_mouse_entered() -> void:
+	emit_signal("card_hovered", self)
+	z_index = 10
+	var tween := create_tween()
+	tween.tween_property(self, "position:y", base_position.y - 30, 0.15).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(self, "scale", Vector2(1.05, 1.05), 0.15).set_ease(Tween.EASE_OUT)
+
+func _on_mouse_exited() -> void:
+	emit_signal("card_unhovered", self)
+	z_index = 0
+	var tween := create_tween()
+	tween.tween_property(self, "position:y", base_position.y, 0.15).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(self, "scale", Vector2(1.0, 1.0), 0.15).set_ease(Tween.EASE_OUT)
+
+func _on_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		emit_signal("card_play_requested", self)
+
+func reset_transform() -> void:
+	position = base_position
+	rotation_degrees = 0.0
+	scale = Vector2(1.0, 1.0)
