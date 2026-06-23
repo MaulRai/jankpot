@@ -8,6 +8,7 @@ func place_card(card_view: CardView) -> void:
 	if card_view.get_parent():
 		card_view.get_parent().remove_child(card_view)
 	card_container.add_child(card_view)
+	card_view.top_level = false
 	card_view.position = Vector2.ZERO
 	card_view.rotation_degrees = 0.0
 	card_view.scale = Vector2(1.0, 1.0)
