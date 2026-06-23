@@ -80,10 +80,14 @@ func _on_gui_input(event: InputEvent) -> void:
 			z_index = 1000
 			# Reset hover transform for clean drag start
 			scale = Vector2(1.0, 1.0)
+			if outline:
+				outline.visible = true
 			emit_signal("card_drag_started", self)
 			accept_event()
 		elif is_dragging:
 			is_dragging = false
+			if outline:
+				outline.visible = false
 			emit_signal("card_drag_ended", self)
 			accept_event()
 

@@ -9,7 +9,11 @@ signal card_play_requested(card_data: CardDef, card_view: CardView)
 var card_views: Array[CardView] = []
 
 func _ready() -> void:
-	pass
+	resized.connect(_on_resized)
+
+func _on_resized() -> void:
+	if card_views.size() > 0:
+		_layout_cards()
 
 func set_cards(cards: Array[CardDef]) -> void:
 	_clear_hand()
@@ -47,7 +51,7 @@ func _layout_cards() -> void:
 	var center_index: float = (card_views.size() - 1) / 2.0
 	var bottom_y: float = size.y - 240.0
 	if bottom_y < 0:
-		bottom_y = 0.0
+		bottom_y = 30.0
 	for i in range(card_views.size()):
 		var card := card_views[i]
 		var offset := i - center_index
