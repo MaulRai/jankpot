@@ -5,23 +5,19 @@
 
 [node name="CardView" type="Control"]
 custom_minimum_size = Vector2(160, 240)
-layout_mode = 3
-anchors_preset = 0
+layout_mode = 0
 offset_right = 160.0
 offset_bottom = 240.0
 pivot_offset = Vector2(80, 120)
 script = ExtResource("1_abc12")
 
 [node name="Background" type="TextureRect" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+layout_mode = 0
+offset_right = 160.0
+offset_bottom = 240.0
 texture = ExtResource("2_def34")
 expand_mode = 1
-stretch_mode = 1
+stretch_mode = 6
 
 [node name="TypeBackground" type="ColorRect" parent="."]
 unique_name_in_owner = true
@@ -83,9 +79,6 @@ scroll_active = false
 [node name="Outline" type="Panel" parent="."]
 unique_name_in_owner = true
 visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+layout_mode = 0
+offset_right = 160.0
+offset_bottom = 240.0

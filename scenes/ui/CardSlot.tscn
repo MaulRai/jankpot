@@ -5,29 +5,22 @@
 
 [node name="CardSlot" type="Control"]
 custom_minimum_size = Vector2(160, 240)
-layout_mode = 3
-anchors_preset = 0
+layout_mode = 0
 offset_right = 160.0
 offset_bottom = 240.0
 script = ExtResource("1_abc12")
 
 [node name="SlotTexture" type="TextureRect" parent="."]
 unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+layout_mode = 0
+offset_right = 160.0
+offset_bottom = 240.0
 texture = ExtResource("2_def34")
 expand_mode = 1
-stretch_mode = 5
+stretch_mode = 6
 
 [node name="CardContainer" type="Control" parent="."]
 unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+layout_mode = 0
+offset_right = 160.0
+offset_bottom = 240.0
