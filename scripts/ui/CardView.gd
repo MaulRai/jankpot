@@ -3,7 +3,8 @@ extends Control
 
 signal card_hovered(card: CardView)
 signal card_unhovered(card: CardView)
-signal card_play_requested(card: CardView)
+signal card_drag_started(card: CardView)
+signal card_drag_ended(card: CardView)
 
 @export var card_data: CardDef
 
@@ -16,6 +17,10 @@ signal card_play_requested(card: CardView)
 
 var base_position: Vector2
 var base_z_index: int = 0
+var base_rotation_degrees: float = 0.0
+
+var is_dragging: bool = false
+var drag_offset: Vector2 = Vector2.ZERO
 
 func _ready() -> void:
 	if card_data:
@@ -50,24 +55,43 @@ func _format_description(text: String, keywords: Array[String]) -> String:
 	return formatted
 
 func _on_mouse_entered() -> void:
+	if is_dragging:
+		return
 	emit_signal("card_hovered", self)
-	z_index = 10
+	z_index = 100
 	var tween := create_tween()
 	tween.tween_property(self, "position:y", base_position.y - 30, 0.15).set_ease(Tween.EASE_OUT)
 	tween.parallel().tween_property(self, "scale", Vector2(1.05, 1.05), 0.15).set_ease(Tween.EASE_OUT)
 
 func _on_mouse_exited() -> void:
+	if is_dragging:
+		return
 	emit_signal("card_unhovered", self)
-	z_index = 0
+	z_index = base_z_index
 	var tween := create_tween()
 	tween.tween_property(self, "position:y", base_position.y, 0.15).set_ease(Tween.EASE_OUT)
 	tween.parallel().tween_property(self, "scale", Vector2(1.0, 1.0), 0.15).set_ease(Tween.EASE_OUT)
 
 func _on_gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		emit_signal("card_play_requested", self)
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			is_dragging = true
+			drag_offset = get_local_mouse_position()
+			z_index = 1000
+			# Reset hover transform for clean drag start
+			scale = Vector2(1.0, 1.0)
+			emit_signal("card_drag_started", self)
+			accept_event()
+		elif is_dragging:
+			is_dragging = false
+			emit_signal("card_drag_ended", self)
+			accept_event()
+
+func _process(_delta: float) -> void:
+	if is_dragging:
+		global_position = get_global_mouse_position() - drag_offset
 
 func reset_transform() -> void:
 	position = base_position
-	rotation_degrees = 0.0
+	rotation_degrees = base_rotation_degrees
 	scale = Vector2(1.0, 1.0)

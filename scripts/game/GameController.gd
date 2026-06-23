@@ -19,10 +19,11 @@ var _is_animating: bool = false
 func _ready() -> void:
 	if deck_manager:
 		deck_manager.hand_changed.connect(_on_hand_changed)
-		deck_manager.setup_starting_deck()
-		deck_manager.draw_until_full(3)
 	if hand_view:
 		hand_view.card_play_requested.connect(_on_card_play_requested)
+	if deck_manager:
+		deck_manager.setup_starting_deck()
+		deck_manager.draw_until_full(3)
 
 func _on_hand_changed() -> void:
 	if _is_animating:
@@ -32,14 +33,40 @@ func _on_hand_changed() -> void:
 
 func _on_card_play_requested(card_data: CardDef, card_view: CardView) -> void:
 	if round_status != "ongoing" or _is_animating:
+		_snap_card_back(card_view)
 		return
+	
+	var drop_pos: Vector2 = card_view.global_position + card_view.size / 2
+	if not player_slot.get_global_rect().has_point(drop_pos):
+		_snap_card_back(card_view)
+		return
+	
+	_play_card(card_data, card_view)
+
+func _snap_card_back(card_view: CardView) -> void:
 	_is_animating = true
+	var target_global: Vector2 = hand_view.to_global(card_view.base_position)
+	var tween := create_tween()
+	tween.tween_property(card_view, "global_position", target_global, 0.2).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(card_view, "rotation_degrees", card_view.base_rotation_degrees, 0.2)
+	
+	await tween.finished
+	
+	card_view.top_level = false
+	card_view.position = card_view.base_position
+	card_view.rotation_degrees = card_view.base_rotation_degrees
+	card_view.scale = Vector2(1.0, 1.0)
+	card_view.z_index = card_view.base_z_index
+	_is_animating = false
+
+func _play_card(card_data: CardDef, card_view: CardView) -> void:
+	_is_animating = true
+
+	# Capture start global position BEFORE removing from hand
+	var start_global: Vector2 = card_view.global_position
 
 	# Remove card from hand UI without freeing it
 	hand_view.remove_card_view(card_view)
-
-	# Capture start global position
-	var start_global: Vector2 = card_view.global_position
 
 	# Reparent to Main for free animation across the UI
 	var main_node: Node = get_parent()
