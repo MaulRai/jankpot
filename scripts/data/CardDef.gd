@@ -11,3 +11,10 @@ enum CardType { ROCK, PAPER, SCISSORS }
 @export var background_color: Color
 @export var keywords: Array[String]
 @export var effects: Array[String]
+@export var rarity: String = "Basic"
+@export var price: int = 0
+@export var is_basic: bool = true
+@export var temporarily_disabled: bool = false
+
+func copy() -> CardDef:
+	return duplicate(true) as CardDef

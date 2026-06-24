@@ -48,6 +48,7 @@ func _layout_cards() -> void:
 func prepare_layout(card_count: int) -> void:
 	for i in range(card_views.size()):
 		_set_card_base_layout(card_views[i], i, card_count)
+		card_views[i].z_index = card_views[i].base_z_index
 
 func add_card_for_draw(card_data: CardDef, index: int, card_count: int) -> CardView:
 	var card := _add_card(card_data)
@@ -91,6 +92,13 @@ func _set_card_base_layout(card: CardView, index: int, card_count: int) -> void:
 	# Cards further to the right are drawn above cards to their left.
 	card.base_z_index = index
 	card.pivot_offset = Vector2(80.0, card.size.y / 2.0)
+
+func normalize_card_layers() -> void:
+	for i in range(card_views.size()):
+		var card := card_views[i]
+		card.base_z_index = i
+		card.z_index = i
+		move_child(card, i)
 
 func remove_card_view(card_view: CardView) -> void:
 	card_views.erase(card_view)

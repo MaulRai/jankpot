@@ -276,11 +276,50 @@ Example keyword glossary:
 
 ```txt
 Damage: Reduces enemy HP.
-Luck: Increases chance-based effects.
+Luck: Adds to probability checks for chance-based weapon effects.
 Reveal: Shows hidden enemy information.
-Bleed: Deals damage at the end of turns.
+Bleed: Deals 1 damage at the end of the next turn, then disappears.
 Conceal: Disables or hides an option.
 ```
+
+Implemented status lifecycle:
+
+* **Downgrade**
+
+  * When its trigger resolves, the played upgraded weapon becomes the matching
+    basic Rock, Paper, or Scissors for the remainder of the current battle.
+  * The permanent deck entry is not destroyed.
+  * The upgraded form returns when the next battle starts.
+
+* **Bleed**
+
+  * Bleed is queued by the triggering weapon.
+  * It deals exactly 1 damage at the end of the next clash.
+  * It then disappears and does not stack in the current implementation.
+
+* **Fragile**
+
+  * A Fragile weapon disappears from draw pile, hand, and discard pile after
+    its break trigger resolves.
+  * This removal lasts only for the current battle.
+  * The weapon returns from the persistent deck blueprint next battle.
+
+* **Luck**
+
+  * Luck modifies probability checks used by chance-based weapon effects.
+  * A Hatter Slip in hand adds +15 percentage points.
+  * Multiple Hatter Slips do not stack.
+  * Luck does not directly replace the base Rock-Paper-Scissors comparison;
+    it changes the chance rolls attached to the resulting weapon effects.
+
+Weapon upgrade reward rules:
+
+* After winning a battle, show 3 weapon cards and let the player choose 1.
+* Reward rarity weights are Common : Uncommon : Rare = `1 : 2 : 4`.
+* Current weapon price is always `0`.
+* The selected weapon replaces one matching basic weapon in the persistent deck.
+* Each new enemy independently rolls its Rock, Paper, and Scissors weapon using
+  the same rarity weights, so consecutive enemies can have different loadouts.
 
 Implementation note:
 

@@ -1,6 +1,8 @@
 class_name EnemyController
 extends Node
 
+const WeaponCatalogData = preload("res://scripts/data/WeaponCatalog.gd")
+
 signal enemy_card_chosen(card: CardDef)
 signal enemy_selected(enemy_data: Dictionary)
 
@@ -155,20 +157,29 @@ var has_last_result := false
 var clash_count := 0
 var _fog_mode := -1
 var _gambler_type: CardDef.CardType = CardDef.CardType.ROCK
+var _disabled_type: CardDef.CardType = CardDef.CardType.ROCK
+var _has_disabled_type := false
 
 func _ready() -> void:
 	setup_enemy_deck()
 
-func setup_enemy_deck() -> void:
+func setup_enemy_deck(use_upgrades: bool = false) -> void:
 	enemy_deck.clear()
 	for type in [CardDef.CardType.ROCK, CardDef.CardType.PAPER, CardDef.CardType.SCISSORS]:
+		var weapon: CardDef
+		if use_upgrades:
+			weapon = WeaponCatalogData.random_upgrade_for_type(type)
+		else:
+			weapon = WeaponCatalogData.create_basic(type)
 		for i in range(3):
-			enemy_deck.append(_create_enemy_card(type, i))
+			var card: CardDef = weapon.copy()
+			card.id = "enemy_%s_%d" % [weapon.id, i]
+			enemy_deck.append(card)
 
-func select_random_non_boss() -> Dictionary:
-	return select_enemy(NON_BOSS_IDS.pick_random())
+func select_random_non_boss(use_upgrades: bool = true) -> Dictionary:
+	return select_enemy(NON_BOSS_IDS.pick_random(), use_upgrades)
 
-func select_enemy(enemy_id: String) -> Dictionary:
+func select_enemy(enemy_id: String, use_upgrades: bool = true) -> Dictionary:
 	if not ENEMIES.has(enemy_id):
 		enemy_id = "pebble_grunt"
 	reset_battle_context()
@@ -176,6 +187,7 @@ func select_enemy(enemy_id: String) -> Dictionary:
 	current_enemy = ENEMIES[current_enemy_id].duplicate(true)
 	current_enemy["id"] = current_enemy_id
 	current_enemy["reward"] = "Choose 1 Upgrade"
+	setup_enemy_deck(use_upgrades)
 	enemy_selected.emit(current_enemy)
 	return current_enemy
 
@@ -188,6 +200,9 @@ func reset_battle_context() -> void:
 
 func choose_card(enemy_hp: int = 6, _player_hp: int = 6) -> CardDef:
 	var weights: Array[float] = _weights_for_current_enemy(enemy_hp)
+	if _has_disabled_type:
+		weights[_disabled_type] = 0.0
+		_has_disabled_type = false
 	var chosen_type: CardDef.CardType = _choose_weighted_type(weights)
 	var matching_cards: Array[CardDef] = []
 	for card in enemy_deck:
@@ -196,6 +211,26 @@ func choose_card(enemy_hp: int = 6, _player_hp: int = 6) -> CardDef:
 	var chosen: CardDef = matching_cards.pick_random() if not matching_cards.is_empty() else enemy_deck.pick_random()
 	enemy_card_chosen.emit(chosen)
 	return chosen
+
+func disable_type_once(type: CardDef.CardType) -> void:
+	_disabled_type = type
+	_has_disabled_type = true
+
+func has_active_effect(effect_id: String) -> bool:
+	for card in enemy_deck:
+		if not card.temporarily_disabled and effect_id in card.effects:
+			return true
+	return false
+
+func temporarily_downgrade(card: CardDef) -> void:
+	var index := enemy_deck.find(card)
+	if index >= 0:
+		var replacement := WeaponCatalogData.create_basic(card.card_type, card.id)
+		enemy_deck[index] = replacement
+
+func temporarily_remove(card: CardDef) -> void:
+	card.temporarily_disabled = true
+	enemy_deck.erase(card)
 
 func record_clash(
 	player_type: CardDef.CardType,
@@ -288,10 +323,53 @@ func _bruise_toad_weights() -> Array[float]:
 	return _make_weights(35.0, 30.0, 35.0)
 
 func _gambler_hare_weights() -> Array[float]:
+	var upgraded_types := _available_upgraded_types()
+
+	# Every third clash is a high-risk gamble using the strongest weapon
+	# rarity that is actually present in this enemy's current loadout.
 	if clash_count > 0 and clash_count % 3 == 0:
-		_gambler_type = randi_range(0, 2) as CardDef.CardType
-		return _weights_with_preference(_gambler_type, 70.0, 15.0)
-	return _balanced_weights()
+		var strongest_types := _highest_rarity_types()
+		if not strongest_types.is_empty():
+			_gambler_type = strongest_types.pick_random() as CardDef.CardType
+			return _weights_with_preference(_gambler_type, 70.0, 15.0)
+
+	# Outside gamble turns, each type with an upgraded weapon receives +25.
+	var weights := _balanced_weights()
+	for type in upgraded_types:
+		weights[type] += 25.0
+	return weights
+
+func _available_upgraded_types() -> Array[int]:
+	var types: Array[int] = []
+	for card in enemy_deck:
+		if not card.is_basic and not card.temporarily_disabled and card.card_type not in types:
+			types.append(card.card_type)
+	return types
+
+func _highest_rarity_types() -> Array[int]:
+	var highest_rank := 0
+	var types: Array[int] = []
+	for card in enemy_deck:
+		if card.temporarily_disabled:
+			continue
+		var rank := _rarity_rank(card.rarity)
+		if rank > highest_rank:
+			highest_rank = rank
+			types.clear()
+			types.append(card.card_type)
+		elif rank == highest_rank and rank > 0 and card.card_type not in types:
+			types.append(card.card_type)
+	return types
+
+func _rarity_rank(rarity: String) -> int:
+	match rarity:
+		WeaponCatalogData.RARITY_RARE:
+			return 3
+		WeaponCatalogData.RARITY_UNCOMMON:
+			return 2
+		WeaponCatalogData.RARITY_COMMON:
+			return 1
+	return 0
 
 func _fog_witch_weights() -> Array[float]:
 	var mode_block := clash_count / 3

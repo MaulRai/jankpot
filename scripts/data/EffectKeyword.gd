@@ -7,14 +7,18 @@ const KEYWORD_COLORS := {
 	"Reveal": "#66CCFF",
 	"Bleed": "#FF5555",
 	"Conceal": "#AAAAFF",
+	"Downgrade": "#D5A86E",
+	"Fragile": "#FF9DB5",
 }
 
 const KEYWORD_DESCRIPTIONS := {
 	"Damage": "Reduces enemy HP.",
-	"Luck": "Increases chance-based effects.",
+	"Luck": "Adds to the probability of chance-based weapon effects.",
 	"Reveal": "Shows hidden enemy information.",
-	"Bleed": "Deals damage at the end of turns.",
+	"Bleed": "Deals 1 damage at the end of the next turn, then disappears.",
 	"Conceal": "Disables or hides an option.",
+	"Downgrade": "Becomes its basic weapon for the rest of the current battle.",
+	"Fragile": "Temporarily disappears for the rest of the current battle after it breaks.",
 }
 
 static func get_color(keyword: String) -> String:

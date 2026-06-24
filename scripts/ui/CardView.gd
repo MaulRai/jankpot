@@ -126,6 +126,8 @@ func set_interaction_enabled(enabled: bool) -> void:
 	if not enabled:
 		is_dragging = false
 		cancel_transform_tween()
+		z_index = base_z_index
+		scale = Vector2.ONE
 		if outline:
 			outline.visible = false
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
