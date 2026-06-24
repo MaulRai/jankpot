@@ -39,30 +39,38 @@ func _clear_hand() -> void:
 	card_views.clear()
 
 func _layout_cards() -> void:
+	for i in range(card_views.size()):
+		_apply_card_layout(card_views[i], i, card_views.size())
+
+func get_card_target_global_position(index: int, card_count: int) -> Vector2:
+	return get_global_transform() * _get_card_base_position(index, card_count)
+
+func _get_card_base_position(index: int, card_count: int) -> Vector2:
 	var card_width: float = 160.0
 	var overlap: float = 50.0
 	var spacing: float = card_width - overlap
 	var total_width: float
-	if card_views.size() > 1:
-		total_width = card_views.size() * card_width - (card_views.size() - 1) * overlap
+	if card_count > 1:
+		total_width = card_count * card_width - (card_count - 1) * overlap
 	else:
 		total_width = card_width
 	var start_x: float = (size.x - total_width) / 2.0
-	var center_index: float = (card_views.size() - 1) / 2.0
 	var bottom_y: float = size.y - 240.0
 	if bottom_y < 0:
 		bottom_y = 30.0
-	for i in range(card_views.size()):
-		var card := card_views[i]
-		var offset := i - center_index
-		card.base_position = Vector2(start_x + i * spacing, bottom_y)
-		card.base_rotation_degrees = offset * 3.0
-		# Cards further to the right are drawn above cards to their left.
-		card.base_z_index = i
-		card.position = card.base_position
-		card.rotation_degrees = card.base_rotation_degrees
-		card.pivot_offset = Vector2(card_width / 2.0, card.size.y / 2.0)
-		card.z_index = card.base_z_index
+	return Vector2(start_x + index * spacing, bottom_y)
+
+func _apply_card_layout(card: CardView, index: int, card_count: int) -> void:
+	var center_index: float = (card_count - 1) / 2.0
+	var offset := index - center_index
+	card.base_position = _get_card_base_position(index, card_count)
+	card.base_rotation_degrees = offset * 3.0
+	# Cards further to the right are drawn above cards to their left.
+	card.base_z_index = index
+	card.position = card.base_position
+	card.rotation_degrees = card.base_rotation_degrees
+	card.pivot_offset = Vector2(80.0, card.size.y / 2.0)
+	card.z_index = card.base_z_index
 
 func remove_card_view(card_view: CardView) -> void:
 	card_views.erase(card_view)

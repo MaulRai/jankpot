@@ -14,6 +14,13 @@ signal wind_exit_batch_finished
 @onready var hp_label: Label = get_node("../LeftPanel/VBoxContainer/HPLabel")
 @onready var turn_label: Label = get_node("../LeftPanel/VBoxContainer/TurnLabel")
 @onready var battle_board: Control = get_node("../CenterBoard")
+@onready var draw_pile_visual: Control = get_node("../DrawPileVisual")
+@onready var pile_card_bottom: TextureRect = get_node("../DrawPileVisual/PileCardBottom")
+@onready var pile_card_middle: TextureRect = get_node("../DrawPileVisual/PileCardMiddle")
+@onready var pile_card_top: TextureRect = get_node("../DrawPileVisual/PileCardTop")
+@onready var pile_count_label: Label = get_node("../DrawPileVisual/CountLabel")
+@onready var legacy_draw_count: Label = get_node("../RightPanel/VBoxContainer/DrawPileSection/DrawPilePanel/DrawPileCount")
+@onready var legacy_discard_count: Label = get_node("../RightPanel/VBoxContainer/DiscardPileSection/DiscardPilePanel/DiscardPileCount")
 
 var player_hp: int = 10
 var enemy_hp: int = 10
@@ -25,11 +32,17 @@ var _pending_wind_exits: int = 0
 func _ready() -> void:
 	if deck_manager:
 		deck_manager.hand_changed.connect(_on_hand_changed)
+		deck_manager.draw_pile_changed.connect(_update_pile_visuals)
+		deck_manager.discard_pile_changed.connect(_update_pile_visuals)
 	if hand_view:
 		hand_view.card_play_requested.connect(_on_card_play_requested)
 	if deck_manager:
+		_is_animating = true
 		deck_manager.setup_starting_deck()
-		deck_manager.draw_until_full(3)
+		_update_pile_visuals()
+		await get_tree().process_frame
+		await _refill_hand_animated()
+		_is_animating = false
 	_update_labels()
 
 func _on_hand_changed() -> void:
@@ -136,14 +149,120 @@ func _play_card(card_data: CardDef, card_view: CardView) -> void:
 		return
 
 	# 10. Draw refill and rebuild hand
-	deck_manager.draw_until_full(3)
-	if hand_view:
-		hand_view.set_cards(deck_manager.hand)
+	await _refill_hand_animated()
 
 	_is_animating = false
 	turn_count += 1
 	_update_labels()
 	emit_signal("turn_resolved")
+
+func _refill_hand_animated() -> void:
+	if deck_manager.draw_pile.is_empty() and not deck_manager.discard_pile.is_empty():
+		deck_manager.reshuffle_discard_if_needed()
+		await _animate_pile_rebuild()
+
+	var previous_hand_size := deck_manager.hand.size()
+	deck_manager.draw_until_full(hand_view.hand_size)
+	var final_hand_size := deck_manager.hand.size()
+
+	for index in range(previous_hand_size, final_hand_size):
+		await _animate_card_draw_to_hand(deck_manager.hand[index], index, final_hand_size)
+
+	hand_view.set_cards(deck_manager.hand)
+	_update_pile_visuals()
+
+func _animate_card_draw_to_hand(card_data: CardDef, hand_index: int, hand_count: int) -> void:
+	if not hand_view.card_scene:
+		return
+
+	var travel_card: CardView = hand_view.card_scene.instantiate()
+	get_parent().add_child(travel_card)
+	travel_card.set_interaction_enabled(false)
+	travel_card.set_face_down(true)
+	travel_card.pivot_offset = travel_card.size * 0.5
+	travel_card.global_position = pile_card_top.global_position
+	travel_card.scale = Vector2(0.5, 0.5)
+	travel_card.z_index = 1800
+
+	var target_position := hand_view.get_card_target_global_position(hand_index, hand_count)
+	var movement := create_tween()
+	movement.set_parallel(true)
+	movement.tween_property(travel_card, "global_position", target_position, 0.52) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	movement.tween_property(travel_card, "scale:y", 1.0, 0.52) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	movement.tween_property(travel_card, "rotation_degrees", randf_range(-3.0, 3.0), 0.52) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+	var flip := create_tween()
+	flip.tween_property(travel_card, "scale:x", 0.06, 0.2) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	flip.tween_callback(func() -> void:
+		travel_card.set_card_data(card_data)
+		travel_card.set_face_down(false)
+	)
+	flip.tween_property(travel_card, "scale:x", 1.0, 0.24) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+	await movement.finished
+	travel_card.queue_free()
+
+func _animate_pile_rebuild() -> void:
+	_set_pile_cards_visible(false)
+	var last_tween: Tween
+	var spawned_cards: Array[TextureRect] = []
+	var target_position := pile_card_top.global_position
+	var viewport_width := get_viewport().get_visible_rect().size.x
+
+	for i in range(6):
+		var card_back := TextureRect.new()
+		card_back.texture = load("res://assets/ui/card-back.png")
+		card_back.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		card_back.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		card_back.size = Vector2(160.0, 240.0)
+		card_back.scale = Vector2(0.5, 0.5)
+		card_back.pivot_offset = card_back.size * 0.5
+		card_back.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		get_parent().add_child(card_back)
+		card_back.global_position = Vector2(
+			viewport_width + randf_range(40.0, 180.0),
+			target_position.y + randf_range(-90.0, 90.0)
+		)
+		card_back.rotation_degrees = randf_range(-20.0, 20.0)
+		card_back.z_index = 1700 + i
+		spawned_cards.append(card_back)
+
+		last_tween = create_tween()
+		last_tween.set_parallel(true)
+		last_tween.tween_property(
+			card_back,
+			"global_position",
+			target_position + Vector2(randf_range(-2.0, 2.0), randf_range(-2.0, 2.0)),
+			0.38
+		).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		last_tween.tween_property(card_back, "rotation_degrees", randf_range(-2.0, 2.0), 0.38) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		await get_tree().create_timer(0.055).timeout
+
+	if last_tween:
+		await last_tween.finished
+	for card_back in spawned_cards:
+		card_back.queue_free()
+	_set_pile_cards_visible(true)
+	_update_pile_visuals()
+
+func _update_pile_visuals() -> void:
+	var draw_count := deck_manager.draw_pile.size() if deck_manager else 0
+	var discard_count := deck_manager.discard_pile.size() if deck_manager else 0
+	pile_count_label.text = str(draw_count)
+	legacy_draw_count.text = str(draw_count)
+	legacy_discard_count.text = str(discard_count)
+	_set_pile_cards_visible(draw_count > 0)
+
+func _set_pile_cards_visible(is_visible: bool) -> void:
+	pile_card_bottom.visible = is_visible
+	pile_card_middle.visible = is_visible
+	pile_card_top.visible = is_visible
 
 func _animate_enemy_card_entry(card_view: CardView) -> void:
 	card_view.position = Vector2(0.0, -70.0)
@@ -300,9 +419,11 @@ func start_battle() -> void:
 	enemy_hp = 10
 	turn_count = 0
 	round_status = "ongoing"
+	_is_animating = true
 	player_slot.clear_slot()
 	enemy_slot.clear_slot()
 	if deck_manager:
 		deck_manager.setup_starting_deck()
-		deck_manager.draw_until_full(3)
+		await _refill_hand_animated()
+	_is_animating = false
 	_update_labels()
