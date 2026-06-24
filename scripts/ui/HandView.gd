@@ -57,7 +57,8 @@ func _layout_cards() -> void:
 		var offset := i - center_index
 		card.base_position = Vector2(start_x + i * spacing, bottom_y)
 		card.base_rotation_degrees = offset * 3.0
-		card.base_z_index = card_views.size() - int(abs(offset))
+		# Cards further to the right are drawn above cards to their left.
+		card.base_z_index = i
 		card.position = card.base_position
 		card.rotation_degrees = card.base_rotation_degrees
 		card.pivot_offset = Vector2(card_width / 2.0, card.size.y / 2.0)
@@ -69,7 +70,7 @@ func remove_card_view(card_view: CardView) -> void:
 		remove_child(card_view)
 
 func _on_card_drag_started(card: CardView) -> void:
-	card.top_level = true
+	card.z_index = 1000
 
 func _on_card_drag_ended(card: CardView) -> void:
 	if card.card_data:

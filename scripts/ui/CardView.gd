@@ -21,6 +21,7 @@ var base_rotation_degrees: float = 0.0
 
 var is_dragging: bool = false
 var drag_offset: Vector2 = Vector2.ZERO
+var transform_tween: Tween
 
 func _ready() -> void:
 	if card_data:
@@ -69,24 +70,27 @@ func _on_mouse_entered() -> void:
 		return
 	emit_signal("card_hovered", self)
 	z_index = 100
-	var tween := create_tween()
-	tween.tween_property(self, "position:y", base_position.y - 30, 0.15).set_ease(Tween.EASE_OUT)
-	tween.parallel().tween_property(self, "scale", Vector2(1.05, 1.05), 0.15).set_ease(Tween.EASE_OUT)
+	cancel_transform_tween()
+	transform_tween = create_tween()
+	transform_tween.tween_property(self, "position:y", base_position.y - 30, 0.15).set_ease(Tween.EASE_OUT)
+	transform_tween.parallel().tween_property(self, "scale", Vector2(1.05, 1.05), 0.15).set_ease(Tween.EASE_OUT)
 
 func _on_mouse_exited() -> void:
 	if is_dragging:
 		return
 	emit_signal("card_unhovered", self)
 	z_index = base_z_index
-	var tween := create_tween()
-	tween.tween_property(self, "position:y", base_position.y, 0.15).set_ease(Tween.EASE_OUT)
-	tween.parallel().tween_property(self, "scale", Vector2(1.0, 1.0), 0.15).set_ease(Tween.EASE_OUT)
+	cancel_transform_tween()
+	transform_tween = create_tween()
+	transform_tween.tween_property(self, "position:y", base_position.y, 0.15).set_ease(Tween.EASE_OUT)
+	transform_tween.parallel().tween_property(self, "scale", Vector2(1.0, 1.0), 0.15).set_ease(Tween.EASE_OUT)
 
 func _on_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			is_dragging = true
-			drag_offset = get_local_mouse_position()
+			cancel_transform_tween()
+			drag_offset = get_global_mouse_position() - global_position
 			z_index = 1000
 			# Reset hover transform for clean drag start
 			scale = Vector2(1.0, 1.0)
@@ -106,6 +110,12 @@ func _process(_delta: float) -> void:
 		global_position = get_global_mouse_position() - drag_offset
 
 func reset_transform() -> void:
+	cancel_transform_tween()
 	position = base_position
 	rotation_degrees = base_rotation_degrees
 	scale = Vector2(1.0, 1.0)
+
+func cancel_transform_tween() -> void:
+	if transform_tween and transform_tween.is_valid():
+		transform_tween.kill()
+	transform_tween = null
