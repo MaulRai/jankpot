@@ -56,7 +56,7 @@ func _on_card_play_requested(card_data: CardDef, card_view: CardView) -> void:
 
 func _snap_card_back(card_view: CardView) -> void:
 	_is_animating = true
-	var target_global: Vector2 = hand_view.to_global(card_view.base_position)
+	var target_global: Vector2 = hand_view.global_position + card_view.base_position
 	var tween := create_tween()
 	tween.tween_property(card_view, "global_position", target_global, 0.2).set_ease(Tween.EASE_OUT)
 	tween.parallel().tween_property(card_view, "rotation_degrees", card_view.base_rotation_degrees, 0.2)

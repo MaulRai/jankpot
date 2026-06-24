@@ -19,16 +19,28 @@ func setup_enemy_deck() -> void:
 		var rock := CardDef.new()
 		rock.id = "enemy_rock_%d" % i
 		rock.card_type = CardDef.CardType.ROCK
+		rock.card_name = "Rock"
+		rock.brief_description = "Solid and steady."
+		rock.art_path = "res://assets/weapon/rock-1.png"
+		rock.background_color = Color("#7E91A3")
 		enemy_deck.append(rock)
 	for i in range(3):
 		var paper := CardDef.new()
 		paper.id = "enemy_paper_%d" % i
 		paper.card_type = CardDef.CardType.PAPER
+		paper.card_name = "Paper"
+		paper.brief_description = "Covers all bases."
+		paper.art_path = "res://assets/weapon/paper-1.png"
+		paper.background_color = Color("#E7DFA4")
 		enemy_deck.append(paper)
 	for i in range(3):
 		var scissors := CardDef.new()
 		scissors.id = "enemy_scissors_%d" % i
 		scissors.card_type = CardDef.CardType.SCISSORS
+		scissors.card_name = "Scissors"
+		scissors.brief_description = "Cuts through defenses."
+		scissors.art_path = "res://assets/weapon/scissors-1.png"
+		scissors.background_color = Color("#9A4A4A")
 		enemy_deck.append(scissors)
 
 func choose_card() -> CardDef:
