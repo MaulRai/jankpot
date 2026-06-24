@@ -5,6 +5,11 @@ const MAX_HEALTH := 6
 
 @onready var enemy_hearts: HBoxContainer = %EnemyHearts
 @onready var player_hearts: HBoxContainer = %PlayerHearts
+@onready var enemy_name: Label = %EnemyName
+@onready var enemy_icon: TextureRect = %EnemyIcon
+@onready var behavior: Label = %Behavior
+@onready var reward: Label = %Reward
+@onready var rule_text: Label = %RuleText
 @onready var trial_value: Label = %TrialValue
 @onready var clash_value: Label = %ClashValue
 
@@ -22,6 +27,16 @@ func set_health(player_health: int, enemy_health: int) -> void:
 func set_progress(trial_current: int, trial_total: int, clash: int) -> void:
 	trial_value.text = "%d / %d" % [trial_current, trial_total]
 	clash_value.text = str(clash)
+
+func set_enemy_info(enemy_data: Dictionary) -> void:
+	enemy_name.text = str(enemy_data.get("name", "Unknown Rival"))
+	behavior.text = str(enemy_data.get("description", "No known pattern."))
+	reward.text = "REWARD  -  %s" % str(enemy_data.get("reward", "Choose 1 Upgrade"))
+	rule_text.text = str(enemy_data.get("rule", "No special rule"))
+	var icon_path := str(enemy_data.get("icon", ""))
+	enemy_icon.visible = not icon_path.is_empty() and ResourceLoader.exists(icon_path)
+	if enemy_icon.visible:
+		enemy_icon.texture = load(icon_path)
 
 func animate_heart_loss(is_player: bool, health_after_damage: int) -> void:
 	var container := player_hearts if is_player else enemy_hearts

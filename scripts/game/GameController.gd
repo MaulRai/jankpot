@@ -41,9 +41,11 @@ func _ready() -> void:
 		hand_view.card_drag_ended.connect(_on_hand_card_drag_ended)
 	if deck_manager:
 		_is_animating = true
+		var selected_enemy := enemy_controller.select_random_non_boss()
 		deck_manager.setup_starting_deck()
 		_update_pile_visuals()
 		await get_tree().process_frame
+		battle_sidebar.set_enemy_info(selected_enemy)
 		await _refill_hand_animated()
 		await _prepare_enemy_card()
 		_is_animating = false
@@ -138,6 +140,7 @@ func _play_card(card_data: CardDef, card_view: CardView) -> void:
 	# 6. Resolve battle
 	var result: BattleResolver.Result = battle_resolver.resolve(card_data.card_type, enemy_card.card_type)
 	await _apply_result(result)
+	enemy_controller.record_clash(card_data.card_type, enemy_card.card_type, result)
 
 	# 7. Brief pause, then blow both cards off the board.
 	await get_tree().create_timer(0.35).timeout
@@ -169,7 +172,7 @@ func _prepare_enemy_card() -> void:
 	if is_instance_valid(_enemy_preview_view):
 		return
 
-	_pending_enemy_card = enemy_controller.choose_card()
+	_pending_enemy_card = enemy_controller.choose_card(enemy_hp, player_hp)
 	_enemy_preview_view = hand_view.card_scene.instantiate()
 	_enemy_preview_view.custom_minimum_size = Vector2(160, 240)
 	enemy_slot.place_card(_enemy_preview_view)
@@ -462,6 +465,7 @@ func start_battle() -> void:
 	player_slot.clear_slot()
 	enemy_slot.clear_slot()
 	if deck_manager:
+		battle_sidebar.set_enemy_info(enemy_controller.select_random_non_boss())
 		deck_manager.setup_starting_deck()
 		await _refill_hand_animated()
 		await _prepare_enemy_card()
