@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://m1w3e3a3e3a3i"]
+[gd_scene load_steps=12 format=3 uid="uid://m1w3e3a3e3a3i"]
 
 [ext_resource type="Script" path="res://scripts/game/GameController.gd" id="1_abc12"]
 [ext_resource type="Script" path="res://scripts/game/DeckManager.gd" id="2_def34"]
@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://scripts/ui/TooltipManager.gd" id="8_vwx56"]
 [ext_resource type="PackedScene" uid="uid://t1w3e3a3e3a3g" path="res://scenes/ui/TooltipBox.tscn" id="9_yz123"]
 [ext_resource type="Texture2D" path="res://assets/ui/card-back.png" id="10_card_back"]
+[ext_resource type="Theme" path="res://themes/game_theme.tres" id="11_game_theme"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -18,6 +19,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("11_game_theme")
 
 [node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
