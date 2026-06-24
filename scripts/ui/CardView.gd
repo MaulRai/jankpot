@@ -20,6 +20,7 @@ var base_z_index: int = 0
 var base_rotation_degrees: float = 0.0
 
 var is_dragging: bool = false
+var interaction_enabled: bool = true
 var drag_offset: Vector2 = Vector2.ZERO
 var transform_tween: Tween
 
@@ -66,7 +67,7 @@ func _format_description(text: String, keywords: Array[String]) -> String:
 	return formatted
 
 func _on_mouse_entered() -> void:
-	if is_dragging:
+	if is_dragging or not interaction_enabled:
 		return
 	emit_signal("card_hovered", self)
 	z_index = 100
@@ -76,7 +77,7 @@ func _on_mouse_entered() -> void:
 	transform_tween.parallel().tween_property(self, "scale", Vector2(1.05, 1.05), 0.15).set_ease(Tween.EASE_OUT)
 
 func _on_mouse_exited() -> void:
-	if is_dragging:
+	if is_dragging or not interaction_enabled:
 		return
 	emit_signal("card_unhovered", self)
 	z_index = base_z_index
@@ -86,6 +87,8 @@ func _on_mouse_exited() -> void:
 	transform_tween.parallel().tween_property(self, "scale", Vector2(1.0, 1.0), 0.15).set_ease(Tween.EASE_OUT)
 
 func _on_gui_input(event: InputEvent) -> void:
+	if not interaction_enabled:
+		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			is_dragging = true
@@ -114,6 +117,17 @@ func reset_transform() -> void:
 	position = base_position
 	rotation_degrees = base_rotation_degrees
 	scale = Vector2(1.0, 1.0)
+
+func set_interaction_enabled(enabled: bool) -> void:
+	interaction_enabled = enabled
+	if not enabled:
+		is_dragging = false
+		cancel_transform_tween()
+		if outline:
+			outline.visible = false
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+	else:
+		mouse_filter = Control.MOUSE_FILTER_STOP
 
 func cancel_transform_tween() -> void:
 	if transform_tween and transform_tween.is_valid():

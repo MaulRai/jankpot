@@ -69,6 +69,7 @@ func _snap_card_back(card_view: CardView) -> void:
 
 func _play_card(card_data: CardDef, card_view: CardView) -> void:
 	_is_animating = true
+	card_view.set_interaction_enabled(false)
 
 	# 1. Animate player card from hand to player slot
 	var start_global: Vector2 = card_view.global_position
@@ -79,17 +80,20 @@ func _play_card(card_data: CardDef, card_view: CardView) -> void:
 	card_view.z_index = 1000
 
 	var tween := create_tween()
-	tween.tween_property(card_view, "global_position", player_slot.global_position, 0.45) \
-		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tween.parallel().tween_property(card_view, "rotation_degrees", 0.0, 0.45)
-	tween.parallel().tween_property(card_view, "scale", Vector2(1.0, 1.0), 0.45)
+	tween.tween_property(
+		card_view,
+		"global_position",
+		player_slot.get_card_target_global_position(),
+		0.35
+	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(card_view, "rotation_degrees", 0.0, 0.35)
+	tween.parallel().tween_property(card_view, "scale", Vector2(1.0, 1.0), 0.35)
 
 	await tween.finished
 
 	player_slot.clear_slot()
 	player_slot.place_card(card_view)
 	card_view.z_index = 0
-	card_view.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	# 2. Enemy chooses hidden card
 	var enemy_card: CardDef = enemy_controller.choose_card()
@@ -100,11 +104,13 @@ func _play_card(card_data: CardDef, card_view: CardView) -> void:
 		enemy_view = hand_view.card_scene.instantiate()
 		enemy_view.custom_minimum_size = Vector2(160, 240)
 		enemy_slot.place_card(enemy_view)
+		enemy_view.set_interaction_enabled(false)
 		enemy_view.set_face_down(true)
 		enemy_view.z_index = 0
+		await _animate_enemy_card_entry(enemy_view)
 
 	# 4. Brief pause before reveal
-	await get_tree().create_timer(0.4).timeout
+	await get_tree().create_timer(0.2).timeout
 
 	# 5. Flip reveal enemy card
 	if enemy_view and enemy_card:
@@ -136,6 +142,17 @@ func _play_card(card_data: CardDef, card_view: CardView) -> void:
 	turn_count += 1
 	_update_labels()
 	emit_signal("turn_resolved")
+
+func _animate_enemy_card_entry(card_view: CardView) -> void:
+	card_view.position = Vector2(0.0, -70.0)
+	card_view.modulate.a = 0.0
+
+	var tween := create_tween()
+	tween.tween_property(card_view, "position", Vector2.ZERO, 0.3) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(card_view, "modulate:a", 1.0, 0.25) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	await tween.finished
 
 func _flip_card(card_view: CardView, revealed_data: CardDef) -> void:
 	# Scale X to 0 to hide

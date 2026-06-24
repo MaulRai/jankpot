@@ -13,6 +13,9 @@ func place_card(card_view: CardView) -> void:
 	card_view.rotation_degrees = 0.0
 	card_view.scale = Vector2(1.0, 1.0)
 
+func get_card_target_global_position() -> Vector2:
+	return card_container.global_position
+
 func clear_slot() -> void:
 	for child in card_container.get_children():
 		child.queue_free()
