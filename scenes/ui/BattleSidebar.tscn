@@ -1,0 +1,312 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/BattleSidebar.gd" id="1_sidebar"]
+
+[sub_resource type="StyleBoxFlat" id="Style_sidebar"]
+bg_color = Color(0.055, 0.063, 0.078, 0.98)
+border_width_right = 3
+border_color = Color(0.33, 0.39, 0.48, 1)
+
+[sub_resource type="StyleBoxFlat" id="Style_header"]
+bg_color = Color(0.22, 0.09, 0.1, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.75, 0.3, 0.25, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+corner_detail = 1
+
+[sub_resource type="StyleBoxFlat" id="Style_health"]
+bg_color = Color(0.095, 0.11, 0.14, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.42, 0.48, 0.58, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+corner_detail = 1
+
+[sub_resource type="StyleBoxFlat" id="Style_rule"]
+bg_color = Color(0.09, 0.13, 0.16, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.26, 0.58, 0.61, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+corner_detail = 1
+
+[sub_resource type="StyleBoxFlat" id="Style_progress"]
+bg_color = Color(0.13, 0.1, 0.18, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.51, 0.38, 0.67, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+corner_detail = 1
+
+[sub_resource type="StyleBoxFlat" id="Style_button"]
+bg_color = Color(0.16, 0.18, 0.22, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.46, 0.52, 0.62, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+corner_detail = 1
+
+[sub_resource type="StyleBoxFlat" id="Style_button_hover"]
+bg_color = Color(0.24, 0.27, 0.33, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.72, 0.78, 0.86, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+corner_detail = 1
+
+[node name="BattleSidebar" type="Panel"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 3
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_right = 280.0
+grow_vertical = 2
+theme_override_styles/panel = SubResource("Style_sidebar")
+script = ExtResource("1_sidebar")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -14.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Sections" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="EnemyHeader" type="PanelContainer" parent="Margin/Sections"]
+custom_minimum_size = Vector2(0, 145)
+layout_mode = 2
+theme_override_styles/panel = SubResource("Style_header")
+
+[node name="Margin" type="MarginContainer" parent="Margin/Sections/EnemyHeader"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="Content" type="VBoxContainer" parent="Margin/Sections/EnemyHeader/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="Eyebrow" type="Label" parent="Margin/Sections/EnemyHeader/Margin/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.66, 0.55, 1)
+theme_override_font_sizes/font_size = 13
+text = "CURRENT RIVAL"
+
+[node name="EnemyName" type="Label" parent="Margin/Sections/EnemyHeader/Margin/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.94, 0.83, 1)
+theme_override_font_sizes/font_size = 25
+text = "Goblin Trickster"
+autowrap_mode = 2
+
+[node name="Behavior" type="Label" parent="Margin/Sections/EnemyHeader/Margin/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.86, 0.79, 0.75, 1)
+theme_override_font_sizes/font_size = 14
+text = "Repeats winning moves"
+
+[node name="Reward" type="Label" parent="Margin/Sections/EnemyHeader/Margin/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.8, 0.32, 1)
+theme_override_font_sizes/font_size = 14
+text = "REWARD  •  Choose 1 Upgrade"
+
+[node name="HealthPanel" type="PanelContainer" parent="Margin/Sections"]
+custom_minimum_size = Vector2(0, 176)
+layout_mode = 2
+theme_override_styles/panel = SubResource("Style_health")
+
+[node name="Margin" type="MarginContainer" parent="Margin/Sections/HealthPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="Content" type="VBoxContainer" parent="Margin/Sections/HealthPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="Title" type="Label" parent="Margin/Sections/HealthPanel/Margin/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.78, 0.88, 1)
+theme_override_font_sizes/font_size = 14
+text = "HEALTH"
+
+[node name="EnemyLabel" type="Label" parent="Margin/Sections/HealthPanel/Margin/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "Enemy"
+
+[node name="EnemyHearts" type="HBoxContainer" parent="Margin/Sections/HealthPanel/Margin/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 26)
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="YouLabel" type="Label" parent="Margin/Sections/HealthPanel/Margin/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "You"
+
+[node name="PlayerHearts" type="HBoxContainer" parent="Margin/Sections/HealthPanel/Margin/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 26)
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="RulePanel" type="PanelContainer" parent="Margin/Sections"]
+custom_minimum_size = Vector2(0, 105)
+layout_mode = 2
+theme_override_styles/panel = SubResource("Style_rule")
+
+[node name="Margin" type="MarginContainer" parent="Margin/Sections/RulePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="Content" type="VBoxContainer" parent="Margin/Sections/RulePanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="Margin/Sections/RulePanel/Margin/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.83, 0.83, 1)
+theme_override_font_sizes/font_size = 14
+text = "BATTLE PATTERN"
+
+[node name="RuleText" type="Label" parent="Margin/Sections/RulePanel/Margin/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "No special rule"
+autowrap_mode = 2
+
+[node name="ProgressPanel" type="PanelContainer" parent="Margin/Sections"]
+custom_minimum_size = Vector2(0, 105)
+layout_mode = 2
+theme_override_styles/panel = SubResource("Style_progress")
+
+[node name="Margin" type="MarginContainer" parent="Margin/Sections/ProgressPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 9
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 9
+
+[node name="Content" type="HBoxContainer" parent="Margin/Sections/ProgressPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Trial" type="VBoxContainer" parent="Margin/Sections/ProgressPanel/Margin/Content"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="Margin/Sections/ProgressPanel/Margin/Content/Trial"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.62, 0.88, 1)
+theme_override_font_sizes/font_size = 13
+text = "TRIAL"
+horizontal_alignment = 1
+
+[node name="TrialValue" type="Label" parent="Margin/Sections/ProgressPanel/Margin/Content/Trial"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 25
+text = "2 / 8"
+horizontal_alignment = 1
+
+[node name="Clash" type="VBoxContainer" parent="Margin/Sections/ProgressPanel/Margin/Content"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="Margin/Sections/ProgressPanel/Margin/Content/Clash"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.62, 0.88, 1)
+theme_override_font_sizes/font_size = 13
+text = "CLASH"
+horizontal_alignment = 1
+
+[node name="ClashValue" type="Label" parent="Margin/Sections/ProgressPanel/Margin/Content/Clash"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 25
+text = "4"
+horizontal_alignment = 1
+
+[node name="UtilityPanel" type="PanelContainer" parent="Margin/Sections"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("Style_health")
+
+[node name="Margin" type="MarginContainer" parent="Margin/Sections/UtilityPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="Buttons" type="VBoxContainer" parent="Margin/Sections/UtilityPanel/Margin"]
+layout_mode = 2
+size_flags_vertical = 8
+theme_override_constants/separation = 8
+
+[node name="RunInfo" type="Button" parent="Margin/Sections/UtilityPanel/Margin/Buttons"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/pressed = SubResource("Style_button_hover")
+text = "Run Info"
+
+[node name="Options" type="Button" parent="Margin/Sections/UtilityPanel/Margin/Buttons"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/pressed = SubResource("Style_button_hover")
+text = "Options"

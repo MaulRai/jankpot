@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://m1w3e3a3e3a3i"]
+[gd_scene load_steps=13 format=3 uid="uid://m1w3e3a3e3a3i"]
 
 [ext_resource type="Script" path="res://scripts/game/GameController.gd" id="1_abc12"]
 [ext_resource type="Script" path="res://scripts/game/DeckManager.gd" id="2_def34"]
@@ -11,6 +11,7 @@
 [ext_resource type="PackedScene" uid="uid://t1w3e3a3e3a3g" path="res://scenes/ui/TooltipBox.tscn" id="9_yz123"]
 [ext_resource type="Texture2D" path="res://assets/ui/card-back.png" id="10_card_back"]
 [ext_resource type="Theme" path="res://themes/game_theme.tres" id="11_game_theme"]
+[ext_resource type="PackedScene" path="res://scenes/ui/BattleSidebar.tscn" id="12_sidebar"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -42,54 +43,13 @@ script = ExtResource("3_ghi56")
 [node name="EnemyController" type="Node" parent="GameController"]
 script = ExtResource("4_jkl78")
 
-[node name="LeftPanel" type="Panel" parent="."]
-layout_mode = 1
-anchors_preset = 9
-anchor_bottom = 1.0
-offset_right = 200.0
-grow_vertical = 2
-
-[node name="VBoxContainer" type="VBoxContainer" parent="LeftPanel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 16.0
-offset_top = 16.0
-offset_right = -16.0
-offset_bottom = -16.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/separation = 12
-
-[node name="RunInfoLabel" type="Label" parent="LeftPanel/VBoxContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
-text = "Run Info"
-
-[node name="HPLabel" type="Label" parent="LeftPanel/VBoxContainer"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "HP: 10 / 10"
-
-[node name="RoundLabel" type="Label" parent="LeftPanel/VBoxContainer"]
-layout_mode = 2
-text = "Round: 1"
-
-[node name="CoinsLabel" type="Label" parent="LeftPanel/VBoxContainer"]
-layout_mode = 2
-text = "Coins: 0"
-
-[node name="TurnLabel" type="Label" parent="LeftPanel/VBoxContainer"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Turn: 0"
+[node name="LeftPanel" parent="." instance=ExtResource("12_sidebar")]
 
 [node name="TopPanel" type="Panel" parent="."]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_left = 200.0
+offset_left = 280.0
 offset_right = -200.0
 offset_bottom = 80.0
 grow_horizontal = 2

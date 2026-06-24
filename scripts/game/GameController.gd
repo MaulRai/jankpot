@@ -11,8 +11,7 @@ signal wind_exit_batch_finished
 @onready var hand_view: HandView = get_node("../BottomHand")
 @onready var player_slot: CardSlot = get_node("../CenterBoard/PlayerSlot")
 @onready var enemy_slot: CardSlot = get_node("../CenterBoard/EnemySlot")
-@onready var hp_label: Label = get_node("../LeftPanel/VBoxContainer/HPLabel")
-@onready var turn_label: Label = get_node("../LeftPanel/VBoxContainer/TurnLabel")
+@onready var battle_sidebar: Control = get_node("../LeftPanel")
 @onready var battle_board: Control = get_node("../CenterBoard")
 @onready var draw_pile_visual: Control = get_node("../DrawPileVisual")
 @onready var pile_card_bottom: TextureRect = get_node("../DrawPileVisual/PileCardBottom")
@@ -22,8 +21,8 @@ signal wind_exit_batch_finished
 @onready var legacy_draw_count: Label = get_node("../RightPanel/VBoxContainer/DrawPileSection/DrawPilePanel/DrawPileCount")
 @onready var legacy_discard_count: Label = get_node("../RightPanel/VBoxContainer/DiscardPileSection/DiscardPilePanel/DiscardPileCount")
 
-var player_hp: int = 10
-var enemy_hp: int = 10
+var player_hp: int = 6
+var enemy_hp: int = 6
 var turn_count: int = 0
 var round_status: String = "ongoing"
 var _is_animating: bool = false
@@ -52,10 +51,9 @@ func _on_hand_changed() -> void:
 		hand_view.set_cards(deck_manager.hand)
 
 func _update_labels() -> void:
-	if hp_label:
-		hp_label.text = "HP: %d / 10" % player_hp
-	if turn_label:
-		turn_label.text = "Turn: %d" % turn_count
+	if battle_sidebar:
+		battle_sidebar.set_health(player_hp, enemy_hp)
+		battle_sidebar.set_progress(2, 8, turn_count + 1)
 
 func _on_card_play_requested(card_data: CardDef, card_view: CardView) -> void:
 	if round_status != "ongoing" or _is_animating:
@@ -452,8 +450,8 @@ func _end_battle() -> void:
 	_is_animating = false
 
 func start_battle() -> void:
-	player_hp = 10
-	enemy_hp = 10
+	player_hp = 6
+	enemy_hp = 6
 	turn_count = 0
 	round_status = "ongoing"
 	_is_animating = true
