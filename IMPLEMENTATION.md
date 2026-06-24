@@ -315,7 +315,7 @@ Implemented status lifecycle:
 Weapon upgrade reward rules:
 
 * After winning a battle, show 3 weapon cards and let the player choose 1.
-* Reward rarity weights are Common : Uncommon : Rare = `1 : 2 : 4`.
+* Reward rarity weights are Common : Uncommon : Rare = `4 : 2 : 1`.
 * Current weapon price is always `0`.
 * The selected weapon replaces one matching basic weapon in the persistent deck.
 * Each new enemy independently rolls its Rock, Paper, and Scissors weapon using

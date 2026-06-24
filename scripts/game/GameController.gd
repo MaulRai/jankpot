@@ -163,6 +163,7 @@ func _play_card(card_data: CardDef, card_view: CardView) -> void:
 
 	# 8. Update discard data only after the cards have visually left the board.
 	deck_manager.play_card(card_data.id)
+	enemy_controller.play_card(enemy_card)
 
 	# 9. Check battle end after the final cards have left the board.
 	if player_hp <= 0 or enemy_hp <= 0:
@@ -379,7 +380,7 @@ func _apply_result(
 	_enemy_bleed_pending = false
 
 	var player_luck := _luck_bonus(deck_manager.hand, player_card)
-	var enemy_luck := _luck_bonus(enemy_controller.enemy_deck, enemy_card)
+	var enemy_luck := _luck_bonus(enemy_controller.enemy_hand, enemy_card)
 
 	# Player weapon effects.
 	if WeaponCatalogData.EFFECT_QUARTZ in player_card.effects and result == BattleResolver.Result.LOSE:

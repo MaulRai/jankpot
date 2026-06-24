@@ -127,9 +127,9 @@ static func random_upgrade_for_type(type: CardDef.CardType) -> CardDef:
 
 static func roll_rarity() -> String:
 	var roll := randi_range(1, 7)
-	if roll <= 1:
+	if roll <= 4:
 		return RARITY_COMMON
-	if roll <= 3:
+	if roll <= 6:
 		return RARITY_UNCOMMON
 	return RARITY_RARE
 

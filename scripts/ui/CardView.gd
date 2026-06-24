@@ -5,6 +5,7 @@ signal card_hovered(card: CardView)
 signal card_unhovered(card: CardView)
 signal card_drag_started(card: CardView)
 signal card_drag_ended(card: CardView)
+signal card_clicked(card: CardView)
 
 @export var card_data: CardDef
 
@@ -22,6 +23,7 @@ var base_rotation_degrees: float = 0.0
 
 var is_dragging: bool = false
 var interaction_enabled: bool = true
+var drag_enabled: bool = true
 var drag_offset: Vector2 = Vector2.ZERO
 var transform_tween: Tween
 
@@ -94,6 +96,10 @@ func _on_gui_input(event: InputEvent) -> void:
 		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
+			if not drag_enabled:
+				card_clicked.emit(self)
+				accept_event()
+				return
 			is_dragging = true
 			cancel_transform_tween()
 			drag_offset = get_global_mouse_position() - global_position
@@ -133,6 +139,9 @@ func set_interaction_enabled(enabled: bool) -> void:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 	else:
 		mouse_filter = Control.MOUSE_FILTER_STOP
+
+func set_drag_enabled(enabled: bool) -> void:
+	drag_enabled = enabled
 
 func cancel_transform_tween() -> void:
 	if transform_tween and transform_tween.is_valid():

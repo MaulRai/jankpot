@@ -145,6 +145,10 @@ const ENEMIES := {
 }
 
 var enemy_deck: Array[CardDef] = []
+var enemy_draw_pile: Array[CardDef] = []
+var enemy_hand: Array[CardDef] = []
+var enemy_discard_pile: Array[CardDef] = []
+var enemy_hand_size := 3
 var current_enemy_id: String = "pebble_grunt"
 var current_enemy: Dictionary = {}
 
@@ -165,6 +169,9 @@ func _ready() -> void:
 
 func setup_enemy_deck(upgrade_count: int = 0) -> void:
 	enemy_deck.clear()
+	enemy_draw_pile.clear()
+	enemy_hand.clear()
+	enemy_discard_pile.clear()
 	for type in [CardDef.CardType.ROCK, CardDef.CardType.PAPER, CardDef.CardType.SCISSORS]:
 		for i in range(3):
 			var card := WeaponCatalogData.create_basic(type, "enemy_basic_%d_%d" % [type, i])
@@ -181,6 +188,10 @@ func setup_enemy_deck(upgrade_count: int = 0) -> void:
 		var upgrade: CardDef = WeaponCatalogData.random_upgrade_for_type(basic_card.card_type)
 		upgrade.id = "enemy_%s_%d" % [upgrade.id, slot_index]
 		enemy_deck[slot_index] = upgrade
+
+	enemy_draw_pile.append_array(enemy_deck)
+	enemy_draw_pile.shuffle()
+	_refill_enemy_hand()
 
 func select_random_non_boss(upgrade_count: int = 0) -> Dictionary:
 	return select_enemy(NON_BOSS_IDS.pick_random(), upgrade_count)
@@ -205,38 +216,51 @@ func reset_battle_context() -> void:
 	_fog_mode = -1
 
 func choose_card(enemy_hp: int = 6, _player_hp: int = 6) -> CardDef:
+	_refill_enemy_hand()
+	if enemy_hand.is_empty():
+		return null
 	var weights: Array[float] = _weights_for_current_enemy(enemy_hp)
 	if _has_disabled_type:
 		weights[_disabled_type] = 0.0
 		_has_disabled_type = false
+	_remove_unavailable_type_weights(weights)
 	var chosen_type: CardDef.CardType = _choose_weighted_type(weights)
 	var matching_cards: Array[CardDef] = []
-	for card in enemy_deck:
+	for card in enemy_hand:
 		if card.card_type == chosen_type:
 			matching_cards.append(card)
-	var chosen: CardDef = matching_cards.pick_random() if not matching_cards.is_empty() else enemy_deck.pick_random()
+	var chosen: CardDef = matching_cards.pick_random() if not matching_cards.is_empty() else enemy_hand.pick_random()
 	enemy_card_chosen.emit(chosen)
 	return chosen
+
+func play_card(card: CardDef) -> void:
+	if not card:
+		return
+	enemy_hand.erase(card)
+	if not card.temporarily_disabled:
+		enemy_discard_pile.append(card)
+	_refill_enemy_hand()
 
 func disable_type_once(type: CardDef.CardType) -> void:
 	_disabled_type = type
 	_has_disabled_type = true
 
 func has_active_effect(effect_id: String) -> bool:
-	for card in enemy_deck:
+	for card in enemy_hand:
 		if not card.temporarily_disabled and effect_id in card.effects:
 			return true
 	return false
 
 func temporarily_downgrade(card: CardDef) -> void:
-	var index := enemy_deck.find(card)
-	if index >= 0:
-		var replacement := WeaponCatalogData.create_basic(card.card_type, card.id)
-		enemy_deck[index] = replacement
+	var replacement := WeaponCatalogData.create_basic(card.card_type, card.id)
+	_replace_enemy_runtime_card(card, replacement)
 
 func temporarily_remove(card: CardDef) -> void:
 	card.temporarily_disabled = true
 	enemy_deck.erase(card)
+	enemy_draw_pile.erase(card)
+	enemy_hand.erase(card)
+	enemy_discard_pile.erase(card)
 
 func record_clash(
 	player_type: CardDef.CardType,
@@ -347,7 +371,7 @@ func _gambler_hare_weights() -> Array[float]:
 
 func _available_upgraded_types() -> Array[int]:
 	var types: Array[int] = []
-	for card in enemy_deck:
+	for card in enemy_hand:
 		if not card.is_basic and not card.temporarily_disabled and card.card_type not in types:
 			types.append(card.card_type)
 	return types
@@ -355,7 +379,7 @@ func _available_upgraded_types() -> Array[int]:
 func _highest_rarity_types() -> Array[int]:
 	var highest_rank := 0
 	var types: Array[int] = []
-	for card in enemy_deck:
+	for card in enemy_hand:
 		if card.temporarily_disabled:
 			continue
 		var rank := _rarity_rank(card.rarity)
@@ -366,6 +390,34 @@ func _highest_rarity_types() -> Array[int]:
 		elif rank == highest_rank and rank > 0 and card.card_type not in types:
 			types.append(card.card_type)
 	return types
+
+func _refill_enemy_hand() -> void:
+	while enemy_hand.size() < enemy_hand_size:
+		if enemy_draw_pile.is_empty():
+			if enemy_discard_pile.is_empty():
+				break
+			enemy_draw_pile.append_array(enemy_discard_pile)
+			enemy_discard_pile.clear()
+			enemy_draw_pile.shuffle()
+		var card: CardDef = enemy_draw_pile.pop_back()
+		if not card.temporarily_disabled:
+			enemy_hand.append(card)
+
+func _remove_unavailable_type_weights(weights: Array[float]) -> void:
+	for type in [CardDef.CardType.ROCK, CardDef.CardType.PAPER, CardDef.CardType.SCISSORS]:
+		var available := false
+		for card in enemy_hand:
+			if card.card_type == type and not card.temporarily_disabled:
+				available = true
+				break
+		if not available:
+			weights[type] = 0.0
+
+func _replace_enemy_runtime_card(old_card: CardDef, replacement: CardDef) -> void:
+	for pile in [enemy_deck, enemy_draw_pile, enemy_hand, enemy_discard_pile]:
+		var index: int = pile.find(old_card)
+		if index >= 0:
+			pile[index] = replacement
 
 func _rarity_rank(rarity: String) -> int:
 	match rarity:
