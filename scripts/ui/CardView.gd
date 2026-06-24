@@ -13,6 +13,7 @@ signal card_drag_ended(card: CardView)
 @onready var description_label: RichTextLabel = %DescriptionLabel
 @onready var type_background: ColorRect = %TypeBackground
 @onready var art_separator: ColorRect = %ArtSeparator
+@onready var card_back: TextureRect = %CardBack
 @onready var outline: Panel = %Outline
 
 var base_position: Vector2
@@ -50,6 +51,8 @@ func render() -> void:
 		art_separator.color = card_data.background_color.darkened(0.3)
 
 func set_face_down(face_down: bool) -> void:
+	card_back.visible = face_down
+	$Background.visible = not face_down
 	art_texture.visible = not face_down
 	name_label.visible = not face_down
 	description_label.visible = not face_down
