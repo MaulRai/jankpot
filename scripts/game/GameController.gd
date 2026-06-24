@@ -20,13 +20,12 @@ signal wind_exit_batch_finished
 @onready var pile_card_middle: TextureRect = get_node("../DrawPileVisual/PileCardMiddle")
 @onready var pile_card_top: TextureRect = get_node("../DrawPileVisual/PileCardTop")
 @onready var pile_count_label: Label = get_node("../DrawPileVisual/CountLabel")
-@onready var legacy_draw_count: Label = get_node("../RightPanel/VBoxContainer/DrawPileSection/DrawPilePanel/DrawPileCount")
-@onready var legacy_discard_count: Label = get_node("../RightPanel/VBoxContainer/DiscardPileSection/DiscardPilePanel/DiscardPileCount")
 @onready var reward_overlay: Control = get_node("../RewardOverlay")
 
 var player_hp: int = 6
 var enemy_hp: int = 6
 var turn_count: int = 0
+var stage_number: int = 1
 var round_status: String = "ongoing"
 var _is_animating: bool = false
 var _pending_wind_exits: int = 0
@@ -49,7 +48,7 @@ func _ready() -> void:
 	reward_overlay.reward_selected.connect(_on_reward_selected)
 	if deck_manager:
 		_is_animating = true
-		var selected_enemy := enemy_controller.select_random_non_boss(false)
+		var selected_enemy := enemy_controller.select_random_non_boss(0)
 		deck_manager.setup_starting_deck()
 		_update_pile_visuals()
 		await get_tree().process_frame
@@ -327,10 +326,7 @@ func _animate_pile_rebuild() -> void:
 
 func _update_pile_visuals() -> void:
 	var draw_count := deck_manager.draw_pile.size() if deck_manager else 0
-	var discard_count := deck_manager.discard_pile.size() if deck_manager else 0
 	pile_count_label.text = str(draw_count)
-	legacy_draw_count.text = str(draw_count)
-	legacy_discard_count.text = str(discard_count)
 	_set_pile_cards_visible(draw_count > 0)
 
 func _set_pile_cards_visible(is_visible: bool) -> void:
@@ -574,6 +570,7 @@ func _end_battle() -> void:
 
 func _on_reward_selected(card: CardDef) -> void:
 	deck_manager.replace_basic_with_upgrade(card)
+	stage_number += 1
 	await start_battle()
 
 func start_battle() -> void:
@@ -594,7 +591,10 @@ func start_battle() -> void:
 	# surviving card views explicitly before drawing the new opening hand.
 	hand_view.set_cards([])
 	if deck_manager:
-		battle_sidebar.set_enemy_info(enemy_controller.select_random_non_boss())
+		var enemy_upgrade_count := clampi(stage_number - 1, 0, 9)
+		battle_sidebar.set_enemy_info(
+			enemy_controller.select_random_non_boss(enemy_upgrade_count)
+		)
 		deck_manager.setup_starting_deck()
 		await _refill_hand_animated()
 		await _prepare_enemy_card()

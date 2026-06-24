@@ -163,23 +163,29 @@ var _has_disabled_type := false
 func _ready() -> void:
 	setup_enemy_deck()
 
-func setup_enemy_deck(use_upgrades: bool = false) -> void:
+func setup_enemy_deck(upgrade_count: int = 0) -> void:
 	enemy_deck.clear()
 	for type in [CardDef.CardType.ROCK, CardDef.CardType.PAPER, CardDef.CardType.SCISSORS]:
-		var weapon: CardDef
-		if use_upgrades:
-			weapon = WeaponCatalogData.random_upgrade_for_type(type)
-		else:
-			weapon = WeaponCatalogData.create_basic(type)
 		for i in range(3):
-			var card: CardDef = weapon.copy()
-			card.id = "enemy_%s_%d" % [weapon.id, i]
+			var card := WeaponCatalogData.create_basic(type, "enemy_basic_%d_%d" % [type, i])
 			enemy_deck.append(card)
 
-func select_random_non_boss(use_upgrades: bool = true) -> Dictionary:
-	return select_enemy(NON_BOSS_IDS.pick_random(), use_upgrades)
+	var upgrade_slots: Array[int] = []
+	for i in range(enemy_deck.size()):
+		upgrade_slots.append(i)
+	upgrade_slots.shuffle()
 
-func select_enemy(enemy_id: String, use_upgrades: bool = true) -> Dictionary:
+	for i in range(clampi(upgrade_count, 0, enemy_deck.size())):
+		var slot_index := upgrade_slots[i]
+		var basic_card := enemy_deck[slot_index]
+		var upgrade: CardDef = WeaponCatalogData.random_upgrade_for_type(basic_card.card_type)
+		upgrade.id = "enemy_%s_%d" % [upgrade.id, slot_index]
+		enemy_deck[slot_index] = upgrade
+
+func select_random_non_boss(upgrade_count: int = 0) -> Dictionary:
+	return select_enemy(NON_BOSS_IDS.pick_random(), upgrade_count)
+
+func select_enemy(enemy_id: String, upgrade_count: int = 0) -> Dictionary:
 	if not ENEMIES.has(enemy_id):
 		enemy_id = "pebble_grunt"
 	reset_battle_context()
@@ -187,7 +193,7 @@ func select_enemy(enemy_id: String, use_upgrades: bool = true) -> Dictionary:
 	current_enemy = ENEMIES[current_enemy_id].duplicate(true)
 	current_enemy["id"] = current_enemy_id
 	current_enemy["reward"] = "Choose 1 Upgrade"
-	setup_enemy_deck(use_upgrades)
+	setup_enemy_deck(upgrade_count)
 	enemy_selected.emit(current_enemy)
 	return current_enemy
 
