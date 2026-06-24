@@ -164,48 +164,86 @@ func _refill_hand_animated() -> void:
 	var previous_hand_size := deck_manager.hand.size()
 	deck_manager.draw_until_full(hand_view.hand_size)
 	var final_hand_size := deck_manager.hand.size()
+	hand_view.prepare_layout(final_hand_size)
+
+	var last_finished: Signal
+
+	# Existing cards smoothly make room for the incoming cards.
+	for card in hand_view.card_views:
+		card.set_interaction_enabled(false)
+		var rearrange := create_tween()
+		rearrange.set_parallel(true)
+		rearrange.tween_property(card, "position", card.base_position, 0.38) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+		rearrange.tween_property(card, "rotation_degrees", card.base_rotation_degrees, 0.38) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		last_finished = rearrange.finished
 
 	for index in range(previous_hand_size, final_hand_size):
-		await _animate_card_draw_to_hand(deck_manager.hand[index], index, final_hand_size)
+		var stagger := float(index - previous_hand_size) * 0.12
+		last_finished = _animate_card_draw_to_hand(
+			deck_manager.hand[index],
+			index,
+			final_hand_size,
+			stagger
+		)
 
-	hand_view.set_cards(deck_manager.hand)
+	if last_finished:
+		await last_finished
+
+	for card in hand_view.card_views:
+		card.reset_transform()
+		card.z_index = card.base_z_index
+		card.set_interaction_enabled(true)
 	_update_pile_visuals()
 
-func _animate_card_draw_to_hand(card_data: CardDef, hand_index: int, hand_count: int) -> void:
+func _animate_card_draw_to_hand(
+	card_data: CardDef,
+	hand_index: int,
+	hand_count: int,
+	delay: float = 0.0
+) -> Signal:
 	if not hand_view.card_scene:
-		return
+		return get_tree().process_frame
 
-	var travel_card: CardView = hand_view.card_scene.instantiate()
-	get_parent().add_child(travel_card)
-	travel_card.set_interaction_enabled(false)
-	travel_card.set_face_down(true)
-	travel_card.pivot_offset = travel_card.size * 0.5
-	travel_card.global_position = pile_card_top.global_position
-	travel_card.scale = Vector2(0.5, 0.5)
-	travel_card.z_index = 1800
+	var drawn_card := hand_view.add_card_for_draw(card_data, hand_index, hand_count)
+	if not drawn_card:
+		return get_tree().process_frame
+	drawn_card.set_interaction_enabled(false)
+	drawn_card.set_face_down(true)
+	drawn_card.global_position = pile_card_top.global_position
+	drawn_card.scale = Vector2(0.5, 0.5)
+	drawn_card.rotation_degrees = randf_range(-8.0, 8.0)
+	drawn_card.z_index = 1800 + hand_index
 
 	var target_position := hand_view.get_card_target_global_position(hand_index, hand_count)
 	var movement := create_tween()
-	movement.set_parallel(true)
-	movement.tween_property(travel_card, "global_position", target_position, 0.52) \
+	if delay > 0.0:
+		movement.tween_interval(delay)
+	movement.tween_property(drawn_card, "global_position", target_position, 0.56) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
-	movement.tween_property(travel_card, "scale:y", 1.0, 0.52) \
+	movement.parallel().tween_property(drawn_card, "scale:y", 1.0, 0.56) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	movement.tween_property(travel_card, "rotation_degrees", randf_range(-3.0, 3.0), 0.52) \
+	movement.parallel().tween_property(
+		drawn_card,
+		"rotation_degrees",
+		drawn_card.base_rotation_degrees,
+		0.56
+	) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 	var flip := create_tween()
-	flip.tween_property(travel_card, "scale:x", 0.06, 0.2) \
+	if delay + 0.08 > 0.0:
+		flip.tween_interval(delay + 0.08)
+	flip.tween_property(drawn_card, "scale:x", 0.06, 0.18) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	flip.tween_callback(func() -> void:
-		travel_card.set_card_data(card_data)
-		travel_card.set_face_down(false)
+		drawn_card.set_face_down(false)
 	)
-	flip.tween_property(travel_card, "scale:x", 1.0, 0.24) \
+	flip.tween_property(drawn_card, "scale:x", 1.0, 0.24) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
-	await movement.finished
-	travel_card.queue_free()
+	return movement.finished
 
 func _animate_pile_rebuild() -> void:
 	_set_pile_cards_visible(false)
