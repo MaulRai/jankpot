@@ -131,6 +131,7 @@ offset_right = 200.0
 offset_bottom = 120.0
 
 [node name="BottomHand" type="Control" parent="."]
+z_index = 30
 layout_mode = 1
 anchors_preset = 14
 anchor_left = 0.0

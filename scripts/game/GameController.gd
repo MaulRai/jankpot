@@ -192,8 +192,6 @@ func _refill_hand_animated() -> void:
 		await last_finished
 
 	for card in hand_view.card_views:
-		card.reset_transform()
-		card.z_index = card.base_z_index
 		card.set_interaction_enabled(true)
 	_update_pile_visuals()
 
@@ -211,24 +209,25 @@ func _animate_card_draw_to_hand(
 		return get_tree().process_frame
 	drawn_card.set_interaction_enabled(false)
 	drawn_card.set_face_down(true)
-	drawn_card.global_position = pile_card_top.global_position
+	var pile_position_in_hand := hand_view.get_global_transform().affine_inverse() \
+		* pile_card_top.global_position
+	drawn_card.position = pile_position_in_hand
 	drawn_card.scale = Vector2(0.5, 0.5)
 	drawn_card.rotation_degrees = randf_range(-8.0, 8.0)
-	drawn_card.z_index = 1800 + hand_index
+	drawn_card.z_index = drawn_card.base_z_index
 
-	var target_position := hand_view.get_card_target_global_position(hand_index, hand_count)
 	var movement := create_tween()
 	if delay > 0.0:
 		movement.tween_interval(delay)
-	movement.tween_property(drawn_card, "global_position", target_position, 0.56) \
+	movement.tween_property(drawn_card, "position", drawn_card.base_position, 0.58) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
-	movement.parallel().tween_property(drawn_card, "scale:y", 1.0, 0.56) \
+	movement.parallel().tween_property(drawn_card, "scale:y", 1.0, 0.58) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	movement.parallel().tween_property(
 		drawn_card,
 		"rotation_degrees",
 		drawn_card.base_rotation_degrees,
-		0.56
+		0.58
 	) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
