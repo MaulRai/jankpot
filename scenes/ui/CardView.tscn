@@ -1,8 +1,18 @@
-[gd_scene load_steps=4 format=3 uid="uid://c1w3e3a3e3a3e"]
+[gd_scene load_steps=5 format=3 uid="uid://c1w3e3a3e3a3e"]
 
 [ext_resource type="Script" path="res://scripts/ui/CardView.gd" id="1_abc12"]
 [ext_resource type="Texture2D" uid="uid://m86ruytpj7og" path="res://assets/ui/card-base.png" id="2_def34"]
 [ext_resource type="Texture2D" path="res://assets/ui/card-back.png" id="3_card_back"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card_shadow"]
+bg_color = Color(0, 0, 0, 0.015)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.24)
+shadow_size = 7
+shadow_offset = Vector2(0, 4)
 
 [node name="CardView" type="Control"]
 custom_minimum_size = Vector2(160, 240)
@@ -11,6 +21,13 @@ offset_right = 160.0
 offset_bottom = 240.0
 pivot_offset = Vector2(80, 120)
 script = ExtResource("1_abc12")
+
+[node name="CardShadow" type="Panel" parent="."]
+layout_mode = 0
+offset_right = 160.0
+offset_bottom = 240.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card_shadow")
 
 [node name="Background" type="TextureRect" parent="."]
 layout_mode = 0
