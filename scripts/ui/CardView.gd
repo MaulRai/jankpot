@@ -47,6 +47,17 @@ func render() -> void:
 	if art_separator:
 		art_separator.color = card_data.background_color.darkened(0.3)
 
+func set_face_down(face_down: bool) -> void:
+	art_texture.visible = not face_down
+	name_label.visible = not face_down
+	description_label.visible = not face_down
+	if face_down:
+		type_background.color = Color(0.12, 0.12, 0.12)
+		art_separator.color = Color(0.08, 0.08, 0.08)
+	else:
+		if card_data:
+			render()
+
 func _format_description(text: String, keywords: Array[String]) -> String:
 	var formatted := text
 	for kw in keywords:

@@ -65,6 +65,7 @@ theme_override_font_sizes/font_size = 18
 text = "Run Info"
 
 [node name="HPLabel" type="Label" parent="LeftPanel/VBoxContainer"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "HP: 10 / 10"
 
@@ -77,6 +78,7 @@ layout_mode = 2
 text = "Coins: 0"
 
 [node name="TurnLabel" type="Label" parent="LeftPanel/VBoxContainer"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "Turn: 0"
 
