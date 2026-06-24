@@ -9,11 +9,17 @@ const MAX_HEALTH := 6
 @onready var enemy_icon: TextureRect = %EnemyIcon
 @onready var behavior: Label = %Behavior
 @onready var reward: Label = %Reward
-@onready var rule_text: Label = %RuleText
+@onready var enemy_history: HBoxContainer = %EnemyHistory
+@onready var player_history: HBoxContainer = %PlayerHistory
+@onready var turn_history: HBoxContainer = %TurnHistory
 @onready var trial_value: Label = %TrialValue
 @onready var clash_value: Label = %ClashValue
 
 var _heart_texture: Texture2D = preload("res://assets/ui/heart.png")
+var _enemy_history_cards: Array[CardDef] = []
+var _player_history_cards: Array[CardDef] = []
+var _history_turns: Array[int] = []
+var _history_turn := 0
 
 func _ready() -> void:
 	_build_heart_row(enemy_hearts)
@@ -32,11 +38,90 @@ func set_enemy_info(enemy_data: Dictionary) -> void:
 	enemy_name.text = str(enemy_data.get("name", "Unknown Rival"))
 	behavior.text = str(enemy_data.get("description", "No known pattern."))
 	reward.text = "REWARD  -  %s" % str(enemy_data.get("reward", "Choose 1 Upgrade"))
-	rule_text.text = str(enemy_data.get("rule", "No special rule"))
 	var icon_path := str(enemy_data.get("icon", ""))
 	enemy_icon.visible = not icon_path.is_empty() and ResourceLoader.exists(icon_path)
 	if enemy_icon.visible:
 		enemy_icon.texture = load(icon_path)
+
+func clear_history() -> void:
+	_enemy_history_cards.clear()
+	_player_history_cards.clear()
+	_history_turns.clear()
+	_history_turn = 0
+	_render_history_row(enemy_history, _enemy_history_cards, false)
+	_render_history_row(player_history, _player_history_cards, false)
+	_render_turn_row(false)
+
+func add_history(player_card: CardDef, enemy_card: CardDef) -> void:
+	_history_turn += 1
+	_player_history_cards.append(player_card.copy())
+	_enemy_history_cards.append(enemy_card.copy())
+	_history_turns.append(_history_turn)
+	if _player_history_cards.size() > 5:
+		_player_history_cards.pop_front()
+	if _enemy_history_cards.size() > 5:
+		_enemy_history_cards.pop_front()
+	if _history_turns.size() > 5:
+		_history_turns.pop_front()
+	_render_history_row(player_history, _player_history_cards, true)
+	_render_history_row(enemy_history, _enemy_history_cards, true)
+	_render_turn_row(true)
+
+func _render_history_row(
+	container: HBoxContainer,
+	cards: Array[CardDef],
+	animate_latest: bool
+) -> void:
+	for child in container.get_children():
+		container.remove_child(child)
+		child.queue_free()
+	for i in range(cards.size()):
+		var card := cards[i]
+		var entry := Control.new()
+		entry.custom_minimum_size = Vector2(30.0, 36.0)
+		entry.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		container.add_child(entry)
+
+		var icon := TextureRect.new()
+		icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		icon.texture = load(card.art_path) if ResourceLoader.exists(card.art_path) else null
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		icon.tooltip_text = card.card_name
+		entry.add_child(icon)
+
+		if animate_latest and i == cards.size() - 1:
+			entry.modulate.a = 0.0
+			entry.position.y = -5.0
+			entry.scale = Vector2(0.9, 0.9)
+			entry.pivot_offset = entry.size * 0.5
+			var tween := create_tween()
+			tween.set_parallel(true)
+			tween.tween_property(entry, "modulate:a", 1.0, 0.22) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+			tween.tween_property(entry, "position:y", 0.0, 0.26) \
+				.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			tween.tween_property(entry, "scale", Vector2.ONE, 0.26) \
+				.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+func _render_turn_row(animate_latest: bool) -> void:
+	for child in turn_history.get_children():
+		turn_history.remove_child(child)
+		child.queue_free()
+	for i in range(_history_turns.size()):
+		var turn_label := Label.new()
+		turn_label.custom_minimum_size = Vector2(30.0, 14.0)
+		turn_label.text = str(_history_turns[i])
+		turn_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		turn_label.add_theme_font_size_override("font_size", 10)
+		turn_label.modulate = Color(0.58, 0.66, 0.74, 1.0)
+		turn_history.add_child(turn_label)
+		if animate_latest and i == _history_turns.size() - 1:
+			turn_label.modulate.a = 0.0
+			var tween := create_tween()
+			tween.tween_property(turn_label, "modulate:a", 1.0, 0.22) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 func animate_heart_loss(is_player: bool, health_after_damage: int) -> void:
 	var container := player_hearts if is_player else enemy_hearts

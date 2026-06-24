@@ -151,6 +151,7 @@ func _play_card(card_data: CardDef, card_view: CardView) -> void:
 	# 6. Resolve battle
 	var result: BattleResolver.Result = battle_resolver.resolve(card_data.card_type, enemy_card.card_type)
 	await _apply_result(result, card_data, enemy_card)
+	battle_sidebar.add_history(card_data, enemy_card)
 	enemy_controller.record_clash(card_data.card_type, enemy_card.card_type, result)
 
 	# 7. Brief pause, then blow both cards off the board.
@@ -587,6 +588,7 @@ func start_battle() -> void:
 	player_slot.set_drop_target_active(false)
 	player_slot.clear_slot()
 	enemy_slot.clear_slot()
+	battle_sidebar.clear_history()
 	# hand_changed is ignored while animating, so remove the previous battle's
 	# surviving card views explicitly before drawing the new opening hand.
 	hand_view.set_cards([])
