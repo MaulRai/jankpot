@@ -2,6 +2,8 @@ class_name HandView
 extends Control
 
 signal card_play_requested(card_data: CardDef, card_view: CardView)
+signal card_drag_started(card_view: CardView)
+signal card_drag_ended(card_view: CardView)
 
 @export var card_scene: PackedScene
 @export var hand_size: int = 3
@@ -97,8 +99,10 @@ func remove_card_view(card_view: CardView) -> void:
 
 func _on_card_drag_started(card: CardView) -> void:
 	card.z_index = 1000
+	card_drag_started.emit(card)
 
 func _on_card_drag_ended(card: CardView) -> void:
+	card_drag_ended.emit(card)
 	if card.card_data:
 		emit_signal("card_play_requested", card.card_data, card)
 

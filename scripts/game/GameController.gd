@@ -27,6 +27,8 @@ var turn_count: int = 0
 var round_status: String = "ongoing"
 var _is_animating: bool = false
 var _pending_wind_exits: int = 0
+var _pending_enemy_card: CardDef
+var _enemy_preview_view: CardView
 
 func _ready() -> void:
 	if deck_manager:
@@ -35,12 +37,15 @@ func _ready() -> void:
 		deck_manager.discard_pile_changed.connect(_update_pile_visuals)
 	if hand_view:
 		hand_view.card_play_requested.connect(_on_card_play_requested)
+		hand_view.card_drag_started.connect(_on_hand_card_drag_started)
+		hand_view.card_drag_ended.connect(_on_hand_card_drag_ended)
 	if deck_manager:
 		_is_animating = true
 		deck_manager.setup_starting_deck()
 		_update_pile_visuals()
 		await get_tree().process_frame
 		await _refill_hand_animated()
+		await _prepare_enemy_card()
 		_is_animating = false
 	_update_labels()
 
@@ -66,6 +71,13 @@ func _on_card_play_requested(card_data: CardDef, card_view: CardView) -> void:
 		return
 	
 	_play_card(card_data, card_view)
+
+func _on_hand_card_drag_started(_card_view: CardView) -> void:
+	if round_status == "ongoing" and not _is_animating:
+		player_slot.set_drop_target_active(true)
+
+func _on_hand_card_drag_ended(_card_view: CardView) -> void:
+	player_slot.set_drop_target_active(false)
 
 func _snap_card_back(card_view: CardView) -> void:
 	_is_animating = true
@@ -108,19 +120,13 @@ func _play_card(card_data: CardDef, card_view: CardView) -> void:
 	player_slot.place_card(card_view)
 	card_view.z_index = 0
 
-	# 2. Enemy chooses hidden card
-	var enemy_card: CardDef = enemy_controller.choose_card()
-
-	# 3. Show enemy card face-down in enemy slot
-	var enemy_view: CardView
-	if hand_view.card_scene:
-		enemy_view = hand_view.card_scene.instantiate()
-		enemy_view.custom_minimum_size = Vector2(160, 240)
-		enemy_slot.place_card(enemy_view)
-		enemy_view.set_interaction_enabled(false)
-		enemy_view.set_face_down(true)
-		enemy_view.z_index = 0
-		await _animate_enemy_card_entry(enemy_view)
+	# 2. Use the enemy card that was already waiting face-down.
+	var enemy_card: CardDef = _pending_enemy_card
+	var enemy_view: CardView = _enemy_preview_view
+	if not enemy_card or not is_instance_valid(enemy_view):
+		await _prepare_enemy_card()
+		enemy_card = _pending_enemy_card
+		enemy_view = _enemy_preview_view
 
 	# 4. Brief pause before reveal
 	await get_tree().create_timer(0.2).timeout
@@ -136,6 +142,8 @@ func _play_card(card_data: CardDef, card_view: CardView) -> void:
 	# 7. Brief pause, then blow both cards off the board.
 	await get_tree().create_timer(0.35).timeout
 	await _discard_animations(card_view, enemy_view)
+	_pending_enemy_card = null
+	_enemy_preview_view = null
 
 	# 8. Update discard data only after the cards have visually left the board.
 	deck_manager.play_card(card_data.id)
@@ -148,11 +156,27 @@ func _play_card(card_data: CardDef, card_view: CardView) -> void:
 
 	# 10. Draw refill and rebuild hand
 	await _refill_hand_animated()
+	await _prepare_enemy_card()
 
 	_is_animating = false
 	turn_count += 1
 	_update_labels()
 	emit_signal("turn_resolved")
+
+func _prepare_enemy_card() -> void:
+	if round_status != "ongoing" or not hand_view.card_scene:
+		return
+	if is_instance_valid(_enemy_preview_view):
+		return
+
+	_pending_enemy_card = enemy_controller.choose_card()
+	_enemy_preview_view = hand_view.card_scene.instantiate()
+	_enemy_preview_view.custom_minimum_size = Vector2(160, 240)
+	enemy_slot.place_card(_enemy_preview_view)
+	_enemy_preview_view.set_interaction_enabled(false)
+	_enemy_preview_view.set_face_down(true)
+	_enemy_preview_view.z_index = 0
+	await _animate_enemy_card_entry(_enemy_preview_view)
 
 func _refill_hand_animated() -> void:
 	if deck_manager.draw_pile.is_empty() and not deck_manager.discard_pile.is_empty():
@@ -432,10 +456,14 @@ func start_battle() -> void:
 	turn_count = 0
 	round_status = "ongoing"
 	_is_animating = true
+	_pending_enemy_card = null
+	_enemy_preview_view = null
+	player_slot.set_drop_target_active(false)
 	player_slot.clear_slot()
 	enemy_slot.clear_slot()
 	if deck_manager:
 		deck_manager.setup_starting_deck()
 		await _refill_hand_animated()
+		await _prepare_enemy_card()
 	_is_animating = false
 	_update_labels()
