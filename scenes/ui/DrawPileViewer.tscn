@@ -1,0 +1,134 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/DrawPileViewer.gd" id="1_viewer"]
+[ext_resource type="Texture2D" path="res://assets/ui/card-back.png" id="2_card_back"]
+
+[sub_resource type="StyleBoxFlat" id="Style_popup"]
+bg_color = Color(0.055, 0.063, 0.078, 0.97)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.33, 0.52, 0.78, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+corner_detail = 1
+
+[node name="DrawPileVisual" type="Control"]
+z_index = 20
+layout_mode = 3
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -176.0
+offset_top = -166.0
+offset_right = -24.0
+offset_bottom = -18.0
+grow_horizontal = 0
+grow_vertical = 0
+script = ExtResource("1_viewer")
+
+[node name="PileCardBottom" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 34.0
+offset_top = 13.0
+offset_right = 114.0
+offset_bottom = 133.0
+rotation = -0.0349066
+mouse_filter = 2
+texture = ExtResource("2_card_back")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="PileCardMiddle" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 37.0
+offset_top = 10.0
+offset_right = 117.0
+offset_bottom = 130.0
+rotation = 0.020944
+mouse_filter = 2
+texture = ExtResource("2_card_back")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="PileCardTop" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 36.0
+offset_top = 8.0
+offset_right = 116.0
+offset_bottom = 128.0
+mouse_filter = 2
+texture = ExtResource("2_card_back")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="PileButton" type="Button" parent="."]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 24.0
+offset_top = 0.0
+offset_right = 130.0
+offset_bottom = 140.0
+flat = true
+
+[node name="CountLabel" type="Label" parent="."]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 36.0
+offset_top = 126.0
+offset_right = 116.0
+offset_bottom = 148.0
+mouse_filter = 2
+text = "9"
+horizontal_alignment = 1
+
+[node name="Popup" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+z_index = 100
+layout_mode = 0
+offset_left = -190.0
+offset_top = -350.0
+offset_right = 140.0
+offset_bottom = -12.0
+theme_override_styles/panel = SubResource("Style_popup")
+
+[node name="Margin" type="MarginContainer" parent="Popup"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="Content" type="VBoxContainer" parent="Popup/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="Title" type="Label" parent="Popup/Margin/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "AVAILABLE WEAPONS"
+
+[node name="EmptyLabel" type="Label" parent="Popup/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.63, 0.7, 1)
+theme_override_font_sizes/font_size = 12
+text = "Pile is empty"
+
+[node name="Scroll" type="ScrollContainer" parent="Popup/Margin/Content"]
+custom_minimum_size = Vector2(306, 286)
+layout_mode = 2
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 1
+
+[node name="Cards" type="GridContainer" parent="Popup/Margin/Content/Scroll"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 8
+columns = 4

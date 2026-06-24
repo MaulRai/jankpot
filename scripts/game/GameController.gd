@@ -21,6 +21,7 @@ signal wind_exit_batch_finished
 @onready var pile_card_top: TextureRect = get_node("../DrawPileVisual/PileCardTop")
 @onready var pile_count_label: Label = get_node("../DrawPileVisual/CountLabel")
 @onready var reward_overlay: Control = get_node("../RewardOverlay")
+@onready var discard_viewer: Control = get_node("../DiscardViewer")
 
 var player_hp: int = 6
 var enemy_hp: int = 6
@@ -329,6 +330,10 @@ func _update_pile_visuals() -> void:
 	var draw_count := deck_manager.draw_pile.size() if deck_manager else 0
 	pile_count_label.text = str(draw_count)
 	_set_pile_cards_visible(draw_count > 0)
+	if draw_pile_visual and deck_manager:
+		draw_pile_visual.set_cards(deck_manager.draw_pile)
+	if discard_viewer and deck_manager:
+		discard_viewer.set_cards(deck_manager.discard_pile)
 
 func _set_pile_cards_visible(is_visible: bool) -> void:
 	pile_card_bottom.visible = is_visible

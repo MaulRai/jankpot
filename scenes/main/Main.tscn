@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3 uid="uid://m1w3e3a3e3a3i"]
+[gd_scene load_steps=15 format=3 uid="uid://m1w3e3a3e3a3i"]
 
 [ext_resource type="Script" path="res://scripts/game/GameController.gd" id="1_abc12"]
 [ext_resource type="Script" path="res://scripts/game/DeckManager.gd" id="2_def34"]
@@ -9,10 +9,11 @@
 [ext_resource type="PackedScene" uid="uid://c1w3e3a3e3a3e" path="res://scenes/ui/CardView.tscn" id="7_stu34"]
 [ext_resource type="Script" path="res://scripts/ui/TooltipManager.gd" id="8_vwx56"]
 [ext_resource type="PackedScene" uid="uid://t1w3e3a3e3a3g" path="res://scenes/ui/TooltipBox.tscn" id="9_yz123"]
-[ext_resource type="Texture2D" path="res://assets/ui/card-back.png" id="10_card_back"]
 [ext_resource type="Theme" path="res://themes/game_theme.tres" id="11_game_theme"]
 [ext_resource type="PackedScene" path="res://scenes/ui/BattleSidebar.tscn" id="12_sidebar"]
 [ext_resource type="PackedScene" path="res://scenes/ui/RewardOverlay.tscn" id="13_reward"]
+[ext_resource type="PackedScene" path="res://scenes/ui/DiscardViewer.tscn" id="14_discard_viewer"]
+[ext_resource type="PackedScene" path="res://scenes/ui/DrawPileViewer.tscn" id="15_draw_viewer"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -110,66 +111,7 @@ grow_vertical = 0
 script = ExtResource("6_pqr12")
 card_scene = ExtResource("7_stu34")
 
-[node name="DrawPileVisual" type="Control" parent="."]
-z_index = 20
-layout_mode = 1
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -176.0
-offset_top = -166.0
-offset_right = -24.0
-offset_bottom = -18.0
-grow_horizontal = 0
-grow_vertical = 0
-mouse_filter = 2
-
-[node name="PileCardBottom" type="TextureRect" parent="DrawPileVisual"]
-layout_mode = 0
-offset_left = 34.0
-offset_top = 13.0
-offset_right = 114.0
-offset_bottom = 133.0
-rotation = -0.0349066
-mouse_filter = 2
-texture = ExtResource("10_card_back")
-expand_mode = 1
-stretch_mode = 6
-
-[node name="PileCardMiddle" type="TextureRect" parent="DrawPileVisual"]
-layout_mode = 0
-offset_left = 37.0
-offset_top = 10.0
-offset_right = 117.0
-offset_bottom = 130.0
-rotation = 0.020944
-mouse_filter = 2
-texture = ExtResource("10_card_back")
-expand_mode = 1
-stretch_mode = 6
-
-[node name="PileCardTop" type="TextureRect" parent="DrawPileVisual"]
-layout_mode = 0
-offset_left = 36.0
-offset_top = 8.0
-offset_right = 116.0
-offset_bottom = 128.0
-mouse_filter = 2
-texture = ExtResource("10_card_back")
-expand_mode = 1
-stretch_mode = 6
-
-[node name="CountLabel" type="Label" parent="DrawPileVisual"]
-layout_mode = 0
-offset_left = 36.0
-offset_top = 126.0
-offset_right = 116.0
-offset_bottom = 148.0
-mouse_filter = 2
-text = "9"
-horizontal_alignment = 1
+[node name="DrawPileVisual" parent="." instance=ExtResource("15_draw_viewer")]
 
 [node name="TooltipManager" type="Control" parent="."]
 layout_mode = 3
@@ -181,3 +123,5 @@ script = ExtResource("8_vwx56")
 tooltip_scene = ExtResource("9_yz123")
 
 [node name="RewardOverlay" parent="." instance=ExtResource("13_reward")]
+
+[node name="DiscardViewer" parent="." instance=ExtResource("14_discard_viewer")]
