@@ -329,39 +329,16 @@ func _apply_result(result: BattleResolver.Result) -> void:
 	match result:
 		BattleResolver.Result.WIN:
 			enemy_hp -= 1
+			await battle_sidebar.animate_heart_loss(false, enemy_hp)
 			_update_labels()
-			_show_floating_text(enemy_slot, "1", Color("#FF5555"))
 			await _shake_node(enemy_slot)
 		BattleResolver.Result.LOSE:
 			player_hp -= 1
+			await battle_sidebar.animate_heart_loss(true, player_hp)
 			_update_labels()
-			_show_floating_text(player_slot, "1", Color("#FF5555"))
 			await _shake_node(player_slot)
 		BattleResolver.Result.DRAW:
-			_show_floating_text(player_slot, "Draw", Color.GRAY)
 			await get_tree().create_timer(0.4).timeout
-
-func _show_floating_text(target_node: Control, text: String, color: Color) -> void:
-	var label := Label.new()
-	label.text = text
-	label.modulate = color
-	label.add_theme_font_size_override("font_size", 28)
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	
-	# Position above target node
-	var label_pos: Vector2 = target_node.global_position + Vector2(0, -40)
-	var root: Node = get_parent()
-	root.add_child(label)
-	label.global_position = label_pos
-	label.z_index = 2000
-	
-	var tween := create_tween()
-	tween.tween_property(label, "global_position:y", label_pos.y - 50, 0.8)
-	tween.parallel().tween_property(label, "modulate:a", 0.0, 0.8)
-	
-	await tween.finished
-	label.queue_free()
 
 func _shake_node(node: Control) -> void:
 	var original_pos := Vector2(node.position)
