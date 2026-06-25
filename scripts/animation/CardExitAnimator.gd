@@ -12,6 +12,23 @@ func animate(
 		return animate_fragile(card_view)
 	return animate_wind(card_view, direction)
 
+func show_bonus_attack_cue(card_view: Control) -> void:
+	if not is_instance_valid(card_view):
+		return
+	var bonus_label := _create_keyword_label(card_view, "Bonus Attack!")
+	bonus_label.add_theme_color_override("font_color", Color("#FFD166"))
+	var tween := create_tween()
+	tween.tween_property(bonus_label, "modulate:a", 1.0, 0.12) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(bonus_label, "position:y", -44.0, 0.18) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_interval(0.3)
+	tween.tween_property(bonus_label, "position:y", -68.0, 0.32) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(bonus_label, "modulate:a", 0.0, 0.32) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tween.tween_callback(bonus_label.queue_free)
+
 func animate_downgrade(card_view: CardView, direction: Vector2) -> Signal:
 	_prepare_card(card_view)
 	var original_modulate := card_view.modulate

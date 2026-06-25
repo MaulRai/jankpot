@@ -4,6 +4,7 @@ extends Node
 const STREAMS := {
 	"bleed": preload("res://audio/sfx/bleed.mp3"),
 	"block": preload("res://audio/sfx/block.mp3"),
+	"bonus_attack": preload("res://audio/sfx/bonus-attack.mp3"),
 	"card_leave": preload("res://audio/sfx/card-leave.mp3"),
 	"card_pickup": preload("res://audio/sfx/card-pickup.mp3"),
 	"card_placed": preload("res://audio/sfx/card-placed.mp3"),

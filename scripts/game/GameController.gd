@@ -41,6 +41,8 @@ var _player_bleed_pending := false
 var _enemy_bleed_pending := false
 var _disabled_player_type: CardDef.CardType = CardDef.CardType.ROCK
 var _has_disabled_player_type := false
+var _player_bonus_attack_triggered := false
+var _enemy_bonus_attack_triggered := false
 
 func _ready() -> void:
 	_card_exit_animator = CardExitAnimatorScript.new()
@@ -179,7 +181,7 @@ func _play_card(card_data: CardDef, card_view: CardView) -> void:
 	var player_downgrades := WeaponCatalogData.EFFECT_QUARTZ in card_data.effects
 	var enemy_downgrades := WeaponCatalogData.EFFECT_QUARTZ in enemy_card.effects
 	var result: BattleResolver.Result = battle_resolver.resolve(card_data.card_type, enemy_card.card_type)
-	await _apply_result(result, card_data, enemy_card)
+	await _apply_result(result, card_data, enemy_card, card_view, enemy_view)
 	battle_sidebar.add_history(player_history_card, enemy_history_card)
 	enemy_controller.record_clash(
 		player_history_card.card_type,
@@ -410,8 +412,13 @@ func _flip_card(card_view: CardView, revealed_data: CardDef) -> void:
 func _apply_result(
 	result: BattleResolver.Result,
 	player_card: CardDef,
-	enemy_card: CardDef
+	enemy_card: CardDef,
+	player_card_view: CardView,
+	enemy_card_view: CardView
 ) -> void:
+	_player_bonus_attack_triggered = false
+	_enemy_bonus_attack_triggered = false
+
 	match result:
 		BattleResolver.Result.WIN:
 			_play_sfx("result_win")
@@ -438,7 +445,7 @@ func _apply_result(
 		_play_sfx("block")
 	if WeaponCatalogData.EFFECT_BRONZE_RAZOR in player_card.effects \
 			and result == BattleResolver.Result.WIN and _chance(0.5, player_luck):
-		damage_to_enemy += 1
+		_player_bonus_attack_triggered = true
 	if WeaponCatalogData.EFFECT_SCULPTURAL_SHEET in player_card.effects \
 			and result == BattleResolver.Result.DRAW:
 		damage_to_enemy += 1
@@ -466,7 +473,7 @@ func _apply_result(
 		_play_sfx("block")
 	if WeaponCatalogData.EFFECT_BRONZE_RAZOR in enemy_card.effects \
 			and result == BattleResolver.Result.LOSE and _chance(0.5, enemy_luck):
-		damage_to_player += 1
+		_enemy_bonus_attack_triggered = true
 	if WeaponCatalogData.EFFECT_SCULPTURAL_SHEET in enemy_card.effects \
 			and result == BattleResolver.Result.DRAW:
 		damage_to_player += 1
@@ -491,6 +498,19 @@ func _apply_result(
 
 	await _deal_damage(false, damage_to_enemy)
 	await _deal_damage(true, damage_to_player)
+
+	# Bronze Razor's proc is a distinct second attack. Cue its text and SFX
+	# immediately before applying that extra point of damage.
+	if _player_bonus_attack_triggered:
+		_card_exit_animator.show_bonus_attack_cue(player_card_view)
+		_play_sfx("bonus_attack")
+		await get_tree().create_timer(0.12).timeout
+		await _deal_damage(false, 1)
+	if _enemy_bonus_attack_triggered:
+		_card_exit_animator.show_bonus_attack_cue(enemy_card_view)
+		_play_sfx("bonus_attack")
+		await get_tree().create_timer(0.12).timeout
+		await _deal_damage(true, 1)
 
 	# Bleed created on the previous clash resolves at the end of this clash.
 	if old_enemy_bleed:
@@ -650,6 +670,8 @@ func start_battle() -> void:
 	_player_bleed_pending = false
 	_enemy_bleed_pending = false
 	_has_disabled_player_type = false
+	_player_bonus_attack_triggered = false
+	_enemy_bonus_attack_triggered = false
 	player_slot.set_drop_target_active(false)
 	player_slot.clear_slot()
 	enemy_slot.clear_slot()
