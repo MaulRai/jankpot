@@ -253,8 +253,8 @@ func has_active_effect(effect_id: String) -> bool:
 	return false
 
 func temporarily_downgrade(card: CardDef) -> void:
-	var replacement := WeaponCatalogData.create_basic(card.card_type, card.id)
-	_replace_enemy_runtime_card(card, replacement)
+	var basic := WeaponCatalogData.create_basic(card.card_type, card.id)
+	_apply_card_data(card, basic)
 
 func temporarily_remove(card: CardDef) -> void:
 	card.temporarily_disabled = true
@@ -419,6 +419,18 @@ func _replace_enemy_runtime_card(old_card: CardDef, replacement: CardDef) -> voi
 		var index: int = pile.find(old_card)
 		if index >= 0:
 			pile[index] = replacement
+
+func _apply_card_data(target: CardDef, source: CardDef) -> void:
+	target.card_type = source.card_type
+	target.card_name = source.card_name
+	target.brief_description = source.brief_description
+	target.art_path = source.art_path
+	target.background_color = source.background_color
+	target.keywords = source.keywords.duplicate()
+	target.effects = source.effects.duplicate()
+	target.rarity = source.rarity
+	target.price = source.price
+	target.is_basic = source.is_basic
 
 func _generate_enemy_deck(upgrade_count: int) -> void:
 	for type in [CardDef.CardType.ROCK, CardDef.CardType.PAPER, CardDef.CardType.SCISSORS]:

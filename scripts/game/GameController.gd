@@ -172,14 +172,27 @@ func _play_card(card_data: CardDef, card_view: CardView) -> void:
 		await _flip_card(enemy_view, enemy_card)
 
 	# 6. Resolve battle
+	var player_history_card := card_data.copy()
+	var enemy_history_card := enemy_card.copy()
+	var player_downgrades := WeaponCatalogData.EFFECT_QUARTZ in card_data.effects
+	var enemy_downgrades := WeaponCatalogData.EFFECT_QUARTZ in enemy_card.effects
 	var result: BattleResolver.Result = battle_resolver.resolve(card_data.card_type, enemy_card.card_type)
 	await _apply_result(result, card_data, enemy_card)
-	battle_sidebar.add_history(card_data, enemy_card)
-	enemy_controller.record_clash(card_data.card_type, enemy_card.card_type, result)
+	battle_sidebar.add_history(player_history_card, enemy_history_card)
+	enemy_controller.record_clash(
+		player_history_card.card_type,
+		enemy_history_card.card_type,
+		result
+	)
 
 	# 7. Brief pause, then blow both cards off the board.
 	await get_tree().create_timer(0.35).timeout
-	await _discard_animations(card_view, enemy_view)
+	await _discard_animations(
+		card_view,
+		enemy_view,
+		"downgrade" if player_downgrades else "auto",
+		"downgrade" if enemy_downgrades else "auto"
+	)
 	_pending_enemy_card = null
 	_enemy_preview_view = null
 
@@ -407,9 +420,10 @@ func _apply_result(
 	var enemy_luck := _luck_bonus(enemy_controller.enemy_hand, enemy_card)
 
 	# Player weapon effects.
-	if WeaponCatalogData.EFFECT_QUARTZ in player_card.effects and result == BattleResolver.Result.LOSE:
+	var player_has_quartz := WeaponCatalogData.EFFECT_QUARTZ in player_card.effects
+	var enemy_has_quartz := WeaponCatalogData.EFFECT_QUARTZ in enemy_card.effects
+	if player_has_quartz and result == BattleResolver.Result.LOSE:
 		damage_to_player = maxi(0, damage_to_player - 1)
-		deck_manager.temporarily_downgrade(player_card)
 	if WeaponCatalogData.EFFECT_BRONZE_RAZOR in player_card.effects \
 			and result == BattleResolver.Result.WIN and _chance(0.5, player_luck):
 		damage_to_enemy += 1
@@ -432,9 +446,8 @@ func _apply_result(
 			damage_to_player += 1
 
 	# Enemy weapon effects use the mirrored result.
-	if WeaponCatalogData.EFFECT_QUARTZ in enemy_card.effects and result == BattleResolver.Result.WIN:
+	if enemy_has_quartz and result == BattleResolver.Result.WIN:
 		damage_to_enemy = maxi(0, damage_to_enemy - 1)
-		enemy_controller.temporarily_downgrade(enemy_card)
 	if WeaponCatalogData.EFFECT_BRONZE_RAZOR in enemy_card.effects \
 			and result == BattleResolver.Result.LOSE and _chance(0.5, enemy_luck):
 		damage_to_player += 1
@@ -485,6 +498,10 @@ func _apply_result(
 		deck_manager.temporarily_remove(player_card)
 	if WeaponCatalogData.EFFECT_RUBY_REVIVE in enemy_card.effects:
 		enemy_controller.temporarily_remove(enemy_card)
+	if player_has_quartz:
+		deck_manager.temporarily_downgrade(player_card)
+	if enemy_has_quartz:
+		enemy_controller.temporarily_downgrade(enemy_card)
 
 	_update_labels()
 	if result == BattleResolver.Result.DRAW and damage_to_enemy == 0 and damage_to_player == 0:
@@ -524,18 +541,31 @@ func _shake_node(node: Control) -> void:
 	tween.tween_property(node, "position", original_pos, 0.04)
 	await tween.finished
 
-func _discard_animations(player_card: CardView, enemy_card: CardView) -> void:
+func _discard_animations(
+	player_card: CardView,
+	enemy_card: CardView,
+	player_exit_type: String = "auto",
+	enemy_exit_type: String = "auto"
+) -> void:
 	_pending_wind_exits = 0
 
 	if is_instance_valid(player_card):
 		_pending_wind_exits += 1
-		_card_exit_animator.animate(player_card, Vector2(-1.0, 0.22)).connect(
+		_card_exit_animator.animate(
+			player_card,
+			Vector2(-1.0, 0.22),
+			player_exit_type
+		).connect(
 			_on_card_wind_exit_finished,
 			CONNECT_ONE_SHOT
 		)
 	if is_instance_valid(enemy_card):
 		_pending_wind_exits += 1
-		_card_exit_animator.animate(enemy_card, Vector2(1.0, -0.22)).connect(
+		_card_exit_animator.animate(
+			enemy_card,
+			Vector2(1.0, -0.22),
+			enemy_exit_type
+		).connect(
 			_on_card_wind_exit_finished,
 			CONNECT_ONE_SHOT
 		)
