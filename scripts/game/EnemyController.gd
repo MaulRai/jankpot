@@ -175,9 +175,12 @@ func setup_enemy_deck(upgrade_count: int = 0) -> void:
 	enemy_hand.clear()
 	enemy_discard_pile.clear()
 	if not assigned_deck.is_empty():
-		for assigned_card in assigned_deck:
+		for i in range(assigned_deck.size()):
+			var assigned_card := assigned_deck[i]
 			if assigned_card:
-				enemy_deck.append(assigned_card.copy())
+				var card := assigned_card.copy()
+				card.id = "%s_assigned_%d" % [assigned_card.id, i]
+				enemy_deck.append(card)
 	else:
 		_generate_enemy_deck(upgrade_count)
 

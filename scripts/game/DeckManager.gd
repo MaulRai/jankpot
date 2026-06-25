@@ -137,9 +137,12 @@ func _create_default_blueprint() -> void:
 func _initialize_blueprint() -> void:
 	deck_blueprint.clear()
 	if not assigned_deck.is_empty():
-		for card in assigned_deck:
+		for i in range(assigned_deck.size()):
+			var card := assigned_deck[i]
 			if card:
-				deck_blueprint.append(card.copy())
+				var assigned_card := card.copy()
+				assigned_card.id = "%s_assigned_%d" % [card.id, i]
+				deck_blueprint.append(assigned_card)
 	else:
 		_create_default_blueprint()
 
