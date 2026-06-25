@@ -50,9 +50,9 @@ func animate_downgrade(card_view: CardView, direction: Vector2) -> Signal:
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	tween.parallel().tween_property(card_view, "scale", original_scale, 0.13) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tween.parallel().tween_property(downgrade_label, "position:y", -62.0, 0.38) \
+	tween.parallel().tween_property(downgrade_label, "position:y", -62.0, 0.4) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tween.parallel().tween_property(downgrade_label, "modulate:a", 0.0, 0.38) \
+	tween.parallel().tween_property(downgrade_label, "modulate:a", 0.0, 0.4) \
 		.set_delay(0.12) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	tween.tween_property(card_view, "global_position", target_position, duration) \
@@ -90,9 +90,9 @@ func animate_fragile(card_view: Control) -> Signal:
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	tween.parallel().tween_property(fragile_label, "modulate:a", 1.0, 0.12) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	tween.tween_property(card_view, "scale", Vector2(1.22, 1.22), 0.38) \
+	tween.tween_property(card_view, "scale", Vector2(1.22, 1.22), 0.4) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tween.parallel().tween_property(card_view, "modulate:a", 0.0, 0.38) \
+	tween.parallel().tween_property(card_view, "modulate:a", 0.0, 0.4) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	tween.parallel().tween_property(fragile_label, "position:y", -58.0, 0.56) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
