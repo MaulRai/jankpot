@@ -25,6 +25,7 @@ signal wind_exit_batch_finished
 @onready var discard_viewer: Control = get_node("../DiscardViewer")
 @onready var consumable_shelf: Control = get_node("../ConsumableShelf")
 @onready var magic_ball_modal: Control = get_node("../MagicBallModal")
+@onready var sfx_manager: Node = get_node("../SFXManager")
 
 var player_hp: int = 6
 var enemy_hp: int = 6
@@ -152,6 +153,7 @@ func _play_card(card_data: CardDef, card_view: CardView) -> void:
 
 	await tween.finished
 
+	_play_sfx("card_placed", -1.0, randf_range(0.98, 1.02))
 	player_slot.clear_slot()
 	player_slot.place_card(card_view)
 	card_view.z_index = 0
@@ -321,6 +323,7 @@ func _animate_card_draw_to_hand(
 	return movement.finished
 
 func _animate_pile_rebuild() -> void:
+	_play_sfx("card_shuffle")
 	_set_pile_cards_visible(false)
 	var last_tween: Tween
 	var spawned_cards: Array[TextureRect] = []
@@ -409,6 +412,14 @@ func _apply_result(
 	player_card: CardDef,
 	enemy_card: CardDef
 ) -> void:
+	match result:
+		BattleResolver.Result.WIN:
+			_play_sfx("result_win")
+		BattleResolver.Result.LOSE:
+			_play_sfx("result_lose")
+		BattleResolver.Result.DRAW:
+			_play_sfx("result_draw")
+
 	var damage_to_enemy := 1 if result == BattleResolver.Result.WIN else 0
 	var damage_to_player := 1 if result == BattleResolver.Result.LOSE else 0
 	var old_player_bleed := _player_bleed_pending
@@ -424,6 +435,7 @@ func _apply_result(
 	var enemy_has_quartz := WeaponCatalogData.EFFECT_QUARTZ in enemy_card.effects
 	if player_has_quartz and result == BattleResolver.Result.LOSE:
 		damage_to_player = maxi(0, damage_to_player - 1)
+		_play_sfx("block")
 	if WeaponCatalogData.EFFECT_BRONZE_RAZOR in player_card.effects \
 			and result == BattleResolver.Result.WIN and _chance(0.5, player_luck):
 		damage_to_enemy += 1
@@ -433,12 +445,15 @@ func _apply_result(
 	if WeaponCatalogData.EFFECT_SPIKE_BOULDER in player_card.effects \
 			and damage_to_player > 0 and _chance(0.5, player_luck):
 		damage_to_enemy += 1
+		_play_sfx("reflect")
 	if WeaponCatalogData.EFFECT_RUSTY_SHEARS in player_card.effects \
 			and result == BattleResolver.Result.WIN:
 		_enemy_bleed_pending = true
+		_play_sfx("bleed")
 	if WeaponCatalogData.EFFECT_MIST_VEIL in player_card.effects \
 			and result == BattleResolver.Result.WIN:
 		enemy_controller.disable_type_once(enemy_card.card_type)
+		_play_sfx("mist_veil")
 	if WeaponCatalogData.EFFECT_GUILLOTINE in player_card.effects:
 		if result == BattleResolver.Result.WIN:
 			damage_to_enemy = 3
@@ -448,6 +463,7 @@ func _apply_result(
 	# Enemy weapon effects use the mirrored result.
 	if enemy_has_quartz and result == BattleResolver.Result.WIN:
 		damage_to_enemy = maxi(0, damage_to_enemy - 1)
+		_play_sfx("block")
 	if WeaponCatalogData.EFFECT_BRONZE_RAZOR in enemy_card.effects \
 			and result == BattleResolver.Result.LOSE and _chance(0.5, enemy_luck):
 		damage_to_player += 1
@@ -457,13 +473,16 @@ func _apply_result(
 	if WeaponCatalogData.EFFECT_SPIKE_BOULDER in enemy_card.effects \
 			and damage_to_enemy > 0 and _chance(0.5, enemy_luck):
 		damage_to_player += 1
+		_play_sfx("reflect")
 	if WeaponCatalogData.EFFECT_RUSTY_SHEARS in enemy_card.effects \
 			and result == BattleResolver.Result.LOSE:
 		_player_bleed_pending = true
+		_play_sfx("bleed")
 	if WeaponCatalogData.EFFECT_MIST_VEIL in enemy_card.effects \
 			and result == BattleResolver.Result.LOSE:
 		_disabled_player_type = player_card.card_type
 		_has_disabled_player_type = true
+		_play_sfx("mist_veil")
 	if WeaponCatalogData.EFFECT_GUILLOTINE in enemy_card.effects:
 		if result == BattleResolver.Result.LOSE:
 			damage_to_player = 3
@@ -475,21 +494,27 @@ func _apply_result(
 
 	# Bleed created on the previous clash resolves at the end of this clash.
 	if old_enemy_bleed:
+		_play_sfx("bleed")
 		await _deal_damage(false, 1)
 	if old_player_bleed:
+		_play_sfx("bleed")
 		await _deal_damage(true, 1)
 
 	if WeaponCatalogData.EFFECT_RUBY_REGEN in player_card.effects \
-			and result == BattleResolver.Result.WIN and player_hp > 0:
+			and result == BattleResolver.Result.WIN and player_hp > 0 and player_hp < 6:
 		player_hp = mini(6, player_hp + 1)
+		_play_sfx("regen")
 	if WeaponCatalogData.EFFECT_RUBY_REGEN in enemy_card.effects \
-			and result == BattleResolver.Result.LOSE and enemy_hp > 0:
+			and result == BattleResolver.Result.LOSE and enemy_hp > 0 and enemy_hp < 6:
 		enemy_hp = mini(6, enemy_hp + 1)
+		_play_sfx("regen")
 
 	if player_hp <= 0 and WeaponCatalogData.EFFECT_RUBY_REVIVE in player_card.effects:
 		player_hp = 1
+		_play_sfx("revive")
 	if enemy_hp <= 0 and WeaponCatalogData.EFFECT_RUBY_REVIVE in enemy_card.effects:
 		enemy_hp = 1
+		_play_sfx("revive")
 
 	# Fragile is an on-play status: after all effects from this clash resolve,
 	# the weapon disappears for the remainder of the current battle regardless
@@ -513,12 +538,14 @@ func _deal_damage(to_player: bool, amount: int) -> void:
 			if player_hp <= 0:
 				break
 			player_hp = maxi(0, player_hp - 1)
+			_play_sfx("heavy_hit", -1.0, randf_range(0.96, 1.04))
 			await battle_sidebar.animate_heart_loss(true, player_hp)
 			await _shake_node(player_slot)
 		else:
 			if enemy_hp <= 0:
 				break
 			enemy_hp = maxi(0, enemy_hp - 1)
+			_play_sfx("heavy_hit", -1.0, randf_range(0.96, 1.04))
 			await battle_sidebar.animate_heart_loss(false, enemy_hp)
 			await _shake_node(enemy_slot)
 
@@ -551,6 +578,7 @@ func _discard_animations(
 
 	if is_instance_valid(player_card):
 		_pending_wind_exits += 1
+		_play_card_exit_sfx(player_card, player_exit_type)
 		_card_exit_animator.animate(
 			player_card,
 			Vector2(-1.0, 0.22),
@@ -561,6 +589,7 @@ func _discard_animations(
 		)
 	if is_instance_valid(enemy_card):
 		_pending_wind_exits += 1
+		_play_card_exit_sfx(enemy_card, enemy_exit_type)
 		_card_exit_animator.animate(
 			enemy_card,
 			Vector2(1.0, -0.22),
@@ -580,6 +609,14 @@ func _on_card_wind_exit_finished() -> void:
 	_pending_wind_exits -= 1
 	if _pending_wind_exits <= 0:
 		wind_exit_batch_finished.emit()
+
+func _play_card_exit_sfx(card_view: CardView, exit_type: String) -> void:
+	if exit_type == "downgrade":
+		_play_sfx("downgrade")
+	elif card_view.card_data and "Fragile" in card_view.card_data.keywords:
+		_play_sfx("fragile")
+	else:
+		_play_sfx("card_leave", -2.0, randf_range(0.97, 1.03))
 
 func _end_battle() -> void:
 	round_status = "ended"
@@ -630,3 +667,11 @@ func start_battle() -> void:
 		await _prepare_enemy_card()
 	_is_animating = false
 	_update_labels()
+
+func _play_sfx(
+	sfx_name: String,
+	volume_offset_db: float = 0.0,
+	pitch_scale: float = 1.0
+) -> void:
+	if sfx_manager:
+		sfx_manager.play_sfx(sfx_name, volume_offset_db, pitch_scale)

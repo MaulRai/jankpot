@@ -50,10 +50,12 @@ func _add_choice(card_data: CardDef) -> void:
 	wrapper.add_child(card_view)
 
 func _select_reward(_card_view: CardView, card_data: CardDef) -> void:
+	_play_sfx("reward_selected")
 	hide_overlay()
 	reward_selected.emit(card_data)
 
 func _on_card_hovered(_card_view: CardView, card_data: CardDef) -> void:
+	_play_sfx("reward_hover", -4.0)
 	_show_highlight(card_data)
 
 func _show_highlight(card_data: CardDef) -> void:
@@ -82,3 +84,8 @@ func _rarity_color(rarity: String) -> Color:
 		WeaponCatalogData.RARITY_RARE:
 			return Color("#C884FF")
 	return Color.WHITE
+
+func _play_sfx(sfx_name: String, volume_offset_db: float = 0.0) -> void:
+	var manager: Node = get_tree().get_first_node_in_group("sfx_manager")
+	if manager:
+		manager.play_sfx(sfx_name, volume_offset_db)

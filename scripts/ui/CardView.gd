@@ -101,6 +101,7 @@ func _on_gui_input(event: InputEvent) -> void:
 				accept_event()
 				return
 			is_dragging = true
+			_play_sfx("card_pickup", -2.0, randf_range(0.97, 1.03))
 			cancel_transform_tween()
 			drag_offset = get_global_mouse_position() - global_position
 			z_index = 1000
@@ -147,3 +148,8 @@ func cancel_transform_tween() -> void:
 	if transform_tween and transform_tween.is_valid():
 		transform_tween.kill()
 	transform_tween = null
+
+func _play_sfx(sfx_name: String, volume_offset_db: float = 0.0, pitch: float = 1.0) -> void:
+	var manager: Node = get_tree().get_first_node_in_group("sfx_manager")
+	if manager:
+		manager.play_sfx(sfx_name, volume_offset_db, pitch)
