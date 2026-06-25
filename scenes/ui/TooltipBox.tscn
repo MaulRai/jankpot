@@ -1,8 +1,25 @@
-[gd_scene load_steps=1 format=3 uid="uid://t1w3e3a3e3a3g"]
+[gd_scene load_steps=2 format=3 uid="uid://t1w3e3a3e3a3g"]
+
+[sub_resource type="StyleBoxFlat" id="Style_tooltip"]
+bg_color = Color(0.045, 0.052, 0.07, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.42, 0.48, 0.6, 0.9)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+corner_detail = 1
 
 [node name="TooltipBox" type="Control"]
+custom_minimum_size = Vector2(260, 88)
 layout_mode = 3
 anchors_preset = 0
+offset_right = 260.0
+offset_bottom = 88.0
+mouse_filter = 2
 
 [node name="Panel" type="Panel" parent="."]
 layout_mode = 1
@@ -11,6 +28,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_styles/panel = SubResource("Style_tooltip")
 
 [node name="RichTextLabel" type="RichTextLabel" parent="Panel"]
 layout_mode = 1
@@ -23,7 +41,7 @@ offset_right = -8.0
 offset_bottom = -8.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_font_sizes/normal_font_size = 12
+theme_override_font_sizes/normal_font_size = 14
 bbcode_enabled = true
 fit_content = true
 scroll_active = false
