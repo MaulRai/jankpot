@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="WeaponLibrary" load_steps=14 format=3]
+[gd_resource type="Resource" script_class="WeaponLibrary" format=3]
 
 [ext_resource type="Script" path="res://scripts/data/WeaponLibrary.gd" id="1"]
 [ext_resource type="Resource" path="res://resources/weapons/basic_rock.tres" id="2"]
@@ -7,7 +7,7 @@
 [ext_resource type="Resource" path="res://resources/weapons/quartz.tres" id="5"]
 [ext_resource type="Resource" path="res://resources/weapons/bronze_razor.tres" id="6"]
 [ext_resource type="Resource" path="res://resources/weapons/sculptural_sheet.tres" id="7"]
-[ext_resource type="Resource" path="res://resources/weapons/spike_boulder.tres" id="8"]
+[ext_resource type="Resource" path="res://resources/weapons/spiked_boulder.tres" id="8"]
 [ext_resource type="Resource" path="res://resources/weapons/rusty_shears.tres" id="9"]
 [ext_resource type="Resource" path="res://resources/weapons/mist_veil.tres" id="10"]
 [ext_resource type="Resource" path="res://resources/weapons/ruby.tres" id="11"]

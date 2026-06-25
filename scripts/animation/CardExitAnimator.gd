@@ -12,21 +12,14 @@ func animate(
 		return animate_fragile(card_view)
 	return animate_wind(card_view, direction)
 
-func show_bonus_attack_cue(card_view: Control) -> void:
+func show_exclamation(card_view: Control, text: String, color: Color) -> void:
 	if not is_instance_valid(card_view):
 		return
-	var bonus_label := _create_keyword_label(card_view, "Bonus Attack!")
-	bonus_label.add_theme_color_override("font_color", Color("#FFD166"))
-	_animate_effect_cue(bonus_label)
+	var label := _create_keyword_label(card_view, text)
+	label.add_theme_color_override("font_color", color)
+	_animate_exclamation(label)
 
-func show_papercut_cue(card_view: Control) -> void:
-	if not is_instance_valid(card_view):
-		return
-	var papercut_label := _create_keyword_label(card_view, "Papercut!")
-	papercut_label.add_theme_color_override("font_color", Color("#F4E7A1"))
-	_animate_effect_cue(papercut_label)
-
-func _animate_effect_cue(label: Label) -> void:
+func _animate_exclamation(label: Label) -> void:
 	var tween := create_tween()
 	tween.tween_property(label, "modulate:a", 1.0, 0.12) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)

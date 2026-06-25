@@ -9,7 +9,7 @@ const RARITY_RARE := "Rare"
 const EFFECT_QUARTZ := "quartz_block_downgrade"
 const EFFECT_BRONZE_RAZOR := "bronze_razor_bonus"
 const EFFECT_SCULPTURAL_SHEET := "sculptural_sheet_draw_damage"
-const EFFECT_SPIKE_BOULDER := "spike_boulder_reflect"
+const EFFECT_spiked_boulder := "spiked_boulder_reflect"
 const EFFECT_RUSTY_SHEARS := "rusty_shears_bleed"
 const EFFECT_MIST_VEIL := "mist_veil_disable"
 const EFFECT_RUBY_REGEN := "ruby_regen"
@@ -60,10 +60,10 @@ static func create_weapon(weapon_id: String) -> CardDef:
 			_setup(card, CardDef.CardType.PAPER, "Sculptural Sheet", RARITY_COMMON,
 				"On draw, deal 1 DMG.", "res://assets/weapon/paper-2.png",
 				[], [EFFECT_SCULPTURAL_SHEET])
-		"spike_boulder":
-			_setup(card, CardDef.CardType.ROCK, "Spike Boulder", RARITY_UNCOMMON,
+		"spiked_boulder":
+			_setup(card, CardDef.CardType.ROCK, "Spiked Boulder", RARITY_UNCOMMON,
 				"When this card takes damage, 50% chance to deal 1 DMG back.",
-				"res://assets/weapon/rock-3.png", ["Luck"], [EFFECT_SPIKE_BOULDER])
+				"res://assets/weapon/rock-3.png", ["Luck"], [EFFECT_spiked_boulder])
 		"rusty_shears":
 			_setup(card, CardDef.CardType.SCISSORS, "Rusty Shears", RARITY_UNCOMMON,
 				"On win, apply 1 Bleed.", "res://assets/weapon/scissors-3.png",
@@ -161,7 +161,7 @@ static func _setup(
 static func _all_upgrade_ids() -> Array[String]:
 	return [
 		"quartz", "bronze_razor", "sculptural_sheet",
-		"spike_boulder", "rusty_shears", "mist_veil",
+		"spiked_boulder", "rusty_shears", "mist_veil",
 		"ruby", "guillotine_blades", "hatter_slip",
 	]
 

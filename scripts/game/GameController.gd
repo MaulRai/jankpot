@@ -431,6 +431,8 @@ func _apply_result(
 	var damage_to_player := 1 if result == BattleResolver.Result.LOSE else 0
 	var player_papercut_triggered := false
 	var enemy_papercut_triggered := false
+	var player_vengeance_triggered := false
+	var enemy_vengeance_triggered := false
 	var old_player_bleed := _player_bleed_pending
 	var old_enemy_bleed := _enemy_bleed_pending
 	_player_bleed_pending = false
@@ -451,10 +453,9 @@ func _apply_result(
 	if WeaponCatalogData.EFFECT_SCULPTURAL_SHEET in player_card.effects \
 			and result == BattleResolver.Result.DRAW:
 		player_papercut_triggered = true
-	if WeaponCatalogData.EFFECT_SPIKE_BOULDER in player_card.effects \
+	if WeaponCatalogData.EFFECT_spiked_boulder in player_card.effects \
 			and damage_to_player > 0 and _chance(0.5, player_luck):
-		damage_to_enemy += 1
-		_play_sfx("reflect")
+		player_vengeance_triggered = true
 	if WeaponCatalogData.EFFECT_RUSTY_SHEARS in player_card.effects \
 			and result == BattleResolver.Result.WIN:
 		_enemy_bleed_pending = true
@@ -479,10 +480,9 @@ func _apply_result(
 	if WeaponCatalogData.EFFECT_SCULPTURAL_SHEET in enemy_card.effects \
 			and result == BattleResolver.Result.DRAW:
 		enemy_papercut_triggered = true
-	if WeaponCatalogData.EFFECT_SPIKE_BOULDER in enemy_card.effects \
+	if WeaponCatalogData.EFFECT_spiked_boulder in enemy_card.effects \
 			and damage_to_enemy > 0 and _chance(0.5, enemy_luck):
-		damage_to_player += 1
-		_play_sfx("reflect")
+		enemy_vengeance_triggered = true
 	if WeaponCatalogData.EFFECT_RUSTY_SHEARS in enemy_card.effects \
 			and result == BattleResolver.Result.LOSE:
 		_player_bleed_pending = true
@@ -498,18 +498,35 @@ func _apply_result(
 		else:
 			damage_to_enemy += 1
 
-	await _deal_damage(false, damage_to_enemy)
-	await _deal_damage(true, damage_to_player)
+	# The attacker finishes first. Spike Boulder retaliation is resolved only
+	# afterward, regardless of whether the attacker is the player or enemy.
+	if result == BattleResolver.Result.LOSE:
+		await _deal_damage(true, damage_to_player)
+		await _deal_damage(false, damage_to_enemy)
+	else:
+		await _deal_damage(false, damage_to_enemy)
+		await _deal_damage(true, damage_to_player)
+
+	if result == BattleResolver.Result.LOSE and player_vengeance_triggered:
+		await _trigger_vengeance(player_card_view, false)
+	elif result == BattleResolver.Result.WIN and enemy_vengeance_triggered:
+		await _trigger_vengeance(enemy_card_view, true)
+	else:
+		# Edge cases with simultaneous/self damage remain deterministic.
+		if player_vengeance_triggered:
+			await _trigger_vengeance(player_card_view, false)
+		if enemy_vengeance_triggered:
+			await _trigger_vengeance(enemy_card_view, true)
 
 	# Resolve simultaneous Sculptural Sheet effects in a stable order:
 	# the player's Papercut always lands before the enemy's.
 	if player_papercut_triggered:
-		_card_exit_animator.show_papercut_cue(player_card_view)
+		_show_exclamation(player_card_view, "Papercut!", Color("#F4E7A1"))
 		_play_sfx("reflect")
 		await get_tree().create_timer(0.12).timeout
 		await _deal_damage(false, 1)
 	if enemy_papercut_triggered:
-		_card_exit_animator.show_papercut_cue(enemy_card_view)
+		_show_exclamation(enemy_card_view, "Papercut!", Color("#F4E7A1"))
 		_play_sfx("reflect")
 		await get_tree().create_timer(0.12).timeout
 		await _deal_damage(true, 1)
@@ -517,12 +534,12 @@ func _apply_result(
 	# Bronze Razor's proc is a distinct second attack. Cue its text and SFX
 	# immediately before applying that extra point of damage.
 	if _player_bonus_attack_triggered:
-		_card_exit_animator.show_bonus_attack_cue(player_card_view)
+		_show_exclamation(player_card_view, "Bonus Attack!", Color("#FFD166"))
 		_play_sfx("bonus_attack")
 		await get_tree().create_timer(0.12).timeout
 		await _deal_damage(false, 1)
 	if _enemy_bonus_attack_triggered:
-		_card_exit_animator.show_bonus_attack_cue(enemy_card_view)
+		_show_exclamation(enemy_card_view, "Bonus Attack!", Color("#FFD166"))
 		_play_sfx("bonus_attack")
 		await get_tree().create_timer(0.12).timeout
 		await _deal_damage(true, 1)
@@ -583,6 +600,15 @@ func _deal_damage(to_player: bool, amount: int) -> void:
 			_play_sfx("heavy_hit", -1.0, randf_range(0.96, 1.04))
 			await battle_sidebar.animate_heart_loss(false, enemy_hp)
 			await _shake_node(enemy_slot)
+
+func _trigger_vengeance(card_view: CardView, damage_player: bool) -> void:
+	_show_exclamation(card_view, "Vengeance!", Color("#FF7657"))
+	_play_sfx("reflect")
+	await get_tree().create_timer(0.12).timeout
+	await _deal_damage(damage_player, 1)
+
+func _show_exclamation(card_view: CardView, text: String, color: Color) -> void:
+	_card_exit_animator.show_exclamation(card_view, text, color)
 
 func _luck_bonus(cards: Array[CardDef], excluded_card: CardDef) -> float:
 	for card in cards:
