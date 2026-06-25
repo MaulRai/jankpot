@@ -8,6 +8,8 @@ signal card_drag_ended(card_view: CardView)
 @export var card_scene: PackedScene
 @export var hand_size: int = 3
 
+@onready var tooltip_manager: TooltipManager = get_node_or_null("../TooltipManager")
+
 var card_views: Array[CardView] = []
 
 func _ready() -> void:
@@ -115,7 +117,11 @@ func _on_card_drag_ended(card: CardView) -> void:
 		emit_signal("card_play_requested", card.card_data, card)
 
 func _on_card_hovered(card: CardView) -> void:
-	pass
+	if not tooltip_manager or not card.card_data or card.card_data.keywords.is_empty():
+		return
+	var tooltip_global_position := card.global_position + Vector2(card.size.x + 12.0, 8.0)
+	tooltip_manager.show_tooltip(card.card_data.keywords, tooltip_global_position)
 
-func _on_card_unhovered(card: CardView) -> void:
-	pass
+func _on_card_unhovered(_card: CardView) -> void:
+	if tooltip_manager:
+		tooltip_manager.hide_tooltip()

@@ -471,9 +471,15 @@ func _apply_result(
 
 	if player_hp <= 0 and WeaponCatalogData.EFFECT_RUBY_REVIVE in player_card.effects:
 		player_hp = 1
-		deck_manager.temporarily_remove(player_card)
 	if enemy_hp <= 0 and WeaponCatalogData.EFFECT_RUBY_REVIVE in enemy_card.effects:
 		enemy_hp = 1
+
+	# Fragile is an on-play status: after all effects from this clash resolve,
+	# the weapon disappears for the remainder of the current battle regardless
+	# of whether it won, lost, drew, regenerated, or revived its owner.
+	if WeaponCatalogData.EFFECT_RUBY_REVIVE in player_card.effects:
+		deck_manager.temporarily_remove(player_card)
+	if WeaponCatalogData.EFFECT_RUBY_REVIVE in enemy_card.effects:
 		enemy_controller.temporarily_remove(enemy_card)
 
 	_update_labels()
