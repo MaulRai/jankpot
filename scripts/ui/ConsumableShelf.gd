@@ -1,0 +1,41 @@
+class_name ConsumableShelf
+extends Control
+
+const MAGIC_BALL_TEXTURE := preload("res://assets/item/magic-ball.png")
+
+signal magic_ball_requested
+
+const MAX_ITEMS := 5
+
+@onready var slots: HBoxContainer = %Slots
+
+var _magic_ball_button: Button
+
+func _ready() -> void:
+	add_magic_ball()
+
+func add_magic_ball() -> bool:
+	if slots.get_child_count() >= MAX_ITEMS or is_instance_valid(_magic_ball_button):
+		return false
+	var button := Button.new()
+	button.custom_minimum_size = Vector2(93.0, 93.0)
+	button.flat = true
+	button.tooltip_text = "Magic Ball\nOne use. Predicts the enemy's next weapon with 80% accuracy."
+	button.pressed.connect(func() -> void: magic_ball_requested.emit())
+	slots.add_child(button)
+
+	var icon := TextureRect.new()
+	icon.texture = MAGIC_BALL_TEXTURE
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	button.add_child(icon)
+	icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_magic_ball_button = button
+	return true
+
+func consume_magic_ball() -> void:
+	if not is_instance_valid(_magic_ball_button):
+		return
+	_magic_ball_button.queue_free()
+	_magic_ball_button = null

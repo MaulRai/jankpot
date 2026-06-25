@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://m1w3e3a3e3a3i"]
+[gd_scene load_steps=17 format=3 uid="uid://m1w3e3a3e3a3i"]
 
 [ext_resource type="Script" path="res://scripts/game/GameController.gd" id="1_abc12"]
 [ext_resource type="Script" path="res://scripts/game/DeckManager.gd" id="2_def34"]
@@ -14,6 +14,8 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/RewardOverlay.tscn" id="13_reward"]
 [ext_resource type="PackedScene" path="res://scenes/ui/DiscardViewer.tscn" id="14_discard_viewer"]
 [ext_resource type="PackedScene" path="res://scenes/ui/DrawPileViewer.tscn" id="15_draw_viewer"]
+[ext_resource type="PackedScene" path="res://scenes/ui/ConsumableShelf.tscn" id="16_shelf"]
+[ext_resource type="PackedScene" path="res://scenes/ui/MagicBallModal.tscn" id="17_magic_modal"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -47,40 +49,7 @@ script = ExtResource("4_jkl78")
 
 [node name="LeftPanel" parent="." instance=ExtResource("12_sidebar")]
 
-[node name="TopPanel" type="Panel" parent="."]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_left = 280.0
-offset_right = -200.0
-offset_bottom = 80.0
-grow_horizontal = 2
-
-[node name="HBoxContainer" type="HBoxContainer" parent="TopPanel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 16.0
-offset_top = 16.0
-offset_right = -16.0
-offset_bottom = -16.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/separation = 12
-alignment = 1
-
-[node name="ItemSlot1" type="Panel" parent="TopPanel/HBoxContainer"]
-custom_minimum_size = Vector2(48, 48)
-layout_mode = 2
-
-[node name="ItemSlot2" type="Panel" parent="TopPanel/HBoxContainer"]
-custom_minimum_size = Vector2(48, 48)
-layout_mode = 2
-
-[node name="ItemSlot3" type="Panel" parent="TopPanel/HBoxContainer"]
-custom_minimum_size = Vector2(48, 48)
-layout_mode = 2
+[node name="ConsumableShelf" parent="." instance=ExtResource("16_shelf")]
 
 [node name="CenterBoard" parent="." instance=ExtResource("5_mno90")]
 layout_mode = 1
@@ -125,3 +94,5 @@ tooltip_scene = ExtResource("9_yz123")
 [node name="RewardOverlay" parent="." instance=ExtResource("13_reward")]
 
 [node name="DiscardViewer" parent="." instance=ExtResource("14_discard_viewer")]
+
+[node name="MagicBallModal" parent="." instance=ExtResource("17_magic_modal")]

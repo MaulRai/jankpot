@@ -22,6 +22,8 @@ signal wind_exit_batch_finished
 @onready var pile_count_label: Label = get_node("../DrawPileVisual/CountLabel")
 @onready var reward_overlay: Control = get_node("../RewardOverlay")
 @onready var discard_viewer: Control = get_node("../DiscardViewer")
+@onready var consumable_shelf: Control = get_node("../ConsumableShelf")
+@onready var magic_ball_modal: Control = get_node("../MagicBallModal")
 
 var player_hp: int = 6
 var enemy_hp: int = 6
@@ -47,6 +49,7 @@ func _ready() -> void:
 		hand_view.card_drag_started.connect(_on_hand_card_drag_started)
 		hand_view.card_drag_ended.connect(_on_hand_card_drag_ended)
 	reward_overlay.reward_selected.connect(_on_reward_selected)
+	consumable_shelf.magic_ball_requested.connect(_on_magic_ball_requested)
 	if deck_manager:
 		_is_animating = true
 		var selected_enemy := enemy_controller.select_random_non_boss(0)
@@ -91,6 +94,21 @@ func _on_hand_card_drag_started(_card_view: CardView) -> void:
 
 func _on_hand_card_drag_ended(_card_view: CardView) -> void:
 	player_slot.set_drop_target_active(false)
+
+func _on_magic_ball_requested() -> void:
+	if round_status != "ongoing" or _is_animating or not _pending_enemy_card:
+		return
+	var prediction := _pending_enemy_card.card_type
+	if randf() >= 0.8:
+		var wrong_types: Array[int] = [
+			CardDef.CardType.ROCK,
+			CardDef.CardType.PAPER,
+			CardDef.CardType.SCISSORS,
+		]
+		wrong_types.erase(prediction)
+		prediction = wrong_types.pick_random() as CardDef.CardType
+	consumable_shelf.consume_magic_ball()
+	magic_ball_modal.show_prediction(prediction)
 
 func _snap_card_back(card_view: CardView) -> void:
 	_is_animating = true
