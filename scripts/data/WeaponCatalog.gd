@@ -51,19 +51,19 @@ static func create_weapon(weapon_id: String) -> CardDef:
 		"quartz":
 			_setup(card, CardDef.CardType.ROCK, "Quartz", RARITY_COMMON,
 				"On lose, Block 1 DMG. Downgrade.", "res://assets/weapon/rock-2.png",
-				["Damage", "Downgrade"], [EFFECT_QUARTZ])
+				["Downgrade"], [EFFECT_QUARTZ])
 		"bronze_razor":
 			_setup(card, CardDef.CardType.SCISSORS, "Bronze Razor", RARITY_COMMON,
 				"On win, 50% chance to deal +1 DMG.", "res://assets/weapon/scissors-2.png",
-				["Damage", "Luck"], [EFFECT_BRONZE_RAZOR])
+				["Luck"], [EFFECT_BRONZE_RAZOR])
 		"sculptural_sheet":
 			_setup(card, CardDef.CardType.PAPER, "Sculptural Sheet", RARITY_COMMON,
 				"On draw, deal 1 DMG.", "res://assets/weapon/paper-2.png",
-				["Damage"], [EFFECT_SCULPTURAL_SHEET])
+				[], [EFFECT_SCULPTURAL_SHEET])
 		"spike_boulder":
 			_setup(card, CardDef.CardType.ROCK, "Spike Boulder", RARITY_UNCOMMON,
 				"When this card takes damage, 50% chance to deal 1 DMG back.",
-				"res://assets/weapon/rock-3.png", ["Damage", "Luck"], [EFFECT_SPIKE_BOULDER])
+				"res://assets/weapon/rock-3.png", ["Luck"], [EFFECT_SPIKE_BOULDER])
 		"rusty_shears":
 			_setup(card, CardDef.CardType.SCISSORS, "Rusty Shears", RARITY_UNCOMMON,
 				"On win, apply 1 Bleed.", "res://assets/weapon/scissors-3.png",
@@ -79,7 +79,7 @@ static func create_weapon(weapon_id: String) -> CardDef:
 		"guillotine_blades":
 			_setup(card, CardDef.CardType.SCISSORS, "Guillotine Blades", RARITY_RARE,
 				"On win, deal 3 total DMG. On lose or draw, take 1 self DMG.",
-				"res://assets/weapon/scissors-4.png", ["Damage"], [EFFECT_GUILLOTINE])
+				"res://assets/weapon/scissors-4.png", [], [EFFECT_GUILLOTINE])
 		"hatter_slip":
 			_setup(card, CardDef.CardType.PAPER, "Hatter Slip", RARITY_RARE,
 				"While in hand, chance effects gain +15% Luck. Does not stack.",

@@ -2,7 +2,6 @@ class_name EffectKeyword
 extends RefCounted
 
 const KEYWORD_COLORS := {
-	"Damage": "#FF7777",
 	"Luck": "#B77DFF",
 	"Reveal": "#66CCFF",
 	"Bleed": "#FF5555",
@@ -12,7 +11,6 @@ const KEYWORD_COLORS := {
 }
 
 const KEYWORD_DESCRIPTIONS := {
-	"Damage": "Reduces enemy HP.",
 	"Luck": "Adds to the probability of chance-based weapon effects.",
 	"Reveal": "Shows hidden enemy information.",
 	"Bleed": "Deals 1 damage at the end of the next turn, then disappears.",
