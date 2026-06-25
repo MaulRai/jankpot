@@ -2,6 +2,7 @@ class_name GameController
 extends Node
 
 const WeaponCatalogData = preload("res://scripts/data/WeaponCatalog.gd")
+const CardExitAnimatorScript = preload("res://scripts/animation/CardExitAnimator.gd")
 
 signal turn_resolved
 signal battle_ended(winner: String)
@@ -34,12 +35,15 @@ var _is_animating: bool = false
 var _pending_wind_exits: int = 0
 var _pending_enemy_card: CardDef
 var _enemy_preview_view: CardView
+var _card_exit_animator: Node
 var _player_bleed_pending := false
 var _enemy_bleed_pending := false
 var _disabled_player_type: CardDef.CardType = CardDef.CardType.ROCK
 var _has_disabled_player_type := false
 
 func _ready() -> void:
+	_card_exit_animator = CardExitAnimatorScript.new()
+	add_child(_card_exit_animator)
 	if deck_manager:
 		deck_manager.hand_changed.connect(_on_hand_changed)
 		deck_manager.draw_pile_changed.connect(_update_pile_visuals)
@@ -525,13 +529,13 @@ func _discard_animations(player_card: CardView, enemy_card: CardView) -> void:
 
 	if is_instance_valid(player_card):
 		_pending_wind_exits += 1
-		animate_card_wind_exit(player_card, Vector2(-1.0, 0.22)).connect(
+		_card_exit_animator.animate(player_card, Vector2(-1.0, 0.22)).connect(
 			_on_card_wind_exit_finished,
 			CONNECT_ONE_SHOT
 		)
 	if is_instance_valid(enemy_card):
 		_pending_wind_exits += 1
-		animate_card_wind_exit(enemy_card, Vector2(1.0, -0.22)).connect(
+		_card_exit_animator.animate(enemy_card, Vector2(1.0, -0.22)).connect(
 			_on_card_wind_exit_finished,
 			CONNECT_ONE_SHOT
 		)
@@ -546,44 +550,6 @@ func _on_card_wind_exit_finished() -> void:
 	_pending_wind_exits -= 1
 	if _pending_wind_exits <= 0:
 		wind_exit_batch_finished.emit()
-
-func animate_card_wind_exit(card_view: Control, direction: Vector2) -> Signal:
-	var duration := randf_range(0.7, 0.85)
-	var viewport_size := get_viewport().get_visible_rect().size
-	var travel_distance := viewport_size.x + card_view.size.x * 1.5
-	var natural_direction := direction.normalized()
-	natural_direction.y += randf_range(-0.08, 0.08)
-	var target_position := card_view.global_position + natural_direction * travel_distance
-	target_position.y += randf_range(-35.0, 35.0)
-
-	card_view.pivot_offset = card_view.size * 0.5
-	card_view.z_index = 1500
-	card_view.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	var rotation_amount := deg_to_rad(randf_range(18.0, 32.0))
-	if direction.x < 0.0:
-		rotation_amount *= -1.0
-
-	var movement_tween := create_tween()
-	movement_tween.set_parallel(true)
-	movement_tween.tween_property(card_view, "global_position", target_position, duration) \
-		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
-	movement_tween.tween_property(
-		card_view,
-		"rotation",
-		card_view.rotation + rotation_amount,
-		duration
-	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-
-	var flip_tween := create_tween()
-	flip_tween.tween_property(card_view, "scale:x", 0.78, duration * 0.24) \
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	flip_tween.tween_property(card_view, "scale:x", 1.0, duration * 0.28) \
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	flip_tween.tween_property(card_view, "scale", Vector2(0.93, 0.93), duration * 0.48) \
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-
-	return movement_tween.finished
 
 func _end_battle() -> void:
 	round_status = "ended"
