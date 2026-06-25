@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CardDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardDef.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "basic_rock"
+card_type = 0
+card_name = "Rock"
+brief_description = "Solid and steady."
+art_path = "res://assets/weapon/rock-1.png"
+background_color = Color(0.494, 0.569, 0.639, 1)
+rarity = "Basic"
+price = 0
+is_basic = true

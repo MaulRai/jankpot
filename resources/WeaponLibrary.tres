@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="WeaponLibrary" load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/WeaponLibrary.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/weapons/basic_rock.tres" id="2"]
+[ext_resource type="Resource" path="res://resources/weapons/basic_paper.tres" id="3"]
+[ext_resource type="Resource" path="res://resources/weapons/basic_scissors.tres" id="4"]
+[ext_resource type="Resource" path="res://resources/weapons/quartz.tres" id="5"]
+[ext_resource type="Resource" path="res://resources/weapons/bronze_razor.tres" id="6"]
+[ext_resource type="Resource" path="res://resources/weapons/sculptural_sheet.tres" id="7"]
+[ext_resource type="Resource" path="res://resources/weapons/spike_boulder.tres" id="8"]
+[ext_resource type="Resource" path="res://resources/weapons/rusty_shears.tres" id="9"]
+[ext_resource type="Resource" path="res://resources/weapons/mist_veil.tres" id="10"]
+[ext_resource type="Resource" path="res://resources/weapons/ruby.tres" id="11"]
+[ext_resource type="Resource" path="res://resources/weapons/guillotine_blades.tres" id="12"]
+[ext_resource type="Resource" path="res://resources/weapons/hatter_slip.tres" id="13"]
+
+[resource]
+script = ExtResource("1")
+basic_weapons = Array[CardDef]([ExtResource("2"), ExtResource("3"), ExtResource("4")])
+common_weapons = Array[CardDef]([ExtResource("5"), ExtResource("6"), ExtResource("7")])
+uncommon_weapons = Array[CardDef]([ExtResource("8"), ExtResource("9"), ExtResource("10")])
+rare_weapons = Array[CardDef]([ExtResource("11"), ExtResource("12"), ExtResource("13")])
+all_weapons = Array[CardDef]([ExtResource("2"), ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6"), ExtResource("7"), ExtResource("8"), ExtResource("9"), ExtResource("10"), ExtResource("11"), ExtResource("12"), ExtResource("13")])

@@ -217,7 +217,9 @@ func _refill_hand_animated() -> void:
 		deck_manager.reshuffle_discard_if_needed()
 		await _animate_pile_rebuild()
 
-	var previous_hand_size := deck_manager.hand.size()
+	# Use the visual count so an inspector-assigned starting hand still animates
+	# into an empty HandView at the beginning of a battle.
+	var previous_hand_size := hand_view.card_views.size()
 	deck_manager.draw_until_full(hand_view.hand_size)
 	var final_hand_size := deck_manager.hand.size()
 	hand_view.prepare_layout(final_hand_size)

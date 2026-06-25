@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CardDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardDef.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "basic_scissors"
+card_type = 2
+card_name = "Scissors"
+brief_description = "Cuts through defenses."
+art_path = "res://assets/weapon/scissors-1.png"
+background_color = Color(0.604, 0.29, 0.29, 1)
+rarity = "Basic"
+price = 0
+is_basic = true

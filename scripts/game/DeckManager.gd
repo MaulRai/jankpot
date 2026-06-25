@@ -7,6 +7,9 @@ signal hand_changed
 signal draw_pile_changed
 signal discard_pile_changed
 
+@export var assigned_deck: Array[CardDef] = []
+@export var starting_hand_indices: Array[int] = []
+
 var draw_pile: Array[CardDef] = []
 var hand: Array[CardDef] = []
 var discard_pile: Array[CardDef] = []
@@ -14,18 +17,22 @@ var deck_blueprint: Array[CardDef] = []
 
 func _ready() -> void:
 	if deck_blueprint.is_empty():
-		_create_default_blueprint()
+		_initialize_blueprint()
 
 func setup_starting_deck() -> void:
 	if deck_blueprint.is_empty():
-		_create_default_blueprint()
+		_initialize_blueprint()
 	draw_pile.clear()
 	hand.clear()
 	discard_pile.clear()
+	var battle_cards: Array[CardDef] = []
 	for blueprint_card in deck_blueprint:
 		var card := blueprint_card.copy()
 		card.temporarily_disabled = false
-		draw_pile.append(card)
+		battle_cards.append(card)
+
+	_assign_starting_hand(battle_cards)
+	draw_pile.append_array(battle_cards)
 	shuffle_draw_pile()
 	emit_signal("hand_changed")
 	emit_signal("draw_pile_changed")
@@ -126,6 +133,31 @@ func _create_default_blueprint() -> void:
 	for type in [CardDef.CardType.ROCK, CardDef.CardType.PAPER, CardDef.CardType.SCISSORS]:
 		for i in range(3):
 			deck_blueprint.append(WeaponCatalogData.create_basic(type, "player_%d_%d" % [type, i]))
+
+func _initialize_blueprint() -> void:
+	deck_blueprint.clear()
+	if not assigned_deck.is_empty():
+		for card in assigned_deck:
+			if card:
+				deck_blueprint.append(card.copy())
+	else:
+		_create_default_blueprint()
+
+func _assign_starting_hand(battle_cards: Array[CardDef]) -> void:
+	if starting_hand_indices.is_empty():
+		return
+	var selected_indices: Array[int] = []
+	for index in starting_hand_indices:
+		if hand.size() >= 3:
+			break
+		if index < 0 or index >= battle_cards.size() or index in selected_indices:
+			continue
+		selected_indices.append(index)
+		hand.append(battle_cards[index])
+	selected_indices.sort()
+	selected_indices.reverse()
+	for index in selected_indices:
+		battle_cards.remove_at(index)
 
 func _replace_runtime_card(old_card: CardDef, replacement: CardDef) -> void:
 	var piles: Array[Array] = [draw_pile, hand, discard_pile]

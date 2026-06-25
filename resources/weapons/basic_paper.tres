@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CardDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardDef.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "basic_paper"
+card_type = 1
+card_name = "Paper"
+brief_description = "Covers all bases."
+art_path = "res://assets/weapon/paper-1.png"
+background_color = Color(0.906, 0.875, 0.643, 1)
+rarity = "Basic"
+price = 0
+is_basic = true

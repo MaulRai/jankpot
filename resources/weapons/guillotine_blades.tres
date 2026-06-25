@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="CardDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardDef.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "guillotine_blades"
+card_type = 2
+card_name = "Guillotine Blades"
+brief_description = "On win, deal 3 total DMG. On lose or draw, take 1 self DMG."
+art_path = "res://assets/weapon/scissors-4.png"
+background_color = Color(0.604, 0.29, 0.29, 1)
+keywords = Array[String](["Damage"])
+effects = Array[String](["guillotine_blades"])
+rarity = "Rare"
+price = 0
+is_basic = false

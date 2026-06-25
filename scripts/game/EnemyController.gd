@@ -148,7 +148,9 @@ var enemy_deck: Array[CardDef] = []
 var enemy_draw_pile: Array[CardDef] = []
 var enemy_hand: Array[CardDef] = []
 var enemy_discard_pile: Array[CardDef] = []
-var enemy_hand_size := 3
+@export var assigned_deck: Array[CardDef] = []
+@export var starting_hand_indices: Array[int] = []
+@export var enemy_hand_size := 3
 var current_enemy_id: String = "pebble_grunt"
 var current_enemy: Dictionary = {}
 
@@ -172,24 +174,20 @@ func setup_enemy_deck(upgrade_count: int = 0) -> void:
 	enemy_draw_pile.clear()
 	enemy_hand.clear()
 	enemy_discard_pile.clear()
-	for type in [CardDef.CardType.ROCK, CardDef.CardType.PAPER, CardDef.CardType.SCISSORS]:
-		for i in range(3):
-			var card := WeaponCatalogData.create_basic(type, "enemy_basic_%d_%d" % [type, i])
-			enemy_deck.append(card)
+	if not assigned_deck.is_empty():
+		for assigned_card in assigned_deck:
+			if assigned_card:
+				enemy_deck.append(assigned_card.copy())
+	else:
+		_generate_enemy_deck(upgrade_count)
 
-	var upgrade_slots: Array[int] = []
-	for i in range(enemy_deck.size()):
-		upgrade_slots.append(i)
-	upgrade_slots.shuffle()
-
-	for i in range(clampi(upgrade_count, 0, enemy_deck.size())):
-		var slot_index := upgrade_slots[i]
-		var basic_card := enemy_deck[slot_index]
-		var upgrade: CardDef = WeaponCatalogData.random_upgrade_for_type(basic_card.card_type)
-		upgrade.id = "enemy_%s_%d" % [upgrade.id, slot_index]
-		enemy_deck[slot_index] = upgrade
-
-	enemy_draw_pile.append_array(enemy_deck)
+	var battle_cards: Array[CardDef] = []
+	for card in enemy_deck:
+		var battle_card := card.copy()
+		battle_card.temporarily_disabled = false
+		battle_cards.append(battle_card)
+	_assign_enemy_starting_hand(battle_cards)
+	enemy_draw_pile.append_array(battle_cards)
 	enemy_draw_pile.shuffle()
 	_refill_enemy_hand()
 
@@ -418,6 +416,39 @@ func _replace_enemy_runtime_card(old_card: CardDef, replacement: CardDef) -> voi
 		var index: int = pile.find(old_card)
 		if index >= 0:
 			pile[index] = replacement
+
+func _generate_enemy_deck(upgrade_count: int) -> void:
+	for type in [CardDef.CardType.ROCK, CardDef.CardType.PAPER, CardDef.CardType.SCISSORS]:
+		for i in range(3):
+			var card := WeaponCatalogData.create_basic(type, "enemy_basic_%d_%d" % [type, i])
+			enemy_deck.append(card)
+
+	var upgrade_slots: Array[int] = []
+	for i in range(enemy_deck.size()):
+		upgrade_slots.append(i)
+	upgrade_slots.shuffle()
+	for i in range(clampi(upgrade_count, 0, enemy_deck.size())):
+		var slot_index := upgrade_slots[i]
+		var basic_card := enemy_deck[slot_index]
+		var upgrade: CardDef = WeaponCatalogData.random_upgrade_for_type(basic_card.card_type)
+		upgrade.id = "enemy_%s_%d" % [upgrade.id, slot_index]
+		enemy_deck[slot_index] = upgrade
+
+func _assign_enemy_starting_hand(battle_cards: Array[CardDef]) -> void:
+	if starting_hand_indices.is_empty():
+		return
+	var selected_indices: Array[int] = []
+	for index in starting_hand_indices:
+		if enemy_hand.size() >= enemy_hand_size:
+			break
+		if index < 0 or index >= battle_cards.size() or index in selected_indices:
+			continue
+		selected_indices.append(index)
+		enemy_hand.append(battle_cards[index])
+	selected_indices.sort()
+	selected_indices.reverse()
+	for index in selected_indices:
+		battle_cards.remove_at(index)
 
 func _rarity_rank(rarity: String) -> int:
 	match rarity:

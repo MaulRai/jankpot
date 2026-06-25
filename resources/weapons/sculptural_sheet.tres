@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="CardDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardDef.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "sculptural_sheet"
+card_type = 1
+card_name = "Sculptural Sheet"
+brief_description = "On draw, deal 1 DMG."
+art_path = "res://assets/weapon/paper-2.png"
+background_color = Color(0.906, 0.875, 0.643, 1)
+keywords = Array[String](["Damage"])
+effects = Array[String](["sculptural_sheet_draw_damage"])
+rarity = "Common"
+price = 0
+is_basic = false
