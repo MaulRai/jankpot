@@ -39,6 +39,7 @@ func _add_card(card_data: CardDef) -> CardView:
 	return card_view
 
 func _clear_hand() -> void:
+	_hide_tooltip()
 	for card in card_views:
 		card.queue_free()
 	card_views.clear()
@@ -103,11 +104,13 @@ func normalize_card_layers() -> void:
 		move_child(card, i)
 
 func remove_card_view(card_view: CardView) -> void:
+	_hide_tooltip()
 	card_views.erase(card_view)
 	if card_view.get_parent() == self:
 		remove_child(card_view)
 
 func _on_card_drag_started(card: CardView) -> void:
+	_hide_tooltip()
 	card.z_index = 1000
 	card_drag_started.emit(card)
 
@@ -123,5 +126,8 @@ func _on_card_hovered(card: CardView) -> void:
 	tooltip_manager.show_tooltip(card.card_data.keywords, tooltip_global_position)
 
 func _on_card_unhovered(_card: CardView) -> void:
+	_hide_tooltip()
+
+func _hide_tooltip() -> void:
 	if tooltip_manager:
 		tooltip_manager.hide_tooltip()
