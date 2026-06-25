@@ -17,17 +17,27 @@ func show_bonus_attack_cue(card_view: Control) -> void:
 		return
 	var bonus_label := _create_keyword_label(card_view, "Bonus Attack!")
 	bonus_label.add_theme_color_override("font_color", Color("#FFD166"))
+	_animate_effect_cue(bonus_label)
+
+func show_papercut_cue(card_view: Control) -> void:
+	if not is_instance_valid(card_view):
+		return
+	var papercut_label := _create_keyword_label(card_view, "Papercut!")
+	papercut_label.add_theme_color_override("font_color", Color("#F4E7A1"))
+	_animate_effect_cue(papercut_label)
+
+func _animate_effect_cue(label: Label) -> void:
 	var tween := create_tween()
-	tween.tween_property(bonus_label, "modulate:a", 1.0, 0.12) \
+	tween.tween_property(label, "modulate:a", 1.0, 0.12) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	tween.parallel().tween_property(bonus_label, "position:y", -44.0, 0.18) \
+	tween.parallel().tween_property(label, "position:y", -44.0, 0.18) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tween.tween_interval(0.3)
-	tween.tween_property(bonus_label, "position:y", -68.0, 0.32) \
+	tween.tween_property(label, "position:y", -68.0, 0.32) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tween.parallel().tween_property(bonus_label, "modulate:a", 0.0, 0.32) \
+	tween.parallel().tween_property(label, "modulate:a", 0.0, 0.32) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-	tween.tween_callback(bonus_label.queue_free)
+	tween.tween_callback(label.queue_free)
 
 func animate_downgrade(card_view: CardView, direction: Vector2) -> Signal:
 	_prepare_card(card_view)

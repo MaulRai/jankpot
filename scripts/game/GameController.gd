@@ -429,6 +429,8 @@ func _apply_result(
 
 	var damage_to_enemy := 1 if result == BattleResolver.Result.WIN else 0
 	var damage_to_player := 1 if result == BattleResolver.Result.LOSE else 0
+	var player_papercut_triggered := false
+	var enemy_papercut_triggered := false
 	var old_player_bleed := _player_bleed_pending
 	var old_enemy_bleed := _enemy_bleed_pending
 	_player_bleed_pending = false
@@ -448,7 +450,7 @@ func _apply_result(
 		_player_bonus_attack_triggered = true
 	if WeaponCatalogData.EFFECT_SCULPTURAL_SHEET in player_card.effects \
 			and result == BattleResolver.Result.DRAW:
-		damage_to_enemy += 1
+		player_papercut_triggered = true
 	if WeaponCatalogData.EFFECT_SPIKE_BOULDER in player_card.effects \
 			and damage_to_player > 0 and _chance(0.5, player_luck):
 		damage_to_enemy += 1
@@ -476,7 +478,7 @@ func _apply_result(
 		_enemy_bonus_attack_triggered = true
 	if WeaponCatalogData.EFFECT_SCULPTURAL_SHEET in enemy_card.effects \
 			and result == BattleResolver.Result.DRAW:
-		damage_to_player += 1
+		enemy_papercut_triggered = true
 	if WeaponCatalogData.EFFECT_SPIKE_BOULDER in enemy_card.effects \
 			and damage_to_enemy > 0 and _chance(0.5, enemy_luck):
 		damage_to_player += 1
@@ -498,6 +500,19 @@ func _apply_result(
 
 	await _deal_damage(false, damage_to_enemy)
 	await _deal_damage(true, damage_to_player)
+
+	# Resolve simultaneous Sculptural Sheet effects in a stable order:
+	# the player's Papercut always lands before the enemy's.
+	if player_papercut_triggered:
+		_card_exit_animator.show_papercut_cue(player_card_view)
+		_play_sfx("reflect")
+		await get_tree().create_timer(0.12).timeout
+		await _deal_damage(false, 1)
+	if enemy_papercut_triggered:
+		_card_exit_animator.show_papercut_cue(enemy_card_view)
+		_play_sfx("reflect")
+		await get_tree().create_timer(0.12).timeout
+		await _deal_damage(true, 1)
 
 	# Bronze Razor's proc is a distinct second attack. Cue its text and SFX
 	# immediately before applying that extra point of damage.
