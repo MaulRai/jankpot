@@ -27,17 +27,17 @@ static func create_basic(type: CardDef.CardType, instance_id: String = "") -> Ca
 	match type:
 		CardDef.CardType.ROCK:
 			card.card_name = "Rock"
-			card.brief_description = "Solid and steady."
+			card.brief_description = "Nothing but a plain rock."
 			card.art_path = "res://assets/weapon/rock-1.png"
 			card.background_color = Color("#7E91A3")
 		CardDef.CardType.PAPER:
 			card.card_name = "Paper"
-			card.brief_description = "Covers all bases."
+			card.brief_description = "Just an ordinary sheet."
 			card.art_path = "res://assets/weapon/paper-1.png"
 			card.background_color = Color("#E7DFA4")
 		CardDef.CardType.SCISSORS:
 			card.card_name = "Scissors"
-			card.brief_description = "Cuts through defenses."
+			card.brief_description = "A simple pair of scissors."
 			card.art_path = "res://assets/weapon/scissors-1.png"
 			card.background_color = Color("#9A4A4A")
 	return card

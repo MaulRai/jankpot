@@ -547,19 +547,19 @@ func _create_enemy_card(type: CardDef.CardType, index: int) -> CardDef:
 		CardDef.CardType.ROCK:
 			card.id = "enemy_rock_%d" % index
 			card.card_name = "Rock"
-			card.brief_description = "Solid and steady."
+			card.brief_description = "Nothing but a plain rock."
 			card.art_path = "res://assets/weapon/rock-1.png"
 			card.background_color = Color("#7E91A3")
 		CardDef.CardType.PAPER:
 			card.id = "enemy_paper_%d" % index
 			card.card_name = "Paper"
-			card.brief_description = "Covers all bases."
+			card.brief_description = "Just an ordinary sheet."
 			card.art_path = "res://assets/weapon/paper-1.png"
 			card.background_color = Color("#E7DFA4")
 		CardDef.CardType.SCISSORS:
 			card.id = "enemy_scissors_%d" % index
 			card.card_name = "Scissors"
-			card.brief_description = "Cuts through defenses."
+			card.brief_description = "A simple pair of scissors."
 			card.art_path = "res://assets/weapon/scissors-1.png"
 			card.background_color = Color("#9A4A4A")
 	return card
