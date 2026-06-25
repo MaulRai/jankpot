@@ -29,6 +29,13 @@ func set_cards(cards: Array[CardDef]) -> void:
 	_cards.clear()
 	for card in cards:
 		_cards.append(card.copy())
+	# Display order must not reveal the actual draw order.
+	_cards.sort_custom(func(a: CardDef, b: CardDef) -> bool:
+		var name_comparison := a.card_name.naturalnocasecmp_to(b.card_name)
+		if name_comparison == 0:
+			return a.rarity.naturalnocasecmp_to(b.rarity) < 0
+		return name_comparison < 0
+	)
 	if not is_node_ready():
 		return
 	_refresh_view()
