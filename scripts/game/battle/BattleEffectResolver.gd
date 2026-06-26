@@ -24,8 +24,10 @@ func build_plan(
 
 	var player_luck := _luck_bonus(player_hand, player_card)
 	var enemy_luck := _luck_bonus(enemy_hand, enemy_card)
-	_apply_player_effects(plan, state, result, player_card, enemy_card, player_luck)
-	_apply_enemy_effects(plan, state, result, player_card, enemy_card, enemy_luck)
+	if not player_card.is_skip:
+		_apply_player_effects(plan, state, result, player_card, enemy_card, player_luck)
+	if not enemy_card.is_skip:
+		_apply_enemy_effects(plan, state, result, player_card, enemy_card, enemy_luck)
 	return plan
 
 

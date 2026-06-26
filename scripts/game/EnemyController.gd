@@ -5,6 +5,7 @@ const EnemyCatalogData = preload("res://scripts/data/EnemyCatalog.gd")
 const EnemyBattleDeckData = preload("res://scripts/game/enemy/EnemyBattleDeck.gd")
 const EnemyStrategyContextData = preload("res://scripts/game/enemy/EnemyStrategyContext.gd")
 const EnemyStrategyEvaluatorData = preload("res://scripts/game/enemy/EnemyStrategyEvaluator.gd")
+const WeaponCatalogData = preload("res://scripts/data/WeaponCatalog.gd")
 
 signal enemy_card_chosen(card: CardDef)
 signal enemy_selected(enemy_data: Dictionary)
@@ -85,6 +86,10 @@ func choose_card(enemy_hp: int = 6, _player_hp: int = 6) -> CardDef:
 		weights[_disabled_type] = 0.0
 		_has_disabled_type = false
 	_deck.remove_unavailable_type_weights(weights)
+	if _total_weight(weights) <= 0.0:
+		var skip := WeaponCatalogData.create_skip("enemy_skip_%d" % Time.get_ticks_usec())
+		enemy_card_chosen.emit(skip)
+		return skip
 	var chosen_type: CardDef.CardType = _strategy.choose_type(weights)
 	var matching: Array[CardDef] = []
 	for card in enemy_hand:
@@ -143,3 +148,10 @@ func _make_strategy_context(enemy_hp: int) -> RefCounted:
 	context.clash_count = clash_count
 	context.hand = enemy_hand
 	return context
+
+
+func _total_weight(weights: Array[float]) -> float:
+	var total := 0.0
+	for weight in weights:
+		total += maxf(weight, 0.0)
+	return total

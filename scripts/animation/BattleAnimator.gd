@@ -104,7 +104,7 @@ func refill_hand() -> void:
 	for card in hand_view.card_views:
 		card.set_interaction_enabled(false)
 		var rearrange := create_tween().set_parallel(true)
-		rearrange.tween_property(card, "position", card.base_position, 0.38) \
+		rearrange.tween_property(card, "position", card.get_rest_position(), 0.38) \
 			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
 		rearrange.tween_property(
 			card, "rotation_degrees", card.base_rotation_degrees, 0.38
@@ -117,6 +117,57 @@ func refill_hand() -> void:
 		)
 	if last_finished:
 		await last_finished
+	for card in hand_view.card_views:
+		card.set_interaction_enabled(true)
+	hand_view.normalize_card_layers()
+	update_pile_visuals()
+
+
+func animate_skip_card_entry(skip_card: CardDef) -> void:
+	var final_size: int = hand_view.card_views.size() + 1
+	hand_view.prepare_layout(final_size)
+	for card in hand_view.card_views:
+		card.set_interaction_enabled(false)
+		var rearrange := create_tween().set_parallel(true)
+		rearrange.tween_property(card, "position", card.get_rest_position(), 0.28) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		rearrange.tween_property(card, "rotation_degrees", card.base_rotation_degrees, 0.28) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+	var skip_view: CardView = hand_view.add_card_for_draw(skip_card, final_size - 1, final_size)
+	if not skip_view:
+		return
+	skip_view.set_interaction_enabled(false)
+	skip_view.set_face_down(true)
+	skip_view.position = hand_view.get_global_transform().affine_inverse() \
+		* (pile_card_top.global_position + Vector2(0.0, -24.0))
+	skip_view.scale = Vector2(0.44, 0.44)
+	skip_view.rotation_degrees = randf_range(-10.0, 10.0)
+	skip_view.modulate = Color(0.7, 0.7, 0.78, 0.0)
+	skip_view.z_index = 1200
+
+	play_sfx("card_shuffle", -5.0, randf_range(0.92, 0.98))
+	var movement := create_tween()
+	movement.tween_property(skip_view, "modulate:a", 1.0, 0.12) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	movement.parallel().tween_property(skip_view, "position", skip_view.base_position, 0.46) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	movement.parallel().tween_property(skip_view, "scale:y", 1.0, 0.46) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	movement.parallel().tween_property(skip_view, "rotation_degrees", skip_view.base_rotation_degrees, 0.46) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+	var flip := create_tween()
+	flip.tween_interval(0.08)
+	flip.tween_property(skip_view, "scale:x", 0.06, 0.16) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	flip.tween_callback(func() -> void: skip_view.set_face_down(false))
+	flip.tween_property(skip_view, "scale:x", 1.1, 0.16) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	flip.tween_property(skip_view, "scale:x", 1.0, 0.08) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	await movement.finished
+	await flip.finished
 	for card in hand_view.card_views:
 		card.set_interaction_enabled(true)
 	hand_view.normalize_card_layers()

@@ -76,6 +76,13 @@ func has_active_effect(effect_id: String) -> bool:
 			return true
 	return false
 
+func has_playable_available(has_disabled_type: bool, disabled_type: CardDef.CardType) -> bool:
+	for pile in [hand, draw_pile, discard_pile]:
+		for card: CardDef in pile:
+			if _is_playable_candidate(card, has_disabled_type, disabled_type):
+				return true
+	return false
+
 func temporarily_downgrade(card: CardDef) -> void:
 	var basic := WeaponCatalogData.create_basic(card.card_type, card.id)
 	_apply_card_data(card, basic)
@@ -109,7 +116,7 @@ func play_card(card_id: String) -> CardDef:
 	for i in range(hand.size()):
 		if hand[i].id == card_id:
 			var card: CardDef = hand.pop_at(i)
-			if not card.temporarily_disabled:
+			if not card.temporarily_disabled and not card.is_skip:
 				discard_pile.append(card)
 			emit_signal("hand_changed")
 			emit_signal("discard_pile_changed")
@@ -117,9 +124,35 @@ func play_card(card_id: String) -> CardDef:
 	return null
 
 func discard_played_card(card: CardDef) -> void:
-	if card and not card.temporarily_disabled:
+	if card and not card.temporarily_disabled and not card.is_skip:
 		discard_pile.append(card)
 	emit_signal("discard_pile_changed")
+
+func ensure_skip_card() -> void:
+	for card in hand:
+		if card.is_skip:
+			return
+	hand.append(WeaponCatalogData.create_skip("player_skip_%d" % Time.get_ticks_usec()))
+	emit_signal("hand_changed")
+
+func create_skip_card_in_hand() -> CardDef:
+	for card in hand:
+		if card.is_skip:
+			return card
+	var skip := WeaponCatalogData.create_skip("player_skip_%d" % Time.get_ticks_usec())
+	hand.append(skip)
+	return skip
+
+func _is_playable_candidate(
+	card: CardDef,
+	has_disabled_type: bool,
+	disabled_type: CardDef.CardType
+) -> bool:
+	if not card or card.temporarily_disabled or card.is_skip:
+		return false
+	if has_disabled_type and card.card_type == disabled_type:
+		return false
+	return true
 
 func reshuffle_discard_if_needed() -> void:
 	if draw_pile.is_empty() and not discard_pile.is_empty():

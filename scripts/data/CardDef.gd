@@ -14,6 +14,7 @@ enum CardType { ROCK, PAPER, SCISSORS }
 @export var rarity: String = "Basic"
 @export var price: int = 0
 @export var is_basic: bool = true
+@export var is_skip: bool = false
 @export var temporarily_disabled: bool = false
 
 func copy() -> CardDef:

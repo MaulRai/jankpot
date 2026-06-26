@@ -24,6 +24,7 @@ var base_rotation_degrees: float = 0.0
 var is_dragging: bool = false
 var interaction_enabled: bool = true
 var drag_enabled: bool = true
+var disabled_visual := false
 var drag_offset: Vector2 = Vector2.ZERO
 var transform_tween: Tween
 
@@ -72,7 +73,7 @@ func _format_description(text: String, keywords: Array[String]) -> String:
 	return formatted
 
 func _on_mouse_entered() -> void:
-	if is_dragging or not interaction_enabled:
+	if is_dragging or not interaction_enabled or disabled_visual:
 		return
 	emit_signal("card_hovered", self)
 	z_index = 100
@@ -82,7 +83,7 @@ func _on_mouse_entered() -> void:
 	transform_tween.parallel().tween_property(self, "scale", Vector2(1.05, 1.05), 0.15).set_ease(Tween.EASE_OUT)
 
 func _on_mouse_exited() -> void:
-	if is_dragging or not interaction_enabled:
+	if is_dragging or not interaction_enabled or disabled_visual:
 		return
 	emit_signal("card_unhovered", self)
 	z_index = base_z_index
@@ -92,7 +93,7 @@ func _on_mouse_exited() -> void:
 	transform_tween.parallel().tween_property(self, "scale", Vector2(1.0, 1.0), 0.15).set_ease(Tween.EASE_OUT)
 
 func _on_gui_input(event: InputEvent) -> void:
-	if not interaction_enabled:
+	if not interaction_enabled or disabled_visual:
 		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
@@ -124,7 +125,7 @@ func _process(_delta: float) -> void:
 
 func reset_transform() -> void:
 	cancel_transform_tween()
-	position = base_position
+	position = get_rest_position()
 	rotation_degrees = base_rotation_degrees
 	scale = Vector2(1.0, 1.0)
 
@@ -143,6 +144,27 @@ func set_interaction_enabled(enabled: bool) -> void:
 
 func set_drag_enabled(enabled: bool) -> void:
 	drag_enabled = enabled
+
+func set_disabled_visual(is_disabled: bool, animate := true) -> void:
+	var changed := disabled_visual != is_disabled
+	disabled_visual = is_disabled
+	drag_enabled = not disabled_visual
+	cancel_transform_tween()
+	var target_position := get_rest_position()
+	var target_modulate := Color(0.48, 0.48, 0.52, 1.0) if disabled_visual else Color.WHITE
+	if animate and (changed or not position.is_equal_approx(target_position)):
+		transform_tween = create_tween()
+		transform_tween.set_parallel(true)
+		transform_tween.tween_property(self, "position", target_position, 0.24) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		transform_tween.tween_property(self, "modulate", target_modulate, 0.24) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	else:
+		position = target_position
+		modulate = target_modulate
+
+func get_rest_position() -> Vector2:
+	return base_position + Vector2(0.0, 34.0) if disabled_visual else base_position
 
 func cancel_transform_tween() -> void:
 	if transform_tween and transform_tween.is_valid():

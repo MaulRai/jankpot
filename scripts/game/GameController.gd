@@ -103,7 +103,7 @@ func _initialize_first_battle() -> void:
 	_animator.update_pile_visuals()
 	await get_tree().process_frame
 	battle_sidebar.set_enemy_info(selected_enemy)
-	await _animator.refill_hand()
+	await _refill_hand_or_give_skip()
 	await _prepare_enemy_card()
 	_is_animating = false
 	_update_labels()
@@ -111,13 +111,15 @@ func _initialize_first_battle() -> void:
 
 func _on_hand_changed() -> void:
 	if not _is_animating:
+		_ensure_player_skip_if_needed()
 		hand_view.set_cards(deck_manager.hand)
 
 
 func _on_card_play_requested(card_data: CardDef, card_view: CardView) -> void:
 	if round_status != "ongoing" or _is_animating \
 			or (_state.has_disabled_player_type \
-			and card_data.card_type == _state.disabled_player_type):
+			and card_data.card_type == _state.disabled_player_type \
+			and not card_data.is_skip):
 		await _reject_card(card_view)
 		return
 	var drop_pos := card_view.global_position + card_view.size / 2.0
@@ -159,6 +161,7 @@ func _on_magic_ball_requested() -> void:
 func _play_card(card_data: CardDef, card_view: CardView) -> void:
 	_is_animating = true
 	_state.has_disabled_player_type = false
+	hand_view.set_disabled_type(false, _state.disabled_player_type)
 	card_view.set_interaction_enabled(false)
 	await _animator.move_player_card_to_slot(card_view)
 	if not _pending_enemy_card or not is_instance_valid(_enemy_preview_view):
@@ -170,9 +173,7 @@ func _play_card(card_data: CardDef, card_view: CardView) -> void:
 
 	var player_history := card_data.copy()
 	var enemy_history := enemy_card.copy()
-	var result: BattleResolver.Result = battle_resolver.resolve(
-		card_data.card_type, enemy_card.card_type
-	)
+	var result: BattleResolver.Result = battle_resolver.resolve_cards(card_data, enemy_card)
 	var plan: RefCounted = _effects.build_plan(
 		result, card_data, enemy_card, deck_manager.hand,
 		enemy_controller.enemy_hand, _state
@@ -198,7 +199,7 @@ func _play_card(card_data: CardDef, card_view: CardView) -> void:
 	if player_hp <= 0 or enemy_hp <= 0:
 		_end_battle()
 		return
-	await _animator.refill_hand()
+	await _refill_hand_or_give_skip()
 	await _prepare_enemy_card()
 	_is_animating = false
 	turn_count += 1
@@ -211,6 +212,8 @@ func _prepare_enemy_card() -> void:
 			or is_instance_valid(_enemy_preview_view):
 		return
 	_pending_enemy_card = enemy_controller.choose_card(enemy_hp, player_hp)
+	if not _pending_enemy_card:
+		_pending_enemy_card = WeaponCatalogData.create_skip("enemy_skip_%d" % Time.get_ticks_usec())
 	_enemy_preview_view = hand_view.card_scene.instantiate()
 	_enemy_preview_view.custom_minimum_size = Vector2(160, 240)
 	enemy_slot.place_card(_enemy_preview_view)
@@ -221,6 +224,7 @@ func _prepare_enemy_card() -> void:
 
 
 func _update_labels() -> void:
+	hand_view.set_disabled_type(_state.has_disabled_player_type, _state.disabled_player_type)
 	battle_sidebar.set_health(player_hp, enemy_hp)
 	battle_board.set_health(player_hp, enemy_hp)
 	battle_board.set_bleed_status(
@@ -269,3 +273,45 @@ func start_battle() -> void:
 	await _prepare_enemy_card()
 	_is_animating = false
 	_update_labels()
+
+
+func _ensure_player_skip_if_needed() -> void:
+	if round_status != "ongoing":
+		return
+	if _player_has_valid_move():
+		return
+	deck_manager.ensure_skip_card()
+
+
+func _refill_hand_or_give_skip() -> void:
+	if not deck_manager.has_playable_available(
+		_state.has_disabled_player_type,
+		_state.disabled_player_type
+	):
+		var had_skip := _player_has_skip_in_hand()
+		var skip := deck_manager.create_skip_card_in_hand()
+		if not had_skip:
+			await _animator.animate_skip_card_entry(skip)
+		else:
+			hand_view.set_cards(deck_manager.hand)
+		hand_view.set_disabled_type(_state.has_disabled_player_type, _state.disabled_player_type)
+		_animator.update_pile_visuals()
+		return
+	await _animator.refill_hand()
+
+
+func _player_has_valid_move() -> bool:
+	for card in deck_manager.hand:
+		if not card or card.temporarily_disabled or card.is_skip:
+			continue
+		if _state.has_disabled_player_type and card.card_type == _state.disabled_player_type:
+			continue
+		return true
+	return false
+
+
+func _player_has_skip_in_hand() -> bool:
+	for card in deck_manager.hand:
+		if card and card.is_skip:
+			return true
+	return false

@@ -11,6 +11,8 @@ signal card_drag_ended(card_view: CardView)
 @onready var tooltip_manager: TooltipManager = get_node_or_null("../TooltipManager")
 
 var card_views: Array[CardView] = []
+var _disabled_type: CardDef.CardType = CardDef.CardType.ROCK
+var _has_disabled_type := false
 
 func _ready() -> void:
 	resized.connect(_on_resized)
@@ -24,6 +26,7 @@ func set_cards(cards: Array[CardDef]) -> void:
 	for card_data in cards:
 		_add_card(card_data)
 	_layout_cards()
+	_apply_disabled_visuals(false)
 
 func _add_card(card_data: CardDef) -> CardView:
 	if not card_scene:
@@ -47,6 +50,7 @@ func _clear_hand() -> void:
 func _layout_cards() -> void:
 	for i in range(card_views.size()):
 		_apply_card_layout(card_views[i], i, card_views.size())
+	_apply_disabled_visuals(false)
 
 func prepare_layout(card_count: int) -> void:
 	for i in range(card_views.size()):
@@ -57,6 +61,7 @@ func add_card_for_draw(card_data: CardDef, index: int, card_count: int) -> CardV
 	var card := _add_card(card_data)
 	if card:
 		_set_card_base_layout(card, index, card_count)
+		_apply_card_disabled_visual(card, false)
 	return card
 
 func get_card_target_global_position(index: int, card_count: int) -> Vector2:
@@ -83,7 +88,7 @@ func _get_card_base_position(index: int, card_count: int) -> Vector2:
 
 func _apply_card_layout(card: CardView, index: int, card_count: int) -> void:
 	_set_card_base_layout(card, index, card_count)
-	card.position = card.base_position
+	card.position = card.get_rest_position()
 	card.rotation_degrees = card.base_rotation_degrees
 	card.z_index = card.base_z_index
 
@@ -102,6 +107,12 @@ func normalize_card_layers() -> void:
 		card.base_z_index = i
 		card.z_index = i
 		move_child(card, i)
+	_apply_disabled_visuals(false)
+
+func set_disabled_type(has_disabled_type: bool, disabled_type: CardDef.CardType) -> void:
+	_has_disabled_type = has_disabled_type
+	_disabled_type = disabled_type
+	_apply_disabled_visuals(true)
 
 func remove_card_view(card_view: CardView) -> void:
 	_hide_tooltip()
@@ -131,3 +142,15 @@ func _on_card_unhovered(_card: CardView) -> void:
 func _hide_tooltip() -> void:
 	if tooltip_manager:
 		tooltip_manager.hide_tooltip()
+
+func _apply_disabled_visuals(animate: bool) -> void:
+	for card in card_views:
+		_apply_card_disabled_visual(card, animate)
+
+func _apply_card_disabled_visual(card: CardView, animate: bool) -> void:
+	if not card.card_data:
+		return
+	var is_disabled := _has_disabled_type \
+		and not card.card_data.is_skip \
+		and card.card_data.card_type == _disabled_type
+	card.set_disabled_visual(is_disabled, animate)

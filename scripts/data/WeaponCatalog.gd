@@ -17,6 +17,22 @@ const EFFECT_RUBY_REVIVE := "ruby_revive_fragile"
 const EFFECT_GUILLOTINE := "guillotine_blades"
 const EFFECT_HATTER_SLIP := "hatter_slip_luck"
 
+static func create_skip(instance_id: String = "skip") -> CardDef:
+	var card := CardDef.new()
+	card.id = instance_id
+	card.card_type = CardDef.CardType.ROCK
+	card.card_name = "Skip"
+	card.brief_description = "No valid move. Brace for incoming damage."
+	card.art_path = "res://assets/weapon/skip.png"
+	card.background_color = Color.BLACK
+	card.keywords = []
+	card.effects = []
+	card.rarity = RARITY_BASIC
+	card.price = 0
+	card.is_basic = false
+	card.is_skip = true
+	return card
+
 static func create_basic(type: CardDef.CardType, instance_id: String = "") -> CardDef:
 	var card := CardDef.new()
 	card.id = instance_id if not instance_id.is_empty() else "basic_%d" % type

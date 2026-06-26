@@ -56,6 +56,8 @@ func refill_hand() -> void:
 func play_card(card: CardDef) -> void:
 	if not card:
 		return
+	if card.is_skip:
+		return
 	hand.erase(card)
 	if not card.temporarily_disabled:
 		discard_pile.append(card)

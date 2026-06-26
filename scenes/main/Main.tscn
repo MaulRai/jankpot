@@ -85,7 +85,7 @@ script = ExtResource("1_abc12")
 
 [node name="DeckManager" type="Node" parent="GameController"]
 script = ExtResource("2_def34")
-assigned_deck = Array[CardDef]([ExtResource("26_mist_veil"), ExtResource("19_rock"), ExtResource("21_scissors"), ExtResource("19_rock"), ExtResource("19_rock"), ExtResource("20_paper"), ExtResource("20_paper"), ExtResource("21_scissors"), ExtResource("21_scissors")])
+assigned_deck = Array[CardDef]([ExtResource("19_rock"), ExtResource("19_rock"), ExtResource("19_rock"), ExtResource("19_rock"), ExtResource("19_rock"), ExtResource("19_rock"), ExtResource("19_rock"), ExtResource("19_rock"), ExtResource("19_rock")])
 starting_hand_indices = Array[int]([0, 1, 2])
 
 [node name="BattleResolver" type="Node" parent="GameController"]
@@ -93,7 +93,8 @@ script = ExtResource("3_ghi56")
 
 [node name="EnemyController" type="Node" parent="GameController"]
 script = ExtResource("4_jkl78")
-starting_hand_indices = Array[int]([])
+assigned_deck = Array[CardDef]([ExtResource("26_mist_veil"), ExtResource("26_mist_veil"), ExtResource("26_mist_veil")])
+starting_hand_indices = Array[int]([0, 1, 2])
 
 [node name="LeftPanel" parent="." instance=ExtResource("12_sidebar")]
 
