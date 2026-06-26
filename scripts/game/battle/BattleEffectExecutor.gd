@@ -5,7 +5,7 @@ var state: Resource
 var animator: Node
 var deck_manager: Node
 var enemy_controller: Node
-var battle_sidebar: Control
+var health_display: Control
 var player_slot: Control
 var enemy_slot: Control
 var update_labels: Callable
@@ -16,7 +16,7 @@ func configure(dependencies: Dictionary) -> void:
 	animator = dependencies.animator
 	deck_manager = dependencies.deck_manager
 	enemy_controller = dependencies.enemy_controller
-	battle_sidebar = dependencies.battle_sidebar
+	health_display = dependencies.health_display
 	player_slot = dependencies.player_slot
 	enemy_slot = dependencies.enemy_slot
 	update_labels = dependencies.update_labels
@@ -114,12 +114,12 @@ func _deal_damage(to_player: bool, amount: int) -> void:
 				break
 			state.player_hp = maxi(0, state.player_hp - 1)
 			animator.play_sfx("heavy_hit", -1.0, randf_range(0.96, 1.04))
-			await battle_sidebar.animate_heart_loss(true, state.player_hp)
+			await health_display.animate_heart_loss(true, state.player_hp)
 			await animator.shake(player_slot)
 		else:
 			if state.enemy_hp <= 0:
 				break
 			state.enemy_hp = maxi(0, state.enemy_hp - 1)
 			animator.play_sfx("heavy_hit", -1.0, randf_range(0.96, 1.04))
-			await battle_sidebar.animate_heart_loss(false, state.enemy_hp)
+			await health_display.animate_heart_loss(false, state.enemy_hp)
 			await animator.shake(enemy_slot)

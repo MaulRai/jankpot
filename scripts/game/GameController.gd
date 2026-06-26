@@ -14,9 +14,11 @@ signal battle_ended(winner: String)
 @onready var battle_resolver: BattleResolver = $BattleResolver
 @onready var enemy_controller: EnemyController = $EnemyController
 @onready var hand_view: HandView = get_node("../BottomHand")
+@onready var battle_board: Control = get_node("../CenterBoard")
 @onready var player_slot: CardSlot = get_node("../CenterBoard/PlayerSlot")
 @onready var enemy_slot: CardSlot = get_node("../CenterBoard/EnemySlot")
 @onready var battle_sidebar: Control = get_node("../LeftPanel")
+@onready var tooltip_manager: TooltipManager = get_node("../TooltipManager")
 @onready var draw_pile_visual: Control = get_node("../DrawPileVisual")
 @onready var pile_card_bottom: TextureRect = get_node("../DrawPileVisual/PileCardBottom")
 @onready var pile_card_middle: TextureRect = get_node("../DrawPileVisual/PileCardMiddle")
@@ -77,11 +79,12 @@ func _ready() -> void:
 		"animator": _animator,
 		"deck_manager": deck_manager,
 		"enemy_controller": enemy_controller,
-		"battle_sidebar": battle_sidebar,
+		"health_display": battle_board,
 		"player_slot": player_slot,
 		"enemy_slot": enemy_slot,
 		"update_labels": _update_labels,
 	})
+	battle_board.set_tooltip_manager(tooltip_manager)
 	deck_manager.hand_changed.connect(_on_hand_changed)
 	deck_manager.draw_pile_changed.connect(_animator.update_pile_visuals)
 	deck_manager.discard_pile_changed.connect(_animator.update_pile_visuals)
@@ -219,6 +222,11 @@ func _prepare_enemy_card() -> void:
 
 func _update_labels() -> void:
 	battle_sidebar.set_health(player_hp, enemy_hp)
+	battle_board.set_health(player_hp, enemy_hp)
+	battle_board.set_bleed_status(
+		_state.player_bleed_pending,
+		_state.enemy_bleed_pending
+	)
 	battle_sidebar.set_progress(2, 8, turn_count + 1)
 
 

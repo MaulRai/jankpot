@@ -1,6 +1,23 @@
-[gd_scene load_steps=3 format=3 uid="uid://b1w3e3a3e3a3h"]
+[gd_scene load_steps=7 format=3 uid="uid://b1w3e3a3e3a3h"]
 
 [ext_resource type="PackedScene" uid="uid://s1w3e3a3e3a3f" path="res://scenes/ui/CardSlot.tscn" id="1_abc12"]
+[ext_resource type="Script" path="res://scripts/ui/BattleBoard.gd" id="1_board"]
+[ext_resource type="Script" path="res://scripts/ui/PixelFramePanel.gd" id="2_pixel_frame"]
+
+[sub_resource type="StyleBoxEmpty" id="Style_empty"]
+
+[sub_resource type="StyleBoxFlat" id="Style_status_badge"]
+bg_color = Color(0.18, 0.035, 0.055, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9, 0.2, 0.24, 0.9)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 1
 
 [node name="BattleBoard" type="Control"]
 layout_mode = 3
@@ -15,6 +32,74 @@ offset_right = 200.0
 offset_bottom = 150.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("1_board")
+
+[node name="PlayerHeartFrame" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = -188.0
+offset_top = -164.0
+offset_right = -12.0
+offset_bottom = -124.0
+grow_vertical = 2
+theme_override_styles/panel = SubResource("Style_empty")
+script = ExtResource("2_pixel_frame")
+base_tint = Color(0.105, 0.075, 0.055, 0.72)
+frame_outline_tint = Color(0.46, 0.34, 0.22, 0.72)
+base_outline_tint = Color(0.17, 0.125, 0.09, 0.72)
+base_fill_tint = Color(0.085, 0.062, 0.048, 0.72)
+frame_alpha = 0.68
+component_scale = 1.5
+
+[node name="Margin" type="MarginContainer" parent="PlayerHeartFrame"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 7
+
+[node name="PlayerHearts" type="HBoxContainer" parent="PlayerHeartFrame/Margin"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 3
+
+[node name="EnemyHeartFrame" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = 12.0
+offset_top = -164.0
+offset_right = 188.0
+offset_bottom = -124.0
+grow_horizontal = 0
+grow_vertical = 2
+theme_override_styles/panel = SubResource("Style_empty")
+script = ExtResource("2_pixel_frame")
+base_tint = Color(0.105, 0.075, 0.055, 0.72)
+frame_outline_tint = Color(0.46, 0.34, 0.22, 0.72)
+base_outline_tint = Color(0.17, 0.125, 0.09, 0.72)
+base_fill_tint = Color(0.085, 0.062, 0.048, 0.72)
+frame_alpha = 0.68
+component_scale = 1.5
+
+[node name="Margin" type="MarginContainer" parent="EnemyHeartFrame"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 7
+
+[node name="EnemyHearts" type="HBoxContainer" parent="EnemyHeartFrame/Margin"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 3
 
 [node name="PlayerSlot" parent="." instance=ExtResource("1_abc12")]
 layout_mode = 1
@@ -40,6 +125,49 @@ offset_right = 180.0
 offset_bottom = 120.0
 grow_horizontal = 0
 grow_vertical = 2
+
+[node name="PlayerBleedStatus" type="Label" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = -132.0
+offset_top = 128.0
+offset_right = -68.0
+offset_bottom = 154.0
+grow_vertical = 2
+mouse_filter = 0
+theme_override_colors/font_color = Color(1, 0.78, 0.78, 1)
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("Style_status_badge")
+text = "BLEED"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="EnemyBleedStatus" type="Label" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = 68.0
+offset_top = 128.0
+offset_right = 132.0
+offset_bottom = 154.0
+grow_horizontal = 0
+grow_vertical = 2
+mouse_filter = 0
+theme_override_colors/font_color = Color(1, 0.78, 0.78, 1)
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("Style_status_badge")
+text = "BLEED"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="VSLabel" type="Label" parent="."]
 layout_mode = 1

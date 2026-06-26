@@ -135,6 +135,7 @@ theme_override_font_sizes/font_size = 14
 text = "REWARD  •  Choose 1 Upgrade"
 
 [node name="HealthPanel" type="PanelContainer" parent="Margin/Sections"]
+visible = false
 custom_minimum_size = Vector2(0, 176)
 layout_mode = 2
 theme_override_styles/panel = SubResource("Style_health")
