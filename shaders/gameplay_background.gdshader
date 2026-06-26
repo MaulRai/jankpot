@@ -25,19 +25,19 @@ shader_type canvas_item;
 // ════════════════════════════════════════════════════════════════════════════
 
 // ── Palette (identik dengan main menu untuk konsistensi) ─────────────────
-uniform vec3 col_void     : source_color = vec3(0.008, 0.014, 0.018);
-uniform vec3 col_deep     : source_color = vec3(0.014, 0.048, 0.052);
-uniform vec3 col_mid      : source_color = vec3(0.022, 0.072, 0.068);
-uniform vec3 col_burgundy : source_color = vec3(0.155, 0.032, 0.048);
-uniform vec3 col_gold     : source_color = vec3(0.72,  0.58,  0.28);
-uniform vec3 col_cyan     : source_color = vec3(0.28,  0.74,  0.78);
-uniform vec3 col_fog      : source_color = vec3(0.04,  0.10,  0.11);
+uniform vec3 col_void     : source_color = vec3(0.012, 0.024, 0.026);
+uniform vec3 col_deep     : source_color = vec3(0.022, 0.074, 0.076);
+uniform vec3 col_mid      : source_color = vec3(0.040, 0.115, 0.098);
+uniform vec3 col_burgundy : source_color = vec3(0.185, 0.040, 0.058);
+uniform vec3 col_gold     : source_color = vec3(0.82,  0.66,  0.34);
+uniform vec3 col_cyan     : source_color = vec3(0.34,  0.82,  0.84);
+uniform vec3 col_fog      : source_color = vec3(0.058, 0.135, 0.135);
 
 // ── Controls ─────────────────────────────────────────────────────────────
-uniform float speed        : hint_range(0.0, 2.0) = 1.0;
-uniform float fog_density  : hint_range(0.0, 1.0) = 0.65;  // sedikit lebih tipis
-uniform float shaft_amount : hint_range(0.0, 1.0) = 0.38;  // lebih subtle
-uniform float darkness     : hint_range(0.0, 1.0) = 0.18;
+uniform float speed        : hint_range(0.0, 8.0) = 4.0;
+uniform float fog_density  : hint_range(0.0, 1.0) = 0.76;  // sedikit lebih tipis
+uniform float shaft_amount : hint_range(0.0, 1.0) = 0.48;  // lebih subtle
+uniform float darkness     : hint_range(0.0, 1.0) = 0.06;
 
 // ── Gameplay-specific: area tengah layar yang harus "bersih" ─────────────
 // Radius dari center yang di-suppress: 0.0 = off, 0.5 = setengah layar.
@@ -202,6 +202,9 @@ void fragment() {
 	                * smoothstep(0.9, 0.5, uv.y);  // fade di top & bottom edge
 	col = mix(col, col_burgundy * 0.45, side_seep * burg_n1 * 0.25);
 
+	float center_lift = smoothstep(0.52, 0.0, r) * 0.18;
+	col += mix(col_cyan * 0.12, col_gold * 0.10, warmth) * center_lift;
+
 	// ── Layer 5 · Magic particle field — sparse ──────────────────────────
 	float motes    = magic_motes(uv, t) * center_mask;
 	vec3  mote_col = mix(col_gold, col_cyan, uv.y * 0.65);
@@ -212,10 +215,11 @@ void fragment() {
 	// Tidak breathing — UI tidak boleh "bergetar" saat ada animasi.
 	vec2  vig_uv   = cpos * vec2(0.78, 0.90);
 	float vignette = smoothstep(0.68, 0.18, length(vig_uv));
-	col *= mix(0.12, 1.0, vignette);  // corner lebih gelap (0.15 → 0.12)
+	col *= mix(0.20, 1.0, vignette);  // corner lebih gelap (0.15 → 0.12)
 
 	// ── Output ───────────────────────────────────────────────────────────
-	col   = max(col, vec3(0.0));
+	col   = max(col + vec3(0.008, 0.020, 0.018), vec3(0.0));
+	col   = pow(col, vec3(0.9));
 	col  *= 1.0 - darkness;
 	COLOR = vec4(col, 1.0);
 }

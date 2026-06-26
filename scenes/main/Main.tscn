@@ -1,4 +1,4 @@
-[gd_scene load_steps=24 format=3 uid="uid://m1w3e3a3e3a3i"]
+[gd_scene load_steps=26 format=3 uid="uid://m1w3e3a3e3a3i"]
 
 [ext_resource type="Script" path="res://scripts/game/GameController.gd" id="1_abc12"]
 [ext_resource type="Script" path="res://scripts/game/DeckManager.gd" id="2_def34"]
@@ -23,6 +23,10 @@
 [ext_resource type="AudioStream" path="res://audio/bgm/battle-loop.mp3" id="22_main_loop"]
 [ext_resource type="Script" path="res://scripts/audio/BGMPlayer.gd" id="23_bgm_player"]
 [ext_resource type="Script" path="res://scripts/audio/SFXManager.gd" id="24_sfx_manager"]
+[ext_resource type="Shader" path="res://shaders/gameplay_background.gdshader" id="25_gameplay_background_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_gameplay_background"]
+shader = ExtResource("25_gameplay_background_shader")
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -48,6 +52,32 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.0980392, 0.0980392, 0.0980392, 1)
+
+[node name="BackgroundViewportContainer" type="SubViewportContainer" parent="."]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch = true
+
+[node name="BackgroundViewport" type="SubViewport" parent="BackgroundViewportContainer"]
+disable_3d = true
+size = Vector2i(320, 180)
+render_target_update_mode = 4
+
+[node name="ShaderCanvas" type="ColorRect" parent="BackgroundViewportContainer/BackgroundViewport"]
+material = SubResource("ShaderMaterial_gameplay_background")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 320.0
+offset_bottom = 180.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 1, 1, 1)
 
 [node name="GameController" type="Node" parent="."]
 script = ExtResource("1_abc12")
