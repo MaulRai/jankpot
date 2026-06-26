@@ -1,6 +1,7 @@
-[gd_scene load_steps=30 format=3 uid="uid://m1w3e3a3e3a3i"]
+[gd_scene load_steps=31 format=3 uid="uid://m1w3e3a3e3a3i"]
 
 [ext_resource type="Script" path="res://scripts/game/GameController.gd" id="1_abc12"]
+[ext_resource type="Script" path="res://scripts/main/GameplayIntro.gd" id="1_intro"]
 [ext_resource type="Script" path="res://scripts/game/DeckManager.gd" id="2_def34"]
 [ext_resource type="Script" path="res://scripts/game/BattleResolver.gd" id="3_ghi56"]
 [ext_resource type="Script" path="res://scripts/game/EnemyController.gd" id="4_jkl78"]
@@ -40,6 +41,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("11_game_theme")
+script = ExtResource("1_intro")
 
 [node name="BGM" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("22_main_loop")
@@ -147,3 +149,14 @@ tooltip_scene = ExtResource("9_yz123")
 [node name="DiscardViewer" parent="." instance=ExtResource("14_discard_viewer")]
 
 [node name="MagicBallModal" parent="." instance=ExtResource("17_magic_modal")]
+
+[node name="TransitionCover" type="ColorRect" parent="."]
+z_index = 1000
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.008, 0.015, 0.014, 1)
