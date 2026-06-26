@@ -98,6 +98,7 @@ func _ready() -> void:
 
 func _initialize_first_battle() -> void:
 	_is_animating = true
+	hand_view.set_dragging_enabled(false)
 	var selected_enemy := enemy_controller.select_random_non_boss(0)
 	deck_manager.setup_starting_deck()
 	_animator.update_pile_visuals()
@@ -106,6 +107,7 @@ func _initialize_first_battle() -> void:
 	await _refill_hand_or_give_skip()
 	await _prepare_enemy_card()
 	_is_animating = false
+	hand_view.set_dragging_enabled(true)
 	_update_labels()
 
 
@@ -160,10 +162,11 @@ func _on_magic_ball_requested() -> void:
 
 func _play_card(card_data: CardDef, card_view: CardView) -> void:
 	_is_animating = true
-	_state.has_disabled_player_type = false
-	hand_view.set_disabled_type(false, _state.disabled_player_type)
+	hand_view.set_dragging_enabled(false, card_view)
 	card_view.set_interaction_enabled(false)
 	await _animator.move_player_card_to_slot(card_view)
+	_state.has_disabled_player_type = false
+	hand_view.set_disabled_type(false, _state.disabled_player_type)
 	if not _pending_enemy_card or not is_instance_valid(_enemy_preview_view):
 		await _prepare_enemy_card()
 	var enemy_card := _pending_enemy_card
@@ -195,6 +198,7 @@ func _play_card(card_data: CardDef, card_view: CardView) -> void:
 		"downgrade" if plan.player_downgrade else "auto",
 		"downgrade" if plan.enemy_downgrade else "auto"
 	)
+	hand_view.set_dragging_enabled(true)
 	_pending_enemy_card = null
 	_enemy_preview_view = null
 	deck_manager.play_card(card_data.id)
@@ -239,6 +243,7 @@ func _update_labels() -> void:
 
 func _end_battle() -> void:
 	round_status = "ended"
+	hand_view.set_dragging_enabled(false)
 	var winner := "Draw"
 	if player_hp <= 0 and enemy_hp > 0:
 		winner = "Enemy"
@@ -262,6 +267,7 @@ func _on_reward_selected(card: CardDef) -> void:
 func start_battle() -> void:
 	_state.reset_for_battle()
 	_is_animating = true
+	hand_view.set_dragging_enabled(false)
 	_pending_enemy_card = null
 	_enemy_preview_view = null
 	player_slot.set_drop_target_active(false)
@@ -275,6 +281,7 @@ func start_battle() -> void:
 	await _animator.refill_hand()
 	await _prepare_enemy_card()
 	_is_animating = false
+	hand_view.set_dragging_enabled(true)
 	_update_labels()
 
 

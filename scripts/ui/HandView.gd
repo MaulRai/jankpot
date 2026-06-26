@@ -13,6 +13,7 @@ signal card_drag_ended(card_view: CardView)
 var card_views: Array[CardView] = []
 var _disabled_type: CardDef.CardType = CardDef.CardType.ROCK
 var _has_disabled_type := false
+var _dragging_enabled := true
 
 func _ready() -> void:
 	resized.connect(_on_resized)
@@ -33,6 +34,7 @@ func _add_card(card_data: CardDef) -> CardView:
 		return null
 	var card_view: CardView = card_scene.instantiate()
 	card_view.set_card_data(card_data)
+	card_view.set_drag_enabled(_dragging_enabled)
 	card_view.card_drag_started.connect(_on_card_drag_started)
 	card_view.card_drag_ended.connect(_on_card_drag_ended)
 	card_view.card_hovered.connect(_on_card_hovered)
@@ -114,6 +116,13 @@ func set_disabled_type(has_disabled_type: bool, disabled_type: CardDef.CardType)
 	_disabled_type = disabled_type
 	_apply_disabled_visuals(true)
 
+func set_dragging_enabled(enabled: bool, excluded_card: CardView = null) -> void:
+	_dragging_enabled = enabled
+	for card in card_views:
+		if card == excluded_card:
+			continue
+		_apply_card_disabled_visual(card, false)
+
 func remove_card_view(card_view: CardView) -> void:
 	_hide_tooltip()
 	card_views.erase(card_view)
@@ -154,3 +163,4 @@ func _apply_card_disabled_visual(card: CardView, animate: bool) -> void:
 		and not card.card_data.is_skip \
 		and card.card_data.card_type == _disabled_type
 	card.set_disabled_visual(is_disabled, animate)
+	card.set_drag_enabled(_dragging_enabled and not is_disabled)
