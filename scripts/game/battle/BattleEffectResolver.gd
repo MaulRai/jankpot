@@ -54,6 +54,7 @@ func _apply_player_effects(
 	if WeaponCatalogData.EFFECT_RUSTY_SHEARS in card.effects \
 			and result == BattleResolver.Result.WIN:
 		state.enemy_bleed_pending = true
+		plan.new_enemy_bleed = true
 		plan.immediate_sfx.append("bleed")
 	if WeaponCatalogData.EFFECT_MIST_VEIL in card.effects \
 			and result == BattleResolver.Result.WIN:
@@ -94,6 +95,7 @@ func _apply_enemy_effects(
 	if WeaponCatalogData.EFFECT_RUSTY_SHEARS in card.effects \
 			and result == BattleResolver.Result.LOSE:
 		state.player_bleed_pending = true
+		plan.new_player_bleed = true
 		plan.immediate_sfx.append("bleed")
 	if WeaponCatalogData.EFFECT_MIST_VEIL in card.effects \
 			and result == BattleResolver.Result.LOSE:

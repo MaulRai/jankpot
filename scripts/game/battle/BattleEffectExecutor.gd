@@ -33,6 +33,8 @@ func execute(
 	animator.play_sfx(plan.result_sfx)
 	for sfx in plan.immediate_sfx:
 		animator.play_sfx(sfx)
+		if sfx == "bleed":
+			_sync_bleed_status(plan)
 	if plan.disable_enemy_type >= 0:
 		enemy_controller.disable_type_once(plan.disable_enemy_type as CardDef.CardType)
 	if plan.disable_player_type >= 0:
@@ -52,9 +54,11 @@ func execute(
 		)
 	if plan.old_enemy_bleed:
 		animator.play_sfx("bleed")
+		health_display.play_bleed_damage_feedback(false, enemy_view)
 		await _deal_damage(false, 1)
 	if plan.old_player_bleed:
 		animator.play_sfx("bleed")
+		health_display.play_bleed_damage_feedback(true, player_view)
 		await _deal_damage(true, 1)
 	_apply_recovery(plan)
 	_apply_card_mutations(plan, player_card, enemy_card)
@@ -77,6 +81,15 @@ func _apply_recovery(plan: RefCounted) -> void:
 	if state.enemy_hp <= 0 and plan.enemy_revive:
 		state.enemy_hp = 1
 		animator.play_sfx("revive")
+
+
+func _sync_bleed_status(plan: RefCounted) -> void:
+	if not plan.new_player_bleed and not plan.new_enemy_bleed:
+		return
+	health_display.set_bleed_status(
+		state.player_bleed_pending or plan.old_player_bleed,
+		state.enemy_bleed_pending or plan.old_enemy_bleed
+	)
 
 
 func _apply_card_mutations(

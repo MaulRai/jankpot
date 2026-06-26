@@ -14,6 +14,8 @@ var player_bonus_attack := false
 var enemy_bonus_attack := false
 var old_player_bleed := false
 var old_enemy_bleed := false
+var new_player_bleed := false
+var new_enemy_bleed := false
 
 var disable_enemy_type := -1
 var disable_player_type := -1
