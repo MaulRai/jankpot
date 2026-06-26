@@ -6,12 +6,19 @@ const MAGIC_BALL_TEXTURE := preload("res://assets/item/magic-ball.png")
 signal magic_ball_requested
 
 const MAX_ITEMS := 5
+const CHAIN_SWAY_DEGREES := 2.2
+const SHELF_SWAY_PIXELS := 3.0
+const CHAIN_SWAY_DURATION := 1.8
 
 @onready var slots: HBoxContainer = %Slots
+@onready var shelf_body: Control = %ShelfBody
+@onready var left_chain: TextureRect = %LeftChain
+@onready var right_chain: TextureRect = %RightChain
 
 var _magic_ball_button: Button
 
 func _ready() -> void:
+	_animate_chains()
 	add_magic_ball()
 
 func add_magic_ball() -> bool:
@@ -39,3 +46,32 @@ func consume_magic_ball() -> void:
 		return
 	_magic_ball_button.queue_free()
 	_magic_ball_button = null
+
+func _animate_chains() -> void:
+	_start_chain_sway(left_chain, 1.0)
+	_start_chain_sway(right_chain, 1.0)
+	_start_shelf_sway()
+
+func _start_chain_sway(chain: TextureRect, direction: float) -> void:
+	if not chain:
+		return
+	chain.pivot_offset = Vector2(chain.size.x * 0.5, 0.0)
+	chain.rotation_degrees = -CHAIN_SWAY_DEGREES * direction
+	var tween := create_tween()
+	tween.set_loops()
+	tween.tween_property(chain, "rotation_degrees", CHAIN_SWAY_DEGREES * direction, CHAIN_SWAY_DURATION) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(chain, "rotation_degrees", -CHAIN_SWAY_DEGREES * direction, CHAIN_SWAY_DURATION) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+func _start_shelf_sway() -> void:
+	if not shelf_body:
+		return
+	var base_position := shelf_body.position
+	shelf_body.position.x = base_position.x + SHELF_SWAY_PIXELS
+	var tween := create_tween()
+	tween.set_loops()
+	tween.tween_property(shelf_body, "position:x", base_position.x - SHELF_SWAY_PIXELS, CHAIN_SWAY_DURATION) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(shelf_body, "position:x", base_position.x + SHELF_SWAY_PIXELS, CHAIN_SWAY_DURATION) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
