@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="EnemyDef" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/data/EnemyDef.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "iron_tortoise"
+display_name = "Iron Tortoise"
+description = "Defensive boss that favors Rock."
+rule = "Favors Rock more strongly at low HP"
+icon_path = "res://assets/icon/enemy/iron-tortoise.png"
+is_boss = true
+strategy_id = "iron_tortoise"

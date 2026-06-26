@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="EnemyDef" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/data/EnemyDef.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "bruise_toad"
+display_name = "Bruise Toad"
+description = "Gets aggressive after losing."
+rule = "Retaliates after a lost clash"
+icon_path = "res://assets/icon/enemy/bruise-toad.png"
+strategy_id = "bruise_toad"

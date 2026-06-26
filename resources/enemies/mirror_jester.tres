@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="EnemyDef" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/data/EnemyDef.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "mirror_jester"
+display_name = "Mirror Jester"
+description = "Copies your last card."
+rule = "Mirrors your previous move"
+icon_path = "res://assets/icon/enemy/mirror-jester.png"
+strategy_id = "mirror_player"

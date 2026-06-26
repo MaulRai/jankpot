@@ -2,11 +2,13 @@ class_name GameController
 extends Node
 
 const WeaponCatalogData = preload("res://scripts/data/WeaponCatalog.gd")
-const CardExitAnimatorScript = preload("res://scripts/animation/CardExitAnimator.gd")
+const BattleStateData = preload("res://scripts/game/battle/BattleState.gd")
+const BattleEffectResolverData = preload("res://scripts/game/battle/BattleEffectResolver.gd")
+const BattleEffectExecutorData = preload("res://scripts/game/battle/BattleEffectExecutor.gd")
+const BattleAnimatorData = preload("res://scripts/animation/BattleAnimator.gd")
 
 signal turn_resolved
 signal battle_ended(winner: String)
-signal wind_exit_batch_finished
 
 @onready var deck_manager: DeckManager = $DeckManager
 @onready var battle_resolver: BattleResolver = $BattleResolver
@@ -15,7 +17,6 @@ signal wind_exit_batch_finished
 @onready var player_slot: CardSlot = get_node("../CenterBoard/PlayerSlot")
 @onready var enemy_slot: CardSlot = get_node("../CenterBoard/EnemySlot")
 @onready var battle_sidebar: Control = get_node("../LeftPanel")
-@onready var battle_board: Control = get_node("../CenterBoard")
 @onready var draw_pile_visual: Control = get_node("../DrawPileVisual")
 @onready var pile_card_bottom: TextureRect = get_node("../DrawPileVisual/PileCardBottom")
 @onready var pile_card_middle: TextureRect = get_node("../DrawPileVisual/PileCardMiddle")
@@ -27,80 +28,116 @@ signal wind_exit_batch_finished
 @onready var magic_ball_modal: Control = get_node("../MagicBallModal")
 @onready var sfx_manager: Node = get_node("../SFXManager")
 
-var player_hp: int = 6
-var enemy_hp: int = 6
-var turn_count: int = 0
-var stage_number: int = 1
-var round_status: String = "ongoing"
-var _is_animating: bool = false
-var _pending_wind_exits: int = 0
+var _state: Resource = BattleStateData.new()
+var _effects: RefCounted = BattleEffectResolverData.new()
+var _animator: Node
+var _effect_executor: Node
+var _is_animating := false
 var _pending_enemy_card: CardDef
 var _enemy_preview_view: CardView
-var _card_exit_animator: Node
-var _player_bleed_pending := false
-var _enemy_bleed_pending := false
-var _disabled_player_type: CardDef.CardType = CardDef.CardType.ROCK
-var _has_disabled_player_type := false
-var _player_bonus_attack_triggered := false
-var _enemy_bonus_attack_triggered := false
+
+var player_hp: int:
+	get: return _state.player_hp
+	set(value): _state.player_hp = value
+var enemy_hp: int:
+	get: return _state.enemy_hp
+	set(value): _state.enemy_hp = value
+var turn_count: int:
+	get: return _state.turn_count
+	set(value): _state.turn_count = value
+var stage_number: int:
+	get: return _state.stage_number
+	set(value): _state.stage_number = value
+var round_status: String:
+	get: return _state.round_status
+	set(value): _state.round_status = value
+
 
 func _ready() -> void:
-	_card_exit_animator = CardExitAnimatorScript.new()
-	add_child(_card_exit_animator)
-	if deck_manager:
-		deck_manager.hand_changed.connect(_on_hand_changed)
-		deck_manager.draw_pile_changed.connect(_update_pile_visuals)
-		deck_manager.discard_pile_changed.connect(_update_pile_visuals)
-	if hand_view:
-		hand_view.card_play_requested.connect(_on_card_play_requested)
-		hand_view.card_drag_started.connect(_on_hand_card_drag_started)
-		hand_view.card_drag_ended.connect(_on_hand_card_drag_ended)
+	_animator = BattleAnimatorData.new()
+	add_child(_animator)
+	_animator.configure({
+		"main_node": get_parent(),
+		"hand_view": hand_view,
+		"player_slot": player_slot,
+		"enemy_slot": enemy_slot,
+		"pile_card_bottom": pile_card_bottom,
+		"pile_card_middle": pile_card_middle,
+		"pile_card_top": pile_card_top,
+		"pile_count_label": pile_count_label,
+		"draw_pile_visual": draw_pile_visual,
+		"discard_viewer": discard_viewer,
+		"deck_manager": deck_manager,
+		"sfx_manager": sfx_manager,
+	})
+	_effect_executor = BattleEffectExecutorData.new()
+	add_child(_effect_executor)
+	_effect_executor.configure({
+		"state": _state,
+		"animator": _animator,
+		"deck_manager": deck_manager,
+		"enemy_controller": enemy_controller,
+		"battle_sidebar": battle_sidebar,
+		"player_slot": player_slot,
+		"enemy_slot": enemy_slot,
+		"update_labels": _update_labels,
+	})
+	deck_manager.hand_changed.connect(_on_hand_changed)
+	deck_manager.draw_pile_changed.connect(_animator.update_pile_visuals)
+	deck_manager.discard_pile_changed.connect(_animator.update_pile_visuals)
+	hand_view.card_play_requested.connect(_on_card_play_requested)
+	hand_view.card_drag_started.connect(_on_hand_card_drag_started)
+	hand_view.card_drag_ended.connect(_on_hand_card_drag_ended)
 	reward_overlay.reward_selected.connect(_on_reward_selected)
 	consumable_shelf.magic_ball_requested.connect(_on_magic_ball_requested)
-	if deck_manager:
-		_is_animating = true
-		var selected_enemy := enemy_controller.select_random_non_boss(0)
-		deck_manager.setup_starting_deck()
-		_update_pile_visuals()
-		await get_tree().process_frame
-		battle_sidebar.set_enemy_info(selected_enemy)
-		await _refill_hand_animated()
-		await _prepare_enemy_card()
-		_is_animating = false
+	await _initialize_first_battle()
+
+
+func _initialize_first_battle() -> void:
+	_is_animating = true
+	var selected_enemy := enemy_controller.select_random_non_boss(0)
+	deck_manager.setup_starting_deck()
+	_animator.update_pile_visuals()
+	await get_tree().process_frame
+	battle_sidebar.set_enemy_info(selected_enemy)
+	await _animator.refill_hand()
+	await _prepare_enemy_card()
+	_is_animating = false
 	_update_labels()
 
+
 func _on_hand_changed() -> void:
-	if _is_animating:
-		return
-	if hand_view:
+	if not _is_animating:
 		hand_view.set_cards(deck_manager.hand)
 
-func _update_labels() -> void:
-	if battle_sidebar:
-		battle_sidebar.set_health(player_hp, enemy_hp)
-		battle_sidebar.set_progress(2, 8, turn_count + 1)
 
 func _on_card_play_requested(card_data: CardDef, card_view: CardView) -> void:
-	if round_status != "ongoing" or _is_animating:
-		_snap_card_back(card_view)
+	if round_status != "ongoing" or _is_animating \
+			or (_state.has_disabled_player_type \
+			and card_data.card_type == _state.disabled_player_type):
+		await _reject_card(card_view)
 		return
-	if _has_disabled_player_type and card_data.card_type == _disabled_player_type:
-		_snap_card_back(card_view)
-		return
-	
-	var drop_pos: Vector2 = card_view.global_position + card_view.size / 2
+	var drop_pos := card_view.global_position + card_view.size / 2.0
 	if not player_slot.get_global_rect().has_point(drop_pos):
-		_snap_card_back(card_view)
+		await _reject_card(card_view)
 		return
-	
-	_play_card(card_data, card_view)
+	await _play_card(card_data, card_view)
+
+
+func _reject_card(card_view: CardView) -> void:
+	_is_animating = true
+	await _animator.snap_card_back(card_view)
+	_is_animating = false
+
 
 func _on_hand_card_drag_started(_card_view: CardView) -> void:
 	if round_status == "ongoing" and not _is_animating:
 		player_slot.set_drop_target_active(true)
 
+
 func _on_hand_card_drag_ended(_card_view: CardView) -> void:
 	player_slot.set_drop_target_active(false)
+
 
 func _on_magic_ball_requested() -> void:
 	if round_status != "ongoing" or _is_animating or not _pending_enemy_card:
@@ -108,122 +145,68 @@ func _on_magic_ball_requested() -> void:
 	var prediction := _pending_enemy_card.card_type
 	if randf() >= 0.8:
 		var wrong_types: Array[int] = [
-			CardDef.CardType.ROCK,
-			CardDef.CardType.PAPER,
-			CardDef.CardType.SCISSORS,
+			CardDef.CardType.ROCK, CardDef.CardType.PAPER, CardDef.CardType.SCISSORS,
 		]
 		wrong_types.erase(prediction)
 		prediction = wrong_types.pick_random() as CardDef.CardType
 	consumable_shelf.consume_magic_ball()
 	magic_ball_modal.show_prediction(prediction)
 
-func _snap_card_back(card_view: CardView) -> void:
-	_is_animating = true
-	card_view.cancel_transform_tween()
-	var tween := create_tween()
-	tween.tween_property(card_view, "position", card_view.base_position, 0.2).set_ease(Tween.EASE_OUT)
-	tween.parallel().tween_property(card_view, "rotation_degrees", card_view.base_rotation_degrees, 0.2)
-	
-	await tween.finished
-	
-	card_view.reset_transform()
-	card_view.z_index = card_view.base_z_index
-	_is_animating = false
 
 func _play_card(card_data: CardDef, card_view: CardView) -> void:
 	_is_animating = true
-	_has_disabled_player_type = false
+	_state.has_disabled_player_type = false
 	card_view.set_interaction_enabled(false)
-
-	# 1. Animate player card from hand to player slot
-	var start_global: Vector2 = card_view.global_position
-	hand_view.remove_card_view(card_view)
-	var main_node: Node = get_parent()
-	main_node.add_child(card_view)
-	card_view.global_position = start_global
-	card_view.z_index = 1000
-
-	var tween := create_tween()
-	tween.tween_property(
-		card_view,
-		"global_position",
-		player_slot.get_card_target_global_position(),
-		0.35
-	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.parallel().tween_property(card_view, "rotation_degrees", 0.0, 0.35)
-	tween.parallel().tween_property(card_view, "scale", Vector2(1.0, 1.0), 0.35)
-
-	await tween.finished
-
-	_play_sfx("card_placed", -1.0, randf_range(0.98, 1.02))
-	player_slot.clear_slot()
-	player_slot.place_card(card_view)
-	card_view.z_index = 0
-
-	# 2. Use the enemy card that was already waiting face-down.
-	var enemy_card: CardDef = _pending_enemy_card
-	var enemy_view: CardView = _enemy_preview_view
-	if not enemy_card or not is_instance_valid(enemy_view):
+	await _animator.move_player_card_to_slot(card_view)
+	if not _pending_enemy_card or not is_instance_valid(_enemy_preview_view):
 		await _prepare_enemy_card()
-		enemy_card = _pending_enemy_card
-		enemy_view = _enemy_preview_view
-
-	# 4. Brief pause before reveal
+	var enemy_card := _pending_enemy_card
+	var enemy_view := _enemy_preview_view
 	await get_tree().create_timer(0.2).timeout
+	await _animator.flip_card(enemy_view, enemy_card)
 
-	# 5. Flip reveal enemy card
-	if enemy_view and enemy_card:
-		await _flip_card(enemy_view, enemy_card)
-
-	# 6. Resolve battle
-	var player_history_card := card_data.copy()
-	var enemy_history_card := enemy_card.copy()
-	var player_downgrades := WeaponCatalogData.EFFECT_QUARTZ in card_data.effects
-	var enemy_downgrades := WeaponCatalogData.EFFECT_QUARTZ in enemy_card.effects
-	var result: BattleResolver.Result = battle_resolver.resolve(card_data.card_type, enemy_card.card_type)
-	await _apply_result(result, card_data, enemy_card, card_view, enemy_view)
-	battle_sidebar.add_history(player_history_card, enemy_history_card)
+	var player_history := card_data.copy()
+	var enemy_history := enemy_card.copy()
+	var result: BattleResolver.Result = battle_resolver.resolve(
+		card_data.card_type, enemy_card.card_type
+	)
+	var plan: RefCounted = _effects.build_plan(
+		result, card_data, enemy_card, deck_manager.hand,
+		enemy_controller.enemy_hand, _state
+	)
+	await _effect_executor.execute(
+		plan, result, card_data, enemy_card, card_view, enemy_view
+	)
+	battle_sidebar.add_history(player_history, enemy_history)
 	enemy_controller.record_clash(
-		player_history_card.card_type,
-		enemy_history_card.card_type,
-		result
+		player_history.card_type, enemy_history.card_type, result
 	)
 
-	# 7. Brief pause, then blow both cards off the board.
 	await get_tree().create_timer(0.35).timeout
-	await _discard_animations(
-		card_view,
-		enemy_view,
-		"downgrade" if player_downgrades else "auto",
-		"downgrade" if enemy_downgrades else "auto"
+	await _animator.discard_cards(
+		card_view, enemy_view,
+		"downgrade" if plan.player_downgrade else "auto",
+		"downgrade" if plan.enemy_downgrade else "auto"
 	)
 	_pending_enemy_card = null
 	_enemy_preview_view = null
-
-	# 8. Update discard data only after the cards have visually left the board.
 	deck_manager.play_card(card_data.id)
 	enemy_controller.play_card(enemy_card)
-
-	# 9. Check battle end after the final cards have left the board.
 	if player_hp <= 0 or enemy_hp <= 0:
 		_end_battle()
 		return
-
-	# 10. Draw refill and rebuild hand
-	await _refill_hand_animated()
+	await _animator.refill_hand()
 	await _prepare_enemy_card()
-
 	_is_animating = false
 	turn_count += 1
 	_update_labels()
-	emit_signal("turn_resolved")
+	turn_resolved.emit()
+
 
 func _prepare_enemy_card() -> void:
-	if round_status != "ongoing" or not hand_view.card_scene:
+	if round_status != "ongoing" or not hand_view.card_scene \
+			or is_instance_valid(_enemy_preview_view):
 		return
-	if is_instance_valid(_enemy_preview_view):
-		return
-
 	_pending_enemy_card = enemy_controller.choose_card(enemy_hp, player_hp)
 	_enemy_preview_view = hand_view.card_scene.instantiate()
 	_enemy_preview_view.custom_minimum_size = Vector2(160, 240)
@@ -231,510 +214,50 @@ func _prepare_enemy_card() -> void:
 	_enemy_preview_view.set_interaction_enabled(false)
 	_enemy_preview_view.set_face_down(true)
 	_enemy_preview_view.z_index = 0
-	await _animate_enemy_card_entry(_enemy_preview_view)
+	await _animator.animate_enemy_card_entry(_enemy_preview_view)
 
-func _refill_hand_animated() -> void:
-	if deck_manager.draw_pile.is_empty() and not deck_manager.discard_pile.is_empty():
-		deck_manager.reshuffle_discard_if_needed()
-		await _animate_pile_rebuild()
 
-	# Use the visual count so an inspector-assigned starting hand still animates
-	# into an empty HandView at the beginning of a battle.
-	var previous_hand_size := hand_view.card_views.size()
-	deck_manager.draw_until_full(hand_view.hand_size)
-	var final_hand_size := deck_manager.hand.size()
-	hand_view.prepare_layout(final_hand_size)
+func _update_labels() -> void:
+	battle_sidebar.set_health(player_hp, enemy_hp)
+	battle_sidebar.set_progress(2, 8, turn_count + 1)
 
-	var last_finished: Signal
-
-	# Existing cards smoothly make room for the incoming cards.
-	for card in hand_view.card_views:
-		card.set_interaction_enabled(false)
-		var rearrange := create_tween()
-		rearrange.set_parallel(true)
-		rearrange.tween_property(card, "position", card.base_position, 0.38) \
-			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
-		rearrange.tween_property(card, "rotation_degrees", card.base_rotation_degrees, 0.38) \
-			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		last_finished = rearrange.finished
-
-	for index in range(previous_hand_size, final_hand_size):
-		var stagger := float(index - previous_hand_size) * 0.12
-		last_finished = _animate_card_draw_to_hand(
-			deck_manager.hand[index],
-			index,
-			final_hand_size,
-			stagger
-		)
-
-	if last_finished:
-		await last_finished
-
-	for card in hand_view.card_views:
-		card.set_interaction_enabled(true)
-	hand_view.normalize_card_layers()
-	_update_pile_visuals()
-
-func _animate_card_draw_to_hand(
-	card_data: CardDef,
-	hand_index: int,
-	hand_count: int,
-	delay: float = 0.0
-) -> Signal:
-	if not hand_view.card_scene:
-		return get_tree().process_frame
-
-	var drawn_card := hand_view.add_card_for_draw(card_data, hand_index, hand_count)
-	if not drawn_card:
-		return get_tree().process_frame
-	drawn_card.set_interaction_enabled(false)
-	drawn_card.set_face_down(true)
-	var pile_position_in_hand := hand_view.get_global_transform().affine_inverse() \
-		* pile_card_top.global_position
-	drawn_card.position = pile_position_in_hand
-	drawn_card.scale = Vector2(0.5, 0.5)
-	drawn_card.rotation_degrees = randf_range(-8.0, 8.0)
-	drawn_card.z_index = drawn_card.base_z_index
-
-	var movement := create_tween()
-	if delay > 0.0:
-		movement.tween_interval(delay)
-	movement.tween_property(drawn_card, "position", drawn_card.base_position, 0.58) \
-		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
-	movement.parallel().tween_property(drawn_card, "scale:y", 1.0, 0.58) \
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	movement.parallel().tween_property(
-		drawn_card,
-		"rotation_degrees",
-		drawn_card.base_rotation_degrees,
-		0.58
-	) \
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-
-	var flip := create_tween()
-	if delay + 0.08 > 0.0:
-		flip.tween_interval(delay + 0.08)
-	flip.tween_property(drawn_card, "scale:x", 0.06, 0.18) \
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-	flip.tween_callback(func() -> void:
-		drawn_card.set_face_down(false)
-	)
-	flip.tween_property(drawn_card, "scale:x", 1.0, 0.24) \
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-
-	return movement.finished
-
-func _animate_pile_rebuild() -> void:
-	_play_sfx("card_shuffle")
-	_set_pile_cards_visible(false)
-	var last_tween: Tween
-	var spawned_cards: Array[TextureRect] = []
-	var target_position := pile_card_top.global_position
-	var viewport_width := get_viewport().get_visible_rect().size.x
-
-	for i in range(6):
-		var card_back := TextureRect.new()
-		card_back.texture = load("res://assets/ui/card-back.png")
-		card_back.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		card_back.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		card_back.size = Vector2(160.0, 240.0)
-		card_back.scale = Vector2(0.5, 0.5)
-		card_back.pivot_offset = card_back.size * 0.5
-		card_back.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		get_parent().add_child(card_back)
-		card_back.global_position = Vector2(
-			viewport_width + randf_range(40.0, 180.0),
-			target_position.y + randf_range(-90.0, 90.0)
-		)
-		card_back.rotation_degrees = randf_range(-20.0, 20.0)
-		card_back.z_index = 1700 + i
-		spawned_cards.append(card_back)
-
-		last_tween = create_tween()
-		last_tween.set_parallel(true)
-		last_tween.tween_property(
-			card_back,
-			"global_position",
-			target_position + Vector2(randf_range(-2.0, 2.0), randf_range(-2.0, 2.0)),
-			0.38
-		).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-		last_tween.tween_property(card_back, "rotation_degrees", randf_range(-2.0, 2.0), 0.38) \
-			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-		await get_tree().create_timer(0.055).timeout
-
-	if last_tween:
-		await last_tween.finished
-	for card_back in spawned_cards:
-		card_back.queue_free()
-	_set_pile_cards_visible(true)
-	_update_pile_visuals()
-
-func _update_pile_visuals() -> void:
-	var draw_count := deck_manager.draw_pile.size() if deck_manager else 0
-	pile_count_label.text = str(draw_count)
-	_set_pile_cards_visible(draw_count > 0)
-	if draw_pile_visual and deck_manager:
-		draw_pile_visual.set_cards(deck_manager.draw_pile)
-	if discard_viewer and deck_manager:
-		discard_viewer.set_cards(deck_manager.discard_pile)
-
-func _set_pile_cards_visible(is_visible: bool) -> void:
-	pile_card_bottom.visible = is_visible
-	pile_card_middle.visible = is_visible
-	pile_card_top.visible = is_visible
-
-func _animate_enemy_card_entry(card_view: CardView) -> void:
-	card_view.position = Vector2(0.0, -70.0)
-	card_view.modulate.a = 0.0
-
-	var tween := create_tween()
-	tween.tween_property(card_view, "position", Vector2.ZERO, 0.3) \
-		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.parallel().tween_property(card_view, "modulate:a", 1.0, 0.25) \
-		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	await tween.finished
-
-func _flip_card(card_view: CardView, revealed_data: CardDef) -> void:
-	# Scale X to 0 to hide
-	var tween := create_tween()
-	tween.tween_property(card_view, "scale:x", 0.0, 0.25).set_ease(Tween.EASE_IN)
-	await tween.finished
-
-	# Reveal content
-	card_view.set_face_down(false)
-	card_view.set_card_data(revealed_data)
-
-	# Scale X back to 1
-	var tween2 := create_tween()
-	tween2.tween_property(card_view, "scale:x", 1.0, 0.25).set_ease(Tween.EASE_OUT)
-	await tween2.finished
-
-func _apply_result(
-	result: BattleResolver.Result,
-	player_card: CardDef,
-	enemy_card: CardDef,
-	player_card_view: CardView,
-	enemy_card_view: CardView
-) -> void:
-	_player_bonus_attack_triggered = false
-	_enemy_bonus_attack_triggered = false
-
-	match result:
-		BattleResolver.Result.WIN:
-			_play_sfx("result_win")
-		BattleResolver.Result.LOSE:
-			_play_sfx("result_lose")
-		BattleResolver.Result.DRAW:
-			_play_sfx("result_draw")
-
-	var damage_to_enemy := 1 if result == BattleResolver.Result.WIN else 0
-	var damage_to_player := 1 if result == BattleResolver.Result.LOSE else 0
-	var player_papercut_triggered := false
-	var enemy_papercut_triggered := false
-	var player_vengeance_triggered := false
-	var enemy_vengeance_triggered := false
-	var old_player_bleed := _player_bleed_pending
-	var old_enemy_bleed := _enemy_bleed_pending
-	_player_bleed_pending = false
-	_enemy_bleed_pending = false
-
-	var player_luck := _luck_bonus(deck_manager.hand, player_card)
-	var enemy_luck := _luck_bonus(enemy_controller.enemy_hand, enemy_card)
-
-	# Player weapon effects.
-	var player_has_quartz := WeaponCatalogData.EFFECT_QUARTZ in player_card.effects
-	var enemy_has_quartz := WeaponCatalogData.EFFECT_QUARTZ in enemy_card.effects
-	if player_has_quartz and result == BattleResolver.Result.LOSE:
-		damage_to_player = maxi(0, damage_to_player - 1)
-		_play_sfx("block")
-	if WeaponCatalogData.EFFECT_BRONZE_RAZOR in player_card.effects \
-			and result == BattleResolver.Result.WIN and _chance(0.5, player_luck):
-		_player_bonus_attack_triggered = true
-	if WeaponCatalogData.EFFECT_SCULPTURAL_SHEET in player_card.effects \
-			and result == BattleResolver.Result.DRAW:
-		player_papercut_triggered = true
-	if WeaponCatalogData.EFFECT_spiked_boulder in player_card.effects \
-			and damage_to_player > 0 and _chance(0.5, player_luck):
-		player_vengeance_triggered = true
-	if WeaponCatalogData.EFFECT_RUSTY_SHEARS in player_card.effects \
-			and result == BattleResolver.Result.WIN:
-		_enemy_bleed_pending = true
-		_play_sfx("bleed")
-	if WeaponCatalogData.EFFECT_MIST_VEIL in player_card.effects \
-			and result == BattleResolver.Result.WIN:
-		enemy_controller.disable_type_once(enemy_card.card_type)
-		_play_sfx("mist_veil")
-	if WeaponCatalogData.EFFECT_GUILLOTINE in player_card.effects:
-		if result == BattleResolver.Result.WIN:
-			damage_to_enemy = 3
-		else:
-			damage_to_player += 1
-
-	# Enemy weapon effects use the mirrored result.
-	if enemy_has_quartz and result == BattleResolver.Result.WIN:
-		damage_to_enemy = maxi(0, damage_to_enemy - 1)
-		_play_sfx("block")
-	if WeaponCatalogData.EFFECT_BRONZE_RAZOR in enemy_card.effects \
-			and result == BattleResolver.Result.LOSE and _chance(0.5, enemy_luck):
-		_enemy_bonus_attack_triggered = true
-	if WeaponCatalogData.EFFECT_SCULPTURAL_SHEET in enemy_card.effects \
-			and result == BattleResolver.Result.DRAW:
-		enemy_papercut_triggered = true
-	if WeaponCatalogData.EFFECT_spiked_boulder in enemy_card.effects \
-			and damage_to_enemy > 0 and _chance(0.5, enemy_luck):
-		enemy_vengeance_triggered = true
-	if WeaponCatalogData.EFFECT_RUSTY_SHEARS in enemy_card.effects \
-			and result == BattleResolver.Result.LOSE:
-		_player_bleed_pending = true
-		_play_sfx("bleed")
-	if WeaponCatalogData.EFFECT_MIST_VEIL in enemy_card.effects \
-			and result == BattleResolver.Result.LOSE:
-		_disabled_player_type = player_card.card_type
-		_has_disabled_player_type = true
-		_play_sfx("mist_veil")
-	if WeaponCatalogData.EFFECT_GUILLOTINE in enemy_card.effects:
-		if result == BattleResolver.Result.LOSE:
-			damage_to_player = 3
-		else:
-			damage_to_enemy += 1
-
-	# The attacker finishes first. Spike Boulder retaliation is resolved only
-	# afterward, regardless of whether the attacker is the player or enemy.
-	if result == BattleResolver.Result.LOSE:
-		await _deal_damage(true, damage_to_player)
-		await _deal_damage(false, damage_to_enemy)
-	else:
-		await _deal_damage(false, damage_to_enemy)
-		await _deal_damage(true, damage_to_player)
-
-	if result == BattleResolver.Result.LOSE and player_vengeance_triggered:
-		await _trigger_vengeance(player_card_view, false)
-	elif result == BattleResolver.Result.WIN and enemy_vengeance_triggered:
-		await _trigger_vengeance(enemy_card_view, true)
-	else:
-		# Edge cases with simultaneous/self damage remain deterministic.
-		if player_vengeance_triggered:
-			await _trigger_vengeance(player_card_view, false)
-		if enemy_vengeance_triggered:
-			await _trigger_vengeance(enemy_card_view, true)
-
-	# Resolve simultaneous Sculptural Sheet effects in a stable order:
-	# the player's Papercut always lands before the enemy's.
-	if player_papercut_triggered:
-		_show_exclamation(player_card_view, "Papercut!", Color("#F4E7A1"))
-		_play_sfx("reflect")
-		await get_tree().create_timer(0.12).timeout
-		await _deal_damage(false, 1)
-	if enemy_papercut_triggered:
-		_show_exclamation(enemy_card_view, "Papercut!", Color("#F4E7A1"))
-		_play_sfx("reflect")
-		await get_tree().create_timer(0.12).timeout
-		await _deal_damage(true, 1)
-
-	# Bronze Razor's proc is a distinct second attack. Cue its text and SFX
-	# immediately before applying that extra point of damage.
-	if _player_bonus_attack_triggered:
-		_show_exclamation(player_card_view, "Bonus Attack!", Color("#FFD166"))
-		_play_sfx("bonus_attack")
-		await get_tree().create_timer(0.12).timeout
-		await _deal_damage(false, 1)
-	if _enemy_bonus_attack_triggered:
-		_show_exclamation(enemy_card_view, "Bonus Attack!", Color("#FFD166"))
-		_play_sfx("bonus_attack")
-		await get_tree().create_timer(0.12).timeout
-		await _deal_damage(true, 1)
-
-	# Bleed created on the previous clash resolves at the end of this clash.
-	if old_enemy_bleed:
-		_play_sfx("bleed")
-		await _deal_damage(false, 1)
-	if old_player_bleed:
-		_play_sfx("bleed")
-		await _deal_damage(true, 1)
-
-	if WeaponCatalogData.EFFECT_RUBY_REGEN in player_card.effects \
-			and result == BattleResolver.Result.WIN and player_hp > 0 and player_hp < 6:
-		player_hp = mini(6, player_hp + 1)
-		_play_sfx("regen")
-	if WeaponCatalogData.EFFECT_RUBY_REGEN in enemy_card.effects \
-			and result == BattleResolver.Result.LOSE and enemy_hp > 0 and enemy_hp < 6:
-		enemy_hp = mini(6, enemy_hp + 1)
-		_play_sfx("regen")
-
-	if player_hp <= 0 and WeaponCatalogData.EFFECT_RUBY_REVIVE in player_card.effects:
-		player_hp = 1
-		_play_sfx("revive")
-	if enemy_hp <= 0 and WeaponCatalogData.EFFECT_RUBY_REVIVE in enemy_card.effects:
-		enemy_hp = 1
-		_play_sfx("revive")
-
-	# Fragile is an on-play status: after all effects from this clash resolve,
-	# the weapon disappears for the remainder of the current battle regardless
-	# of whether it won, lost, drew, regenerated, or revived its owner.
-	if WeaponCatalogData.EFFECT_RUBY_REVIVE in player_card.effects:
-		deck_manager.temporarily_remove(player_card)
-	if WeaponCatalogData.EFFECT_RUBY_REVIVE in enemy_card.effects:
-		enemy_controller.temporarily_remove(enemy_card)
-	if player_has_quartz:
-		deck_manager.temporarily_downgrade(player_card)
-	if enemy_has_quartz:
-		enemy_controller.temporarily_downgrade(enemy_card)
-
-	_update_labels()
-	if result == BattleResolver.Result.DRAW and damage_to_enemy == 0 and damage_to_player == 0:
-		await get_tree().create_timer(0.3).timeout
-
-func _deal_damage(to_player: bool, amount: int) -> void:
-	for i in range(amount):
-		if to_player:
-			if player_hp <= 0:
-				break
-			player_hp = maxi(0, player_hp - 1)
-			_play_sfx("heavy_hit", -1.0, randf_range(0.96, 1.04))
-			await battle_sidebar.animate_heart_loss(true, player_hp)
-			await _shake_node(player_slot)
-		else:
-			if enemy_hp <= 0:
-				break
-			enemy_hp = maxi(0, enemy_hp - 1)
-			_play_sfx("heavy_hit", -1.0, randf_range(0.96, 1.04))
-			await battle_sidebar.animate_heart_loss(false, enemy_hp)
-			await _shake_node(enemy_slot)
-
-func _trigger_vengeance(card_view: CardView, damage_player: bool) -> void:
-	_show_exclamation(card_view, "Vengeance!", Color("#FF7657"))
-	_play_sfx("reflect")
-	await get_tree().create_timer(0.12).timeout
-	await _deal_damage(damage_player, 1)
-
-func _show_exclamation(card_view: CardView, text: String, color: Color) -> void:
-	_card_exit_animator.show_exclamation(card_view, text, color)
-
-func _luck_bonus(cards: Array[CardDef], excluded_card: CardDef) -> float:
-	for card in cards:
-		if card != excluded_card and not card.temporarily_disabled \
-				and WeaponCatalogData.EFFECT_HATTER_SLIP in card.effects:
-			return 0.15
-	return 0.0
-
-func _chance(base_chance: float, luck_bonus: float) -> bool:
-	return randf() < clampf(base_chance + luck_bonus, 0.0, 1.0)
-
-func _shake_node(node: Control) -> void:
-	var original_pos := Vector2(node.position)
-	var tween := create_tween()
-	for i in range(6):
-		var offset := Vector2(randf_range(-6, 6), randf_range(-4, 4))
-		tween.tween_property(node, "position", original_pos + offset, 0.04)
-	tween.tween_property(node, "position", original_pos, 0.04)
-	await tween.finished
-
-func _discard_animations(
-	player_card: CardView,
-	enemy_card: CardView,
-	player_exit_type: String = "auto",
-	enemy_exit_type: String = "auto"
-) -> void:
-	_pending_wind_exits = 0
-
-	if is_instance_valid(player_card):
-		_pending_wind_exits += 1
-		_play_card_exit_sfx(player_card, player_exit_type)
-		_card_exit_animator.animate(
-			player_card,
-			Vector2(-1.0, 0.22),
-			player_exit_type
-		).connect(
-			_on_card_wind_exit_finished,
-			CONNECT_ONE_SHOT
-		)
-	if is_instance_valid(enemy_card):
-		_pending_wind_exits += 1
-		_play_card_exit_sfx(enemy_card, enemy_exit_type)
-		_card_exit_animator.animate(
-			enemy_card,
-			Vector2(1.0, -0.22),
-			enemy_exit_type
-		).connect(
-			_on_card_wind_exit_finished,
-			CONNECT_ONE_SHOT
-		)
-
-	if _pending_wind_exits > 0:
-		await wind_exit_batch_finished
-
-	player_slot.clear_slot()
-	enemy_slot.clear_slot()
-
-func _on_card_wind_exit_finished() -> void:
-	_pending_wind_exits -= 1
-	if _pending_wind_exits <= 0:
-		wind_exit_batch_finished.emit()
-
-func _play_card_exit_sfx(card_view: CardView, exit_type: String) -> void:
-	if exit_type == "downgrade":
-		_play_sfx("downgrade")
-	elif card_view.card_data and "Fragile" in card_view.card_data.keywords:
-		_play_sfx("fragile")
-	else:
-		_play_sfx("card_leave", -2.0, randf_range(0.97, 1.03))
 
 func _end_battle() -> void:
 	round_status = "ended"
 	var winner := "Draw"
-	if player_hp <= 0 and enemy_hp <= 0:
-		winner = "Draw"
-	elif player_hp <= 0:
+	if player_hp <= 0 and enemy_hp > 0:
 		winner = "Enemy"
-	elif enemy_hp <= 0:
+	elif enemy_hp <= 0 and player_hp > 0:
 		winner = "Player"
-	emit_signal("battle_ended", winner)
+	battle_ended.emit(winner)
 	if winner == "Player":
-		var available_types := deck_manager.get_types_with_basic_weapon()
-		reward_overlay.show_choices(WeaponCatalogData.generate_reward_choices(3, available_types))
+		reward_overlay.show_choices(WeaponCatalogData.generate_reward_choices(
+			3, deck_manager.get_types_with_basic_weapon()
+		))
 	else:
 		_is_animating = false
+
 
 func _on_reward_selected(card: CardDef) -> void:
 	deck_manager.replace_basic_with_upgrade(card)
 	stage_number += 1
 	await start_battle()
 
+
 func start_battle() -> void:
-	player_hp = 6
-	enemy_hp = 6
-	turn_count = 0
-	round_status = "ongoing"
+	_state.reset_for_battle()
 	_is_animating = true
 	_pending_enemy_card = null
 	_enemy_preview_view = null
-	_player_bleed_pending = false
-	_enemy_bleed_pending = false
-	_has_disabled_player_type = false
-	_player_bonus_attack_triggered = false
-	_enemy_bonus_attack_triggered = false
 	player_slot.set_drop_target_active(false)
 	player_slot.clear_slot()
 	enemy_slot.clear_slot()
 	battle_sidebar.clear_history()
-	# hand_changed is ignored while animating, so remove the previous battle's
-	# surviving card views explicitly before drawing the new opening hand.
 	hand_view.set_cards([])
-	if deck_manager:
-		var enemy_upgrade_count := clampi(stage_number - 1, 0, 9)
-		battle_sidebar.set_enemy_info(
-			enemy_controller.select_random_non_boss(enemy_upgrade_count)
-		)
-		deck_manager.setup_starting_deck()
-		await _refill_hand_animated()
-		await _prepare_enemy_card()
+	var upgrade_count := clampi(stage_number - 1, 0, 9)
+	battle_sidebar.set_enemy_info(enemy_controller.select_random_non_boss(upgrade_count))
+	deck_manager.setup_starting_deck()
+	await _animator.refill_hand()
+	await _prepare_enemy_card()
 	_is_animating = false
 	_update_labels()
-
-func _play_sfx(
-	sfx_name: String,
-	volume_offset_db: float = 0.0,
-	pitch_scale: float = 1.0
-) -> void:
-	if sfx_manager:
-		sfx_manager.play_sfx(sfx_name, volume_offset_db, pitch_scale)

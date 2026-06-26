@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="EnemyDef" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/data/EnemyDef.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "guillotine_duke"
+display_name = "Guillotine Duke"
+description = "Aggressive boss that hunts Paper."
+rule = "Scissors bias rises after you play Paper"
+icon_path = "res://assets/icon/enemy/guillotine-duke.png"
+is_boss = true
+strategy_id = "guillotine_duke"

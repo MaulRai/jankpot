@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="EnemyDef" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/data/EnemyDef.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "cowardly_knight"
+display_name = "Cowardly Knight"
+description = "Plays safer when low HP."
+rule = "Favors Rock at 3 HP or less"
+icon_path = "res://assets/icon/enemy/cowardly-knight.png"
+strategy_id = "cowardly"

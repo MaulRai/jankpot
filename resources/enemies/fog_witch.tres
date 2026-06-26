@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="EnemyDef" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/data/EnemyDef.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "fog_witch"
+display_name = "Fog Witch"
+description = "Hides its pattern."
+rule = "Changes pattern every 3 clashes"
+icon_path = "res://assets/icon/enemy/fog-witch.png"
+strategy_id = "fog_witch"

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="EnemyDef" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/data/EnemyDef.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "dice_imp"
+display_name = "Dice Imp"
+description = "Completely unpredictable."
+rule = "No stable pattern"
+icon_path = "res://assets/icon/enemy/dice-imp.png"
+strategy_id = "dice_imp"

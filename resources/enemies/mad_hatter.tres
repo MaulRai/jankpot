@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="EnemyDef" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/data/EnemyDef.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "mad_hatter"
+display_name = "Mad Hatter"
+description = "Changes rules every 3 clashes."
+rule = "Cycles chaos, mirror, counter, and Paper modes"
+icon_path = "res://assets/icon/enemy/mad-hatter.png"
+is_boss = true
+strategy_id = "mad_hatter"

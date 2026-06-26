@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="EnemyDef" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/data/EnemyDef.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "duelist_finch"
+display_name = "Duelist Finch"
+description = "Avoids repeating itself."
+rule = "Rarely repeats its last move"
+icon_path = "res://assets/icon/enemy/duelist-finch.png"
+strategy_id = "avoid_last"
