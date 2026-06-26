@@ -105,9 +105,10 @@ func _draw_sides(corner_size: Vector2, side_size: Vector2) -> void:
 		Color.WHITE
 	)
 
-	draw_texture_rect(
+	_draw_rotated_texture_rect(
 		_side_texture,
 		Rect2(Vector2(0.0, corner_size.y), Vector2(side_size.x, vertical_length)),
+		0.0,
 		true,
 		Color.WHITE
 	)
@@ -120,7 +121,13 @@ func _draw_sides(corner_size: Vector2, side_size: Vector2) -> void:
 	)
 
 func _draw_corners(corner_size: Vector2) -> void:
-	draw_texture_rect(_corner_texture, Rect2(Vector2.ZERO, corner_size), false, Color.WHITE)
+	_draw_rotated_texture_rect(
+		_corner_texture,
+		Rect2(Vector2.ZERO, corner_size),
+		0.0,
+		false,
+		Color.WHITE
+	)
 
 	var top_right_corner_texture := _corner_texture
 	if top_right_corner_variant == TopRightCornerVariant.SHINING:

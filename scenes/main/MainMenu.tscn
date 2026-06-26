@@ -9,13 +9,13 @@
 [sub_resource type="StyleBoxEmpty" id="Style_empty"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_title"]
-font_size = 76
+font_size = 112
 font_color = Color(0.96, 0.86, 0.42, 1)
-outline_size = 10
+outline_size = 14
 outline_color = Color(0.12, 0.055, 0.12, 1)
-shadow_size = 6
+shadow_size = 8
 shadow_color = Color(0.02, 0.018, 0.03, 0.75)
-shadow_offset = Vector2(0, 6)
+shadow_offset = Vector2(0, 8)
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -48,9 +48,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -240.0
-offset_top = -148.0
+offset_top = -176.0
 offset_right = 240.0
-offset_bottom = 148.0
+offset_bottom = 176.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 36
@@ -64,6 +64,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="PlayFrame" type="PanelContainer" parent="CenterContent"]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(220, 72)
 layout_mode = 2
 size_flags_horizontal = 4
