@@ -168,6 +168,9 @@ func _play_card(card_data: CardDef, card_view: CardView) -> void:
 		await _prepare_enemy_card()
 	var enemy_card := _pending_enemy_card
 	var enemy_view := _enemy_preview_view
+	enemy_card = _apply_luck(card_data, enemy_card, _luck_chance(deck_manager.hand, card_data), false)
+	enemy_card = _apply_luck(card_data, enemy_card, _luck_chance(enemy_controller.enemy_hand, null), true)
+	_pending_enemy_card = enemy_card
 	await get_tree().create_timer(0.2).timeout
 	await _animator.flip_card(enemy_view, enemy_card)
 
@@ -313,5 +316,66 @@ func _player_has_valid_move() -> bool:
 func _player_has_skip_in_hand() -> bool:
 	for card in deck_manager.hand:
 		if card and card.is_skip:
+			return true
+	return false
+
+
+func _apply_luck(
+	player_card: CardDef,
+	enemy_card: CardDef,
+	luck: float,
+	favors_enemy: bool
+) -> CardDef:
+	if not player_card or player_card.is_skip:
+		return enemy_card
+	if luck <= 0.0 or randf() >= luck:
+		return enemy_card
+
+	var priorities: Array[BattleResolver.Result]
+	if favors_enemy:
+		priorities = [
+			BattleResolver.Result.LOSE,
+			BattleResolver.Result.DRAW,
+			BattleResolver.Result.WIN,
+		]
+	else:
+		priorities = [
+			BattleResolver.Result.WIN,
+			BattleResolver.Result.DRAW,
+			BattleResolver.Result.LOSE,
+		]
+
+	var replacement := _best_enemy_card_for_result(player_card, priorities)
+	return replacement if replacement else enemy_card
+
+
+func _luck_chance(cards: Array[CardDef], excluded_card: CardDef) -> float:
+	var chance := 0.0
+	if _has_hatter_slip(cards, excluded_card):
+		chance += 0.15
+	return clampf(chance, 0.0, 1.0)
+
+
+func _best_enemy_card_for_result(
+	player_card: CardDef,
+	priorities: Array[BattleResolver.Result]
+) -> CardDef:
+	for desired_result in priorities:
+		var matches: Array[CardDef] = []
+		for enemy_card in enemy_controller.enemy_hand:
+			if not enemy_card or enemy_card.temporarily_disabled:
+				continue
+			var result := battle_resolver.resolve_cards(player_card, enemy_card)
+			if result == desired_result:
+				matches.append(enemy_card)
+		if not matches.is_empty():
+			return matches.pick_random()
+	return null
+
+
+func _has_hatter_slip(cards: Array[CardDef], excluded_card: CardDef) -> bool:
+	for card in cards:
+		if card and card != excluded_card and not card.temporarily_disabled \
+				and WeaponCatalogData.EFFECT_HATTER_SLIP in card.effects:
 			return true
 	return false

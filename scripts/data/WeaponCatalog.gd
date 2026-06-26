@@ -98,7 +98,7 @@ static func create_weapon(weapon_id: String) -> CardDef:
 				"res://assets/weapon/scissors-4.png", [], [EFFECT_GUILLOTINE])
 		"hatter_slip":
 			_setup(card, CardDef.CardType.PAPER, "Hatter Slip", RARITY_RARE,
-				"While in hand, +15% Luck. Does not stack.",
+				"While in hand, 15% chance to tilt the hidden choice in your favor.",
 				"res://assets/weapon/paper-4.png", ["Luck"], [EFFECT_HATTER_SLIP])
 		_:
 			return create_basic(CardDef.CardType.ROCK)

@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=3 uid="uid://m1w3e3a3e3a3i"]
+[gd_scene load_steps=30 format=3 uid="uid://m1w3e3a3e3a3i"]
 
 [ext_resource type="Script" path="res://scripts/game/GameController.gd" id="1_abc12"]
 [ext_resource type="Script" path="res://scripts/game/DeckManager.gd" id="2_def34"]
@@ -27,6 +27,7 @@
 [ext_resource type="Resource" path="res://resources/weapons/mist_veil.tres" id="26_mist_veil"]
 [ext_resource type="Resource" path="res://resources/weapons/ruby.tres" id="27_ruby"]
 [ext_resource type="Resource" path="res://resources/weapons/guillotine_blades.tres" id="28_guillotine_blades"]
+[ext_resource type="Resource" path="res://resources/weapons/hatter_slip.tres" id="29_hatter_slip"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_gameplay_background"]
 shader = ExtResource("25_gameplay_background_shader")
@@ -87,7 +88,7 @@ script = ExtResource("1_abc12")
 
 [node name="DeckManager" type="Node" parent="GameController"]
 script = ExtResource("2_def34")
-assigned_deck = Array[CardDef]([ExtResource("28_guillotine_blades"), ExtResource("19_rock"), ExtResource("19_rock"), ExtResource("20_paper"), ExtResource("20_paper"), ExtResource("20_paper"), ExtResource("21_scissors"), ExtResource("21_scissors"), ExtResource("21_scissors")])
+assigned_deck = Array[CardDef]([ExtResource("29_hatter_slip"), ExtResource("19_rock"), ExtResource("21_scissors"), ExtResource("19_rock"), ExtResource("19_rock"), ExtResource("20_paper"), ExtResource("20_paper"), ExtResource("21_scissors"), ExtResource("21_scissors")])
 starting_hand_indices = Array[int]([0, 1, 2])
 
 [node name="BattleResolver" type="Node" parent="GameController"]
