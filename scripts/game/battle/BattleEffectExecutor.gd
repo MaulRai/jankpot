@@ -156,14 +156,12 @@ func _deal_damage(to_player: bool, amount: int) -> void:
 			if state.player_hp <= 0:
 				break
 			state.player_hp = maxi(0, state.player_hp - 1)
-			animator.play_sfx("fatal_hit", -1.0, randf_range(0.96, 1.04))
 			await health_display.animate_heart_loss(true, state.player_hp)
 			await animator.shake(player_slot)
 		else:
 			if state.enemy_hp <= 0:
 				break
 			state.enemy_hp = maxi(0, state.enemy_hp - 1)
-			animator.play_sfx("fatal_hit", -1.0, randf_range(0.96, 1.04))
 			await health_display.animate_heart_loss(false, state.enemy_hp)
 			await animator.shake(enemy_slot)
 
