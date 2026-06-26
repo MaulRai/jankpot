@@ -40,6 +40,11 @@ func place_card(card_view: CardView) -> void:
 func get_card_target_global_position() -> Vector2:
 	return card_container.global_position
 
+func get_card() -> CardView:
+	if card_container.get_child_count() == 0:
+		return null
+	return card_container.get_child(0) as CardView
+
 func clear_slot() -> void:
 	for child in card_container.get_children():
 		child.queue_free()

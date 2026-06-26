@@ -72,15 +72,19 @@ func execute(
 
 func _apply_recovery(plan: RefCounted) -> void:
 	if plan.player_regen and state.player_hp > 0 and state.player_hp < 6:
+		animator.show_exclamation(player_slot.get_card(), "Regen!", Color("#66D98C"))
 		state.player_hp += 1
 		animator.play_sfx("regen")
 	if plan.enemy_regen and state.enemy_hp > 0 and state.enemy_hp < 6:
+		animator.show_exclamation(enemy_slot.get_card(), "Regen!", Color("#66D98C"))
 		state.enemy_hp += 1
 		animator.play_sfx("regen")
 	if state.player_hp <= 0 and plan.player_revive:
+		animator.show_exclamation(player_slot.get_card(), "Revive!", Color("#FF9DB5"))
 		state.player_hp = 1
 		animator.play_sfx("revive")
 	if state.enemy_hp <= 0 and plan.enemy_revive:
+		animator.show_exclamation(enemy_slot.get_card(), "Revive!", Color("#FF9DB5"))
 		state.enemy_hp = 1
 		animator.play_sfx("revive")
 
