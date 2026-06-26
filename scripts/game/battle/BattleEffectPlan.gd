@@ -19,6 +19,8 @@ var new_enemy_bleed := false
 
 var disable_enemy_type := -1
 var disable_player_type := -1
+var player_conceal := false
+var enemy_conceal := false
 var player_regen := false
 var enemy_regen := false
 var player_revive := false

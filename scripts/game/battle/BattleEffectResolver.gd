@@ -61,6 +61,7 @@ func _apply_player_effects(
 	if WeaponCatalogData.EFFECT_MIST_VEIL in card.effects \
 			and result == BattleResolver.Result.WIN:
 		plan.disable_enemy_type = enemy_card.card_type
+		plan.player_conceal = true
 		plan.immediate_sfx.append("mist_veil")
 	if WeaponCatalogData.EFFECT_GUILLOTINE in card.effects:
 		if result == BattleResolver.Result.WIN:
@@ -102,6 +103,7 @@ func _apply_enemy_effects(
 	if WeaponCatalogData.EFFECT_MIST_VEIL in card.effects \
 			and result == BattleResolver.Result.LOSE:
 		plan.disable_player_type = player_card.card_type
+		plan.enemy_conceal = true
 		plan.immediate_sfx.append("mist_veil")
 	if WeaponCatalogData.EFFECT_GUILLOTINE in card.effects:
 		if result == BattleResolver.Result.LOSE:

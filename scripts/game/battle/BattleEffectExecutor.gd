@@ -37,9 +37,11 @@ func execute(
 			_sync_bleed_status(plan)
 	if plan.disable_enemy_type >= 0:
 		enemy_controller.disable_type_once(plan.disable_enemy_type as CardDef.CardType)
+		animator.show_exclamation(player_view, "Concealed!", Color("#AAAAFF"))
 	if plan.disable_player_type >= 0:
 		state.disabled_player_type = plan.disable_player_type as CardDef.CardType
 		state.has_disabled_player_type = true
+		animator.show_exclamation(enemy_view, "Concealed!", Color("#AAAAFF"))
 
 	if result == BattleResolver.Result.LOSE:
 		await _deal_damage(true, plan.damage_to_player)
