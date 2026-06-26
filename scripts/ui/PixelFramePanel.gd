@@ -4,6 +4,12 @@ extends PanelContainer
 const BASE_TEXTURE: Texture2D = preload("res://assets/ui/component/base.png")
 const SIDE_TEXTURE: Texture2D = preload("res://assets/ui/component/side.png")
 const CORNER_TEXTURE: Texture2D = preload("res://assets/ui/component/corner.png")
+const CORNER_SHINING_TEXTURE: Texture2D = preload("res://assets/ui/component/corner-shining.png")
+
+enum TopRightCornerVariant {
+	NORMAL,
+	SHINING,
+}
 
 @export var frame_tint := Color(0.78, 0.84, 0.94, 1.0)
 @export var base_tint := Color(0.12, 0.14, 0.18, 1.0)
@@ -12,10 +18,12 @@ const CORNER_TEXTURE: Texture2D = preload("res://assets/ui/component/corner.png"
 @export var base_fill_tint := Color(0.12, 0.14, 0.18, 1.0)
 @export var frame_alpha := 1.0
 @export_range(0.5, 4.0, 0.5) var component_scale := 1.0
+@export var top_right_corner_variant: TopRightCornerVariant = TopRightCornerVariant.NORMAL
 
 var _base_texture: Texture2D
 var _side_texture: Texture2D
 var _corner_texture: Texture2D
+var _corner_shining_texture: Texture2D
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_PASS
@@ -27,7 +35,7 @@ func _draw() -> void:
 	if size.x <= 0.0 or size.y <= 0.0:
 		return
 
-	if not _base_texture or not _side_texture or not _corner_texture:
+	if not _base_texture or not _side_texture or not _corner_texture or not _corner_shining_texture:
 		_rebuild_palette_textures()
 
 	var corner_size := _corner_texture.get_size() * component_scale
@@ -46,6 +54,7 @@ func _rebuild_palette_textures() -> void:
 	_base_texture = _make_palette_texture(BASE_TEXTURE, base_outline_tint, base_fill_tint)
 	_side_texture = _make_palette_texture(SIDE_TEXTURE, frame_outline, frame_fill)
 	_corner_texture = _make_palette_texture(CORNER_TEXTURE, frame_outline, frame_fill)
+	_corner_shining_texture = _make_palette_texture(CORNER_SHINING_TEXTURE, frame_outline, frame_fill)
 
 func _make_palette_texture(source_texture: Texture2D, outline_color: Color, fill_color: Color) -> Texture2D:
 	var image := source_texture.get_image()
@@ -113,8 +122,12 @@ func _draw_sides(corner_size: Vector2, side_size: Vector2) -> void:
 func _draw_corners(corner_size: Vector2) -> void:
 	draw_texture_rect(_corner_texture, Rect2(Vector2.ZERO, corner_size), false, Color.WHITE)
 
+	var top_right_corner_texture := _corner_texture
+	if top_right_corner_variant == TopRightCornerVariant.SHINING:
+		top_right_corner_texture = _corner_shining_texture
+
 	_draw_rotated_texture_rect(
-		_corner_texture,
+		top_right_corner_texture,
 		Rect2(Vector2(size.x - corner_size.x, 0.0), corner_size),
 		PI * 0.5,
 		false,
