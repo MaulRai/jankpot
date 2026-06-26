@@ -1,6 +1,7 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/BattleSidebar.gd" id="1_sidebar"]
+[ext_resource type="Script" path="res://scripts/ui/PixelFramePanel.gd" id="2_pixel_frame"]
 
 [sub_resource type="StyleBoxFlat" id="Style_sidebar"]
 bg_color = Color(0.055, 0.063, 0.078, 0.98)
@@ -8,55 +9,19 @@ border_width_right = 3
 border_color = Color(0.33, 0.39, 0.48, 1)
 
 [sub_resource type="StyleBoxFlat" id="Style_header"]
-bg_color = Color(0.22, 0.09, 0.1, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.75, 0.3, 0.25, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
+bg_color = Color(0, 0, 0, 0)
 corner_detail = 1
 
 [sub_resource type="StyleBoxFlat" id="Style_health"]
-bg_color = Color(0.095, 0.11, 0.14, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.42, 0.48, 0.58, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
+bg_color = Color(0, 0, 0, 0)
 corner_detail = 1
 
 [sub_resource type="StyleBoxFlat" id="Style_rule"]
-bg_color = Color(0.09, 0.13, 0.16, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.26, 0.58, 0.61, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
+bg_color = Color(0, 0, 0, 0)
 corner_detail = 1
 
 [sub_resource type="StyleBoxFlat" id="Style_progress"]
-bg_color = Color(0.13, 0.1, 0.18, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.51, 0.38, 0.67, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
+bg_color = Color(0, 0, 0, 0)
 corner_detail = 1
 
 [sub_resource type="StyleBoxFlat" id="Style_button"]
@@ -115,13 +80,19 @@ theme_override_constants/separation = 10
 custom_minimum_size = Vector2(0, 195)
 layout_mode = 2
 theme_override_styles/panel = SubResource("Style_header")
+script = ExtResource("2_pixel_frame")
+frame_tint = Color(0.96, 0.39, 0.32, 1)
+base_tint = Color(0.2, 0.08, 0.09, 1)
+frame_outline_tint = Color(1, 0.64, 0.5, 1)
+base_outline_tint = Color(0.28, 0.105, 0.11, 1)
+base_fill_tint = Color(0.15, 0.055, 0.065, 1)
 
 [node name="Margin" type="MarginContainer" parent="Margin/Sections/EnemyHeader"]
 layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 14
 
 [node name="Content" type="VBoxContainer" parent="Margin/Sections/EnemyHeader/Margin"]
 layout_mode = 2
@@ -167,13 +138,19 @@ text = "REWARD  •  Choose 1 Upgrade"
 custom_minimum_size = Vector2(0, 176)
 layout_mode = 2
 theme_override_styles/panel = SubResource("Style_health")
+script = ExtResource("2_pixel_frame")
+frame_tint = Color(0.62, 0.72, 0.9, 1)
+base_tint = Color(0.075, 0.09, 0.125, 1)
+frame_outline_tint = Color(0.86, 0.92, 1, 1)
+base_outline_tint = Color(0.12, 0.15, 0.205, 1)
+base_fill_tint = Color(0.055, 0.068, 0.1, 1)
 
 [node name="Margin" type="MarginContainer" parent="Margin/Sections/HealthPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 14
 
 [node name="Content" type="VBoxContainer" parent="Margin/Sections/HealthPanel/Margin"]
 layout_mode = 2
@@ -211,13 +188,19 @@ theme_override_constants/separation = 3
 custom_minimum_size = Vector2(0, 145)
 layout_mode = 2
 theme_override_styles/panel = SubResource("Style_rule")
+script = ExtResource("2_pixel_frame")
+frame_tint = Color(0.34, 0.86, 0.86, 1)
+base_tint = Color(0.065, 0.115, 0.14, 1)
+frame_outline_tint = Color(0.64, 1, 0.98, 1)
+base_outline_tint = Color(0.09, 0.18, 0.21, 1)
+base_fill_tint = Color(0.045, 0.088, 0.11, 1)
 
 [node name="Margin" type="MarginContainer" parent="Margin/Sections/HistoryPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 14
 
 [node name="Content" type="VBoxContainer" parent="Margin/Sections/HistoryPanel/Margin"]
 layout_mode = 2
@@ -290,13 +273,19 @@ alignment = 0
 custom_minimum_size = Vector2(0, 105)
 layout_mode = 2
 theme_override_styles/panel = SubResource("Style_progress")
+script = ExtResource("2_pixel_frame")
+frame_tint = Color(0.7, 0.5, 0.96, 1)
+base_tint = Color(0.105, 0.075, 0.145, 1)
+frame_outline_tint = Color(0.9, 0.76, 1, 1)
+base_outline_tint = Color(0.16, 0.105, 0.22, 1)
+base_fill_tint = Color(0.075, 0.052, 0.11, 1)
 
 [node name="Margin" type="MarginContainer" parent="Margin/Sections/ProgressPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 9
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 9
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 13
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 13
 
 [node name="Content" type="HBoxContainer" parent="Margin/Sections/ProgressPanel/Margin"]
 layout_mode = 2
@@ -342,13 +331,19 @@ horizontal_alignment = 1
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("Style_health")
+script = ExtResource("2_pixel_frame")
+frame_tint = Color(0.52, 0.6, 0.74, 1)
+base_tint = Color(0.075, 0.09, 0.125, 1)
+frame_outline_tint = Color(0.78, 0.86, 1, 1)
+base_outline_tint = Color(0.12, 0.15, 0.205, 1)
+base_fill_tint = Color(0.055, 0.068, 0.1, 1)
 
 [node name="Margin" type="MarginContainer" parent="Margin/Sections/UtilityPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 14
 
 [node name="Buttons" type="VBoxContainer" parent="Margin/Sections/UtilityPanel/Margin"]
 layout_mode = 2
