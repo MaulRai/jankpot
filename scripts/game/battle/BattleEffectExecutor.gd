@@ -44,10 +44,10 @@ func execute(
 		animator.show_exclamation(enemy_view, "Concealed!", Color("#AAAAFF"))
 	if plan.player_execute:
 		animator.show_exclamation(player_view, "Execute!", Color("#FFD166"))
-		animator.play_sfx("heavy_hit", -1.0, randf_range(0.96, 1.04))
+		animator.play_sfx("fatal_hit", -1.0, randf_range(0.96, 1.04))
 	if plan.enemy_execute:
 		animator.show_exclamation(enemy_view, "Execute!", Color("#FFD166"))
-		animator.play_sfx("heavy_hit", -1.0, randf_range(0.96, 1.04))
+		animator.play_sfx("fatal_hit", -1.0, randf_range(0.96, 1.04))
 
 	if result == BattleResolver.Result.LOSE:
 		await _deal_planned_damage(true, plan.damage_to_player, plan.enemy_execute)
