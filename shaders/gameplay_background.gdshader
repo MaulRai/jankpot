@@ -36,7 +36,7 @@ uniform vec3 col_fog      : source_color = vec3(0.058, 0.135, 0.135);
 // ── Controls ─────────────────────────────────────────────────────────────
 uniform float speed        : hint_range(0.0, 8.0) = 4.0;
 uniform float fog_density  : hint_range(0.0, 1.0) = 0.76;  // sedikit lebih tipis
-uniform float shaft_amount : hint_range(0.0, 1.0) = 0.48;  // lebih subtle
+uniform float shaft_amount : hint_range(0.0, 1.0) = 0.0;  // vertical beams disabled
 uniform float darkness     : hint_range(0.0, 1.0) = 0.06;
 
 // ── Gameplay-specific: area tengah layar yang harus "bersih" ─────────────
@@ -175,32 +175,29 @@ void fragment() {
 
 	// ── Layer 3 · Light shafts — didorong ke sisi ────────────────────────
 	// x_center jauh dari 0.5 supaya tidak jatuh di tengah layar.
-	float shaft_a = light_shaft(uv, t, 0.18, 0.035, 0.022, 1.8); // kiri
-	float shaft_b = light_shaft(uv, t, 0.82, 0.028, 0.017, 2.2); // kanan
-	float shaft_c = light_shaft(uv, t, 0.30, 0.018, 0.029, 1.5); // kiri-tengah
-
-	// Shaft hanya kuat di area luar center_clear_radius.
-	float shafts    = (shaft_a * 0.65 + shaft_b * 0.50 + shaft_c * 0.28)
-	                * shaft_amount * center_mask;
-	vec3  shaft_col = mix(col_fog * 1.8, col_gold * 0.55, 0.25);
-	col = mix(col, col + shaft_col, clamp(shafts * 0.32, 0.0, 0.18));
-
 	// ── Layer 4 · Burgundy mist — edge only ──────────────────────────────
 	float burg_n1 = fbm3(uv * 2.2 + vec2(-t * 0.009,  t * 0.005));
 	float burg_n2 = fbm3(uv * 1.5 + vec2( t * 0.006, -t * 0.007) + vec2(4.3, 2.1));
 
-	// Edge mask: hanya aktif di luar center dan lebih ke pinggir layar.
-	float edge_mask = smoothstep(0.30, 0.60, r);
-	float burg_shape = smoothstep(0.40, 0.70, burg_n1 * 0.6 + burg_n2 * 0.4)
-	                 * edge_mask;
+	// Bottom tendrils are busier like the main menu, but kept below the board.
+	float bottom_zone = smoothstep(0.42, 0.88, uv.y);
+	float side_zone = smoothstep(0.95, 0.42, abs(uv.x - 0.5) * 2.0);
+	float lower_edge_mask = max(smoothstep(0.30, 0.60, r), bottom_zone * 0.72);
+	float burg_zone = max(lower_edge_mask * side_zone, bottom_zone * 0.58);
+	float burg_shape = smoothstep(0.36, 0.66, burg_n1 * 0.6 + burg_n2 * 0.4) * burg_zone;
+	float burg_wave = smoothstep(0.54, 0.92, sin(t * 0.18 + uv.x * 5.2 - uv.y * 2.6) * 0.5 + 0.5);
+	float burg_tendril_a = smoothstep(0.20, 0.0, abs(sin((uv.x + uv.y * 0.36) * 6.2 + burg_n2 * 2.4 - t * 0.22)));
+	float burg_tendril_b = smoothstep(0.15, 0.0, abs(sin((uv.x * 1.35 - uv.y * 0.28) * 8.4 + burg_n1 * 2.0 + t * 0.16)));
+	float burg_lines = burg_wave * max(burg_tendril_a, burg_tendril_b * 0.72) * burg_zone;
+	burg_shape = max(burg_shape, burg_lines * 0.9);
 
-	col = mix(col, col_burgundy, burg_shape * 0.48);
+	col = mix(col, col_burgundy, burg_shape * 0.72);
 
-	// Seeping dari edge kanan/kiri saja (bukan bawah layar seperti main menu).
-	float side_seep = (smoothstep(0.28, 0.0, uv.x) + smoothstep(0.72, 1.0, uv.x))
-	                * smoothstep(0.1, 0.5, uv.y)
-	                * smoothstep(0.9, 0.5, uv.y);  // fade di top & bottom edge
-	col = mix(col, col_burgundy * 0.45, side_seep * burg_n1 * 0.25);
+	float bottom_seep = smoothstep(0.46, 1.0, uv.y)
+	                  * smoothstep(0.88, 0.24, abs(uv.x - 0.5) * 2.0);
+	float side_seep = (smoothstep(0.32, 0.0, uv.x) + smoothstep(0.68, 1.0, uv.x))
+	                * smoothstep(0.0, 0.72, uv.y) * 0.30;
+	col = mix(col, col_burgundy * 0.66, (bottom_seep * 0.42 + side_seep) * burg_n1);
 
 	float center_lift = smoothstep(0.52, 0.0, r) * 0.18;
 	col += mix(col_cyan * 0.12, col_gold * 0.10, warmth) * center_lift;
