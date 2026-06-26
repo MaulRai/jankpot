@@ -93,6 +93,7 @@ func _ready() -> void:
 	hand_view.card_drag_ended.connect(_on_hand_card_drag_ended)
 	reward_overlay.reward_selected.connect(_on_reward_selected)
 	consumable_shelf.magic_ball_requested.connect(_on_magic_ball_requested)
+	consumable_shelf.shield_requested.connect(_on_shield_requested)
 	await _initialize_first_battle()
 
 
@@ -158,6 +159,14 @@ func _on_magic_ball_requested() -> void:
 		prediction = wrong_types.pick_random() as CardDef.CardType
 	consumable_shelf.consume_magic_ball()
 	magic_ball_modal.show_prediction(prediction)
+
+
+func _on_shield_requested() -> void:
+	if round_status != "ongoing" or _is_animating:
+		return
+	_state.player_shield += 1
+	consumable_shelf.consume_shield()
+	_update_labels()
 
 
 func _play_card(card_data: CardDef, card_view: CardView) -> void:
@@ -237,6 +246,10 @@ func _update_labels() -> void:
 	battle_board.set_bleed_status(
 		_state.player_bleed_pending,
 		_state.enemy_bleed_pending
+	)
+	battle_board.set_shield_status(
+		_state.player_shield,
+		_state.enemy_shield
 	)
 	battle_sidebar.set_progress(2, 8, turn_count + 1)
 

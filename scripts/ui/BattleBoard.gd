@@ -3,6 +3,7 @@ extends Control
 
 const MAX_HEALTH := 6
 const BLEED_KEYWORD := "Bleed"
+const SHIELD_KEYWORD := "Shield"
 
 @onready var player_hearts: HBoxContainer = %PlayerHearts
 @onready var enemy_hearts: HBoxContainer = %EnemyHearts
@@ -10,10 +11,15 @@ const BLEED_KEYWORD := "Bleed"
 @onready var enemy_bleed_pulse: TextureRect = %EnemyBleedPulse
 @onready var player_bleed_status: TextureRect = %PlayerBleedStatus
 @onready var enemy_bleed_status: TextureRect = %EnemyBleedStatus
+@onready var player_shield_pulse: TextureRect = %PlayerShieldPulse
+@onready var enemy_shield_pulse: TextureRect = %EnemyShieldPulse
+@onready var player_shield_status: TextureRect = %PlayerShieldStatus
+@onready var enemy_shield_status: TextureRect = %EnemyShieldStatus
 
 var tooltip_manager: TooltipManager
 var _heart_texture: Texture2D = preload("res://assets/ui/heart.png")
 var _bleed_texture: Texture2D = preload("res://assets/icon/effect/bleed.png")
+var _shield_texture: Texture2D = preload("res://assets/item/shield.png")
 
 
 func _ready() -> void:
@@ -21,8 +27,11 @@ func _ready() -> void:
 	_build_heart_row(enemy_hearts)
 	set_health(MAX_HEALTH, MAX_HEALTH)
 	set_bleed_status(false, false)
-	_connect_status_hover(player_bleed_status)
-	_connect_status_hover(enemy_bleed_status)
+	set_shield_status(0, 0)
+	_connect_status_hover(player_bleed_status, BLEED_KEYWORD)
+	_connect_status_hover(enemy_bleed_status, BLEED_KEYWORD)
+	_connect_status_hover(player_shield_status, SHIELD_KEYWORD)
+	_connect_status_hover(enemy_shield_status, SHIELD_KEYWORD)
 
 
 func set_tooltip_manager(manager: TooltipManager) -> void:
@@ -45,9 +54,26 @@ func set_bleed_status(player_bleeding: bool, enemy_bleeding: bool) -> void:
 		_play_bleed_pulse_once(enemy_bleed_pulse)
 
 
+func set_shield_status(player_shields: int, enemy_shields: int) -> void:
+	var player_was_visible := player_shield_status.visible
+	var enemy_was_visible := enemy_shield_status.visible
+	player_shield_status.visible = player_shields > 0
+	enemy_shield_status.visible = enemy_shields > 0
+	if player_shields > 0 and not player_was_visible:
+		_play_status_pulse_once(player_shield_pulse, Color(0.56, 0.85, 1.0, 0.52))
+	if enemy_shields > 0 and not enemy_was_visible:
+		_play_status_pulse_once(enemy_shield_pulse, Color(0.56, 0.85, 1.0, 0.52))
+
+
 func play_bleed_damage_feedback(is_player: bool, target_card: Control) -> void:
 	_play_bleed_status_expire(player_bleed_status if is_player else enemy_bleed_status)
 	_play_card_bleed_overlay(target_card)
+
+
+func play_shield_block_feedback(is_player: bool, target_card: Control) -> void:
+	var status_icon := player_shield_status if is_player else enemy_shield_status
+	_play_card_shield_overlay(target_card)
+	await _play_shield_status_absorb(status_icon)
 
 
 func animate_heart_loss(is_player: bool, health_after_damage: int) -> void:
@@ -181,30 +207,34 @@ func _update_heart_row(container: HBoxContainer, health: int) -> void:
 			heart.modulate = Color.WHITE if i < clamped_health else Color(0.16, 0.17, 0.2, 0.5)
 
 
-func _connect_status_hover(status_label: TextureRect) -> void:
+func _connect_status_hover(status_label: TextureRect, keyword: String) -> void:
 	status_label.mouse_filter = Control.MOUSE_FILTER_STOP
-	status_label.mouse_entered.connect(_show_bleed_tooltip.bind(status_label))
-	status_label.mouse_exited.connect(_hide_bleed_tooltip)
+	status_label.mouse_entered.connect(_show_status_tooltip.bind(status_label, keyword))
+	status_label.mouse_exited.connect(_hide_status_tooltip)
 
 
-func _show_bleed_tooltip(status_label: TextureRect) -> void:
+func _show_status_tooltip(status_label: TextureRect, keyword: String) -> void:
 	if tooltip_manager:
 		tooltip_manager.show_tooltip(
-			[BLEED_KEYWORD],
+			[keyword],
 			status_label.global_position + Vector2(status_label.size.x + 10.0, -6.0)
 		)
 
 
-func _hide_bleed_tooltip() -> void:
+func _hide_status_tooltip() -> void:
 	if tooltip_manager:
 		tooltip_manager.hide_tooltip()
 
 
 func _play_bleed_pulse_once(pulse_icon: TextureRect) -> void:
+	_play_status_pulse_once(pulse_icon, Color(1.0, 0.36, 0.36, 0.48))
+
+
+func _play_status_pulse_once(pulse_icon: TextureRect, tint: Color) -> void:
 	pulse_icon.visible = true
 	pulse_icon.pivot_offset = pulse_icon.size * 0.5
 	pulse_icon.scale = Vector2.ONE
-	pulse_icon.modulate = Color(1.0, 0.36, 0.36, 0.48)
+	pulse_icon.modulate = tint
 
 	var tween := create_tween()
 	tween.set_parallel(true)
@@ -216,6 +246,28 @@ func _play_bleed_pulse_once(pulse_icon: TextureRect) -> void:
 	pulse_icon.visible = false
 	pulse_icon.scale = Vector2.ONE
 	pulse_icon.modulate.a = 0.0
+
+
+func _play_shield_status_absorb(status_icon: TextureRect) -> void:
+	if not status_icon.visible:
+		return
+	status_icon.pivot_offset = status_icon.size * 0.5
+	status_icon.modulate = Color.WHITE
+
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(status_icon, "scale", Vector2(1.35, 1.35), 0.16) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(status_icon, "modulate", Color(0.65, 0.9, 1.0, 1.0), 0.16) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(status_icon, "scale", Vector2(0.72, 0.72), 0.2) \
+		.set_delay(0.16).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	tween.tween_property(status_icon, "modulate:a", 0.0, 0.2) \
+		.set_delay(0.16).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	await tween.finished
+	status_icon.visible = false
+	status_icon.scale = Vector2.ONE
+	status_icon.modulate = Color.WHITE
 
 
 func _play_bleed_status_expire(status_icon: TextureRect) -> void:
@@ -238,7 +290,34 @@ func _play_bleed_status_expire(status_icon: TextureRect) -> void:
 	status_icon.modulate = Color.WHITE
 
 
+func _play_card_shield_overlay(target_card: Control) -> void:
+	if not target_card or not is_instance_valid(target_card):
+		return
+	_play_card_status_overlay(
+		target_card,
+		_shield_texture,
+		Color(0.55, 0.88, 1.0, 0.78),
+		Vector2(1.55, 1.55)
+	)
+
+
 func _play_card_bleed_overlay(target_card: Control) -> void:
+	if not target_card or not is_instance_valid(target_card):
+		return
+	_play_card_status_overlay(
+		target_card,
+		_bleed_texture,
+		Color(1.0, 0.26, 0.26, 0.78),
+		Vector2(1.95, 1.95)
+	)
+
+
+func _play_card_status_overlay(
+	target_card: Control,
+	texture: Texture2D,
+	tint: Color,
+	target_scale: Vector2
+) -> void:
 	if not target_card or not is_instance_valid(target_card):
 		return
 
@@ -249,7 +328,7 @@ func _play_card_bleed_overlay(target_card: Control) -> void:
 		target_size = Vector2(160.0, 240.0)
 
 	var overlay := TextureRect.new()
-	overlay.texture = _bleed_texture
+	overlay.texture = texture
 	overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	overlay.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -258,12 +337,12 @@ func _play_card_bleed_overlay(target_card: Control) -> void:
 	overlay.position = (target_size - overlay.size) * 0.5
 	overlay.pivot_offset = overlay.size * 0.5
 	overlay.scale = Vector2(0.72, 0.72)
-	overlay.modulate = Color(1.0, 0.26, 0.26, 0.78)
+	overlay.modulate = tint
 	target_card.add_child(overlay)
 
 	var tween := target_card.create_tween()
 	tween.set_parallel(true)
-	tween.tween_property(overlay, "scale", Vector2(1.95, 1.95), 0.48) \
+	tween.tween_property(overlay, "scale", target_scale, 0.48) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tween.tween_property(overlay, "modulate:a", 0.0, 0.48) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)

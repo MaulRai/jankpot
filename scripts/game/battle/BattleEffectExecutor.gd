@@ -152,6 +152,9 @@ func _apply_blood_price(card_view: CardView, damage_player: bool) -> void:
 
 func _deal_damage(to_player: bool, amount: int) -> void:
 	for index in range(amount):
+		var blocked := await _block_damage_if_shielded(to_player)
+		if blocked:
+			continue
 		if to_player:
 			if state.player_hp <= 0:
 				break
@@ -169,6 +172,11 @@ func _deal_damage(to_player: bool, amount: int) -> void:
 func _deal_damage_burst(to_player: bool, amount: int) -> void:
 	if amount <= 0:
 		return
+	var blocked := await _block_damage_if_shielded(to_player)
+	if blocked:
+		amount -= 1
+	if amount <= 0:
+		return
 	if to_player:
 		if state.player_hp <= 0:
 			return
@@ -183,3 +191,23 @@ func _deal_damage_burst(to_player: bool, amount: int) -> void:
 		state.enemy_hp = maxi(0, state.enemy_hp - amount)
 		await health_display.animate_heart_loss_burst(false, health_before, state.enemy_hp)
 		await animator.shake(enemy_slot)
+
+
+func _block_damage_if_shielded(to_player: bool) -> bool:
+	if to_player:
+		if state.player_shield <= 0:
+			return false
+		animator.play_sfx("shield")
+		await health_display.play_shield_block_feedback(true, player_slot)
+		state.player_shield = maxi(0, state.player_shield - 1)
+		update_labels.call()
+		await animator.shake(player_slot)
+		return true
+	if state.enemy_shield <= 0:
+		return false
+	animator.play_sfx("shield")
+	await health_display.play_shield_block_feedback(false, enemy_slot)
+	state.enemy_shield = maxi(0, state.enemy_shield - 1)
+	update_labels.call()
+	await animator.shake(enemy_slot)
+	return true

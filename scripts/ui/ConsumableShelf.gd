@@ -2,8 +2,10 @@ class_name ConsumableShelf
 extends Control
 
 const MAGIC_BALL_TEXTURE := preload("res://assets/item/magic-ball.png")
+const SHIELD_TEXTURE := preload("res://assets/item/shield.png")
 
 signal magic_ball_requested
+signal shield_requested
 
 const MAX_ITEMS := 5
 const CHAIN_SWAY_DEGREES := 2.2
@@ -15,37 +17,72 @@ const CHAIN_SWAY_DURATION := 1.8
 @onready var left_chain: TextureRect = %LeftChain
 @onready var right_chain: TextureRect = %RightChain
 
-var _magic_ball_button: Button
+var _buttons: Dictionary = {}
 
 func _ready() -> void:
 	_animate_chains()
-	add_magic_ball()
+	add_shield()
 
 func add_magic_ball() -> bool:
-	if slots.get_child_count() >= MAX_ITEMS or is_instance_valid(_magic_ball_button):
+	return _add_unique_consumable(
+		&"magic_ball",
+		MAGIC_BALL_TEXTURE,
+		"Magic Ball\nOne use. Predicts the enemy's next weapon with 80% accuracy.",
+		func() -> void: magic_ball_requested.emit()
+	)
+
+func add_shield() -> bool:
+	return _add_unique_consumable(
+		&"shield",
+		SHIELD_TEXTURE,
+		"Shield\nOne use. Blocks 1 DMG.",
+		func() -> void: shield_requested.emit()
+	)
+
+func consume_magic_ball() -> void:
+	_consume(&"magic_ball")
+
+func consume_shield() -> void:
+	_consume(&"shield")
+
+func _add_unique_consumable(
+	item_id: StringName,
+	texture: Texture2D,
+	tooltip: String,
+	pressed_callback: Callable
+) -> bool:
+	if slots.get_child_count() >= MAX_ITEMS or _has_item(item_id):
 		return false
+	var button := _create_item_button(texture, tooltip)
+	button.pressed.connect(pressed_callback)
+	slots.add_child(button)
+	_buttons[item_id] = button
+	return true
+
+func _create_item_button(texture: Texture2D, tooltip: String) -> Button:
 	var button := Button.new()
 	button.custom_minimum_size = Vector2(93.0, 93.0)
 	button.flat = true
-	button.tooltip_text = "Magic Ball\nOne use. Predicts the enemy's next weapon with 80% accuracy."
-	button.pressed.connect(func() -> void: magic_ball_requested.emit())
-	slots.add_child(button)
+	button.tooltip_text = tooltip
 
 	var icon := TextureRect.new()
-	icon.texture = MAGIC_BALL_TEXTURE
+	icon.texture = texture
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	button.add_child(icon)
 	icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_magic_ball_button = button
-	return true
+	return button
 
-func consume_magic_ball() -> void:
-	if not is_instance_valid(_magic_ball_button):
+func _consume(item_id: StringName) -> void:
+	if not _has_item(item_id):
 		return
-	_magic_ball_button.queue_free()
-	_magic_ball_button = null
+	var button := _buttons[item_id] as Button
+	_buttons.erase(item_id)
+	button.queue_free()
+
+func _has_item(item_id: StringName) -> bool:
+	return _buttons.has(item_id) and is_instance_valid(_buttons[item_id])
 
 func _animate_chains() -> void:
 	_start_chain_sway(left_chain, 1.0)
