@@ -66,8 +66,9 @@ func _apply_player_effects(
 	if WeaponCatalogData.EFFECT_GUILLOTINE in card.effects:
 		if result == BattleResolver.Result.WIN:
 			plan.damage_to_enemy = 3
+			plan.player_execute = true
 		else:
-			plan.damage_to_player += 1
+			plan.player_blood_price = true
 	plan.player_regen = WeaponCatalogData.EFFECT_RUBY_REGEN in card.effects \
 		and result == BattleResolver.Result.WIN
 	plan.player_revive = WeaponCatalogData.EFFECT_RUBY_REVIVE in card.effects
@@ -108,8 +109,9 @@ func _apply_enemy_effects(
 	if WeaponCatalogData.EFFECT_GUILLOTINE in card.effects:
 		if result == BattleResolver.Result.LOSE:
 			plan.damage_to_player = 3
+			plan.enemy_execute = true
 		else:
-			plan.damage_to_enemy += 1
+			plan.enemy_blood_price = true
 	plan.enemy_regen = WeaponCatalogData.EFFECT_RUBY_REGEN in card.effects \
 		and result == BattleResolver.Result.LOSE
 	plan.enemy_revive = WeaponCatalogData.EFFECT_RUBY_REVIVE in card.effects

@@ -105,6 +105,59 @@ func animate_heart_loss(is_player: bool, health_after_damage: int) -> void:
 	_update_heart_row(container, health_after_damage)
 
 
+func animate_heart_loss_burst(is_player: bool, health_before_damage: int, health_after_damage: int) -> void:
+	var container := player_hearts if is_player else enemy_hearts
+	var start_index := clampi(health_after_damage, 0, MAX_HEALTH)
+	var end_index := clampi(health_before_damage - 1, 0, MAX_HEALTH - 1)
+	if start_index > end_index:
+		return
+
+	var falling_hearts: Array[TextureRect] = []
+	for heart_index in range(start_index, end_index + 1):
+		if heart_index >= container.get_child_count():
+			continue
+		var source_heart := container.get_child(heart_index) as TextureRect
+		if not source_heart:
+			continue
+
+		var falling_heart := TextureRect.new()
+		falling_heart.texture = source_heart.texture
+		falling_heart.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		falling_heart.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		falling_heart.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		falling_heart.size = source_heart.size
+		falling_heart.pivot_offset = falling_heart.size * 0.5
+		get_tree().current_scene.add_child(falling_heart)
+		falling_heart.global_position = source_heart.global_position
+		falling_heart.z_index = 2500 + heart_index
+		falling_hearts.append(falling_heart)
+		source_heart.modulate = Color(0.16, 0.17, 0.2, 0.5)
+
+	var direction := -1.0 if is_player else 1.0
+	var tween := create_tween()
+	tween.set_parallel(true)
+	for i in range(falling_hearts.size()):
+		var heart := falling_hearts[i]
+		var spread := float(i) - float(falling_hearts.size() - 1) * 0.5
+		var jump_position := heart.global_position + Vector2(direction * (9.0 + spread * 5.0), -24.0 - absf(spread) * 4.0)
+		var fall_position := Vector2(
+			heart.global_position.x + direction * randf_range(38.0, 68.0) + spread * 10.0,
+			get_viewport_rect().size.y + heart.size.y + 30.0
+		)
+		tween.tween_property(heart, "global_position", jump_position, 0.16) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tween.tween_property(heart, "global_position", fall_position, 0.5) \
+			.set_delay(0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tween.tween_property(heart, "rotation_degrees", direction * randf_range(32.0, 52.0), 0.66)
+		tween.tween_property(heart, "modulate:a", 0.12, 0.5) \
+			.set_delay(0.16).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	await tween.finished
+
+	for heart in falling_hearts:
+		heart.queue_free()
+	_update_heart_row(container, health_after_damage)
+
+
 func _build_heart_row(container: HBoxContainer) -> void:
 	for child in container.get_children():
 		child.queue_free()

@@ -42,13 +42,23 @@ func execute(
 		state.disabled_player_type = plan.disable_player_type as CardDef.CardType
 		state.has_disabled_player_type = true
 		animator.show_exclamation(enemy_view, "Concealed!", Color("#AAAAFF"))
+	if plan.player_execute:
+		animator.show_exclamation(player_view, "Execute!", Color("#FFD166"))
+		animator.play_sfx("heavy_hit", -1.0, randf_range(0.96, 1.04))
+	if plan.enemy_execute:
+		animator.show_exclamation(enemy_view, "Execute!", Color("#FFD166"))
+		animator.play_sfx("heavy_hit", -1.0, randf_range(0.96, 1.04))
 
 	if result == BattleResolver.Result.LOSE:
-		await _deal_damage(true, plan.damage_to_player)
-		await _deal_damage(false, plan.damage_to_enemy)
+		await _deal_planned_damage(true, plan.damage_to_player, plan.enemy_execute)
+		await _deal_planned_damage(false, plan.damage_to_enemy, plan.player_execute)
 	else:
-		await _deal_damage(false, plan.damage_to_enemy)
-		await _deal_damage(true, plan.damage_to_player)
+		await _deal_planned_damage(false, plan.damage_to_enemy, plan.player_execute)
+		await _deal_planned_damage(true, plan.damage_to_player, plan.enemy_execute)
+	if plan.player_blood_price:
+		await _apply_blood_price(player_view, true)
+	if plan.enemy_blood_price:
+		await _apply_blood_price(enemy_view, false)
 	for reaction in plan.ordered_reactions(result):
 		var view: CardView = player_view if reaction.side == "player" else enemy_view
 		await _reaction(
@@ -126,19 +136,52 @@ func _reaction(
 	await _deal_damage(damage_player, 1)
 
 
+func _deal_planned_damage(to_player: bool, amount: int, burst: bool) -> void:
+	if burst:
+		await _deal_damage_burst(to_player, amount)
+	else:
+		await _deal_damage(to_player, amount)
+
+
+func _apply_blood_price(card_view: CardView, damage_player: bool) -> void:
+	animator.show_exclamation(card_view, "Blood Price!", Color("#FF7657"))
+	animator.play_sfx("bleed")
+	await get_tree().create_timer(0.12).timeout
+	await _deal_damage(damage_player, 1)
+
+
 func _deal_damage(to_player: bool, amount: int) -> void:
 	for index in range(amount):
 		if to_player:
 			if state.player_hp <= 0:
 				break
 			state.player_hp = maxi(0, state.player_hp - 1)
-			animator.play_sfx("heavy_hit", -1.0, randf_range(0.96, 1.04))
+			animator.play_sfx("fatal_hit", -1.0, randf_range(0.96, 1.04))
 			await health_display.animate_heart_loss(true, state.player_hp)
 			await animator.shake(player_slot)
 		else:
 			if state.enemy_hp <= 0:
 				break
 			state.enemy_hp = maxi(0, state.enemy_hp - 1)
-			animator.play_sfx("heavy_hit", -1.0, randf_range(0.96, 1.04))
+			animator.play_sfx("fatal_hit", -1.0, randf_range(0.96, 1.04))
 			await health_display.animate_heart_loss(false, state.enemy_hp)
 			await animator.shake(enemy_slot)
+
+
+func _deal_damage_burst(to_player: bool, amount: int) -> void:
+	if amount <= 0:
+		return
+	if to_player:
+		if state.player_hp <= 0:
+			return
+		var health_before: int = state.player_hp
+		state.player_hp = maxi(0, state.player_hp - amount)
+		await health_display.animate_heart_loss_burst(true, health_before, state.player_hp)
+		await animator.shake(player_slot)
+	else:
+		if state.enemy_hp <= 0:
+			return
+		var health_before: int = state.enemy_hp
+		state.enemy_hp = maxi(0, state.enemy_hp - amount)
+		await health_display.animate_heart_loss_burst(false, health_before, state.enemy_hp)
+		await animator.shake(enemy_slot)
