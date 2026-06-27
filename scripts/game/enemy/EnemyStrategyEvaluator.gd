@@ -59,6 +59,21 @@ func weights(strategy_id: String, context: RefCounted) -> Array[float]:
 	return _balanced()
 
 
+func deck_type_counts(strategy_id: String) -> Array[int]:
+	match strategy_id:
+		"rock_bias":
+			return _counts_with_preference(CardDef.CardType.ROCK)
+		"paper_bias":
+			return _counts_with_preference(CardDef.CardType.PAPER)
+		"scissors_bias":
+			return _counts_with_preference(CardDef.CardType.SCISSORS)
+		"iron_tortoise":
+			return _counts_with_preference(CardDef.CardType.ROCK)
+		"guillotine_duke":
+			return _counts_with_preference(CardDef.CardType.SCISSORS)
+	return _balanced_counts()
+
+
 func choose_type(weights: Array[float]) -> CardDef.CardType:
 	var total := 0.0
 	for weight in weights:
@@ -215,6 +230,17 @@ func _balanced() -> Array[float]:
 
 func _make_weights(rock: float, paper: float, scissors: float) -> Array[float]:
 	return [rock, paper, scissors]
+
+
+func _counts_with_preference(preferred: CardDef.CardType) -> Array[int]:
+	var counts: Array[int] = [2, 2, 2]
+	counts[preferred] = 5
+	return counts
+
+
+func _balanced_counts() -> Array[int]:
+	var counts: Array[int] = [3, 3, 3]
+	return counts
 
 
 static func _counter_of(type: CardDef.CardType) -> CardDef.CardType:

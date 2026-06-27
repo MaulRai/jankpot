@@ -13,14 +13,15 @@ var hand_size := 3
 func setup(
 	upgrade_count: int,
 	assigned_deck: Array[CardDef],
-	starting_hand_indices: Array[int]
+	starting_hand_indices: Array[int],
+	type_counts: Array[int] = []
 ) -> void:
 	deck.clear()
 	draw_pile.clear()
 	hand.clear()
 	discard_pile.clear()
 	if assigned_deck.is_empty():
-		_generate(upgrade_count)
+		_generate(upgrade_count, type_counts)
 	else:
 		for index in range(assigned_deck.size()):
 			var source := assigned_deck[index]
@@ -95,9 +96,10 @@ func remove_unavailable_type_weights(weights: Array[float]) -> void:
 			weights[type] = 0.0
 
 
-func _generate(upgrade_count: int) -> void:
+func _generate(upgrade_count: int, type_counts: Array[int]) -> void:
 	for type in [CardDef.CardType.ROCK, CardDef.CardType.PAPER, CardDef.CardType.SCISSORS]:
-		for index in range(3):
+		var count := _count_for_type(type_counts, type)
+		for index in range(count):
 			deck.append(WeaponCatalogData.create_basic(
 				type,
 				"enemy_basic_%d_%d" % [type, index]
@@ -112,6 +114,12 @@ func _generate(upgrade_count: int) -> void:
 		var upgrade := WeaponCatalogData.random_upgrade_for_type(deck[slot].card_type)
 		upgrade.id = "enemy_%s_%d" % [upgrade.id, slot]
 		deck[slot] = upgrade
+
+
+func _count_for_type(type_counts: Array[int], type: CardDef.CardType) -> int:
+	if type_counts.size() <= type:
+		return 3
+	return maxi(0, type_counts[type])
 
 
 func _assign_starting_hand(

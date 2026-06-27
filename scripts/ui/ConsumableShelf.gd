@@ -28,7 +28,6 @@ var _button_tweens: Dictionary = {}
 
 func _ready() -> void:
 	_animate_chains()
-	add_cup_a_joe()
 
 func add_magic_ball() -> bool:
 	return _add_unique_consumable(

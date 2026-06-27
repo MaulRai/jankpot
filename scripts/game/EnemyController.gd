@@ -49,7 +49,18 @@ func _ready() -> void:
 
 func setup_enemy_deck(upgrade_count: int = 0) -> void:
 	_deck.hand_size = enemy_hand_size
-	_deck.setup(upgrade_count, assigned_deck, starting_hand_indices)
+	var strategy_id := ""
+	if current_enemy.has("strategy_id"):
+		strategy_id = str(current_enemy["strategy_id"])
+	if strategy_id.is_empty():
+		var definition: Resource = EnemyCatalogData.get_enemy(current_enemy_id)
+		strategy_id = definition.strategy_id
+	_deck.setup(
+		upgrade_count,
+		assigned_deck,
+		starting_hand_indices,
+		_strategy.deck_type_counts(strategy_id)
+	)
 
 
 func select_random_non_boss(upgrade_count: int = 0) -> Dictionary:
@@ -61,6 +72,7 @@ func select_enemy(enemy_id: String, upgrade_count: int = 0) -> Dictionary:
 	reset_battle_context()
 	current_enemy_id = definition.id
 	current_enemy = definition.to_dictionary()
+	current_enemy["strategy_id"] = definition.strategy_id
 	setup_enemy_deck(upgrade_count)
 	enemy_selected.emit(current_enemy)
 	return current_enemy
