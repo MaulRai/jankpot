@@ -58,7 +58,7 @@ func _populate_shop() -> void:
 	_offers_grid.add_child(_create_offer({
 		"name":        "Premium Pack",
 		"price":       15,
-		"description": "A finer pack with better odds for unusual weapons.",
+		"description": "A finer pack that always reveals an unusual or rare weapon.",
 		"texture":     PREMIUM_PACK_TEXTURE,
 		"kind":        "pack",
 		"pack_id":     "premium",
