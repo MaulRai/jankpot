@@ -15,6 +15,8 @@ const MAX_ITEMS := 5
 const CHAIN_SWAY_DEGREES := 2.2
 const SHELF_SWAY_PIXELS := 3.0
 const CHAIN_SWAY_DURATION := 1.8
+const ITEM_HOVER_SCALE := Vector2(1.08, 1.08)
+const ITEM_PRESS_SCALE := Vector2(0.92, 0.92)
 
 @onready var slots: HBoxContainer = %Slots
 @onready var shelf_body: Control = %ShelfBody
@@ -22,6 +24,7 @@ const CHAIN_SWAY_DURATION := 1.8
 @onready var right_chain: TextureRect = %RightChain
 
 var _buttons: Dictionary = {}
+var _button_tweens: Dictionary = {}
 
 func _ready() -> void:
 	_animate_chains()
@@ -92,6 +95,11 @@ func _create_item_button(texture: Texture2D, tooltip: String) -> Button:
 	button.custom_minimum_size = Vector2(93.0, 93.0)
 	button.flat = true
 	button.tooltip_text = tooltip
+	button.pivot_offset = button.custom_minimum_size * 0.5
+	button.mouse_entered.connect(_animate_item_button.bind(button, ITEM_HOVER_SCALE, Color(1.08, 1.08, 1.0, 1.0), 0.12))
+	button.mouse_exited.connect(_animate_item_button.bind(button, Vector2.ONE, Color.WHITE, 0.14))
+	button.button_down.connect(_animate_item_button.bind(button, ITEM_PRESS_SCALE, Color(0.86, 0.86, 0.78, 1.0), 0.06))
+	button.button_up.connect(_on_item_button_up.bind(button))
 
 	var icon := TextureRect.new()
 	icon.texture = texture
@@ -111,6 +119,31 @@ func _consume(item_id: StringName) -> void:
 
 func _has_item(item_id: StringName) -> bool:
 	return _buttons.has(item_id) and is_instance_valid(_buttons[item_id])
+
+func _on_item_button_up(button: Button) -> void:
+	var target_scale := ITEM_HOVER_SCALE if button.is_hovered() else Vector2.ONE
+	var target_modulate := Color(1.08, 1.08, 1.0, 1.0) if button.is_hovered() else Color.WHITE
+	_animate_item_button(button, target_scale, target_modulate, 0.1)
+
+func _animate_item_button(
+	button: Button,
+	target_scale: Vector2,
+	target_modulate: Color,
+	duration: float
+) -> void:
+	if not is_instance_valid(button):
+		return
+	if _button_tweens.has(button):
+		var old_tween := _button_tweens[button] as Tween
+		if old_tween and old_tween.is_valid():
+			old_tween.kill()
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(button, "scale", target_scale, duration) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(button, "modulate", target_modulate, duration) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	_button_tweens[button] = tween
 
 func _animate_chains() -> void:
 	_start_chain_sway(left_chain, 1.0)

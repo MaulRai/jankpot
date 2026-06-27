@@ -6,11 +6,20 @@ extends Control
 @onready var cards_container: GridContainer = %Cards
 @onready var empty_label: Label = %EmptyLabel
 @onready var pile_button: Button = %PileButton
+@onready var pile_card_bottom: TextureRect = $PileCardBottom
+@onready var pile_card_middle: TextureRect = $PileCardMiddle
+@onready var pile_card_top: TextureRect = $PileCardTop
 
 var _cards: Array[CardDef] = []
+var _button_tween: Tween
 
 func _ready() -> void:
 	pile_button.pressed.connect(_toggle_popup)
+	pile_button.mouse_entered.connect(_animate_pile_button.bind(true, false))
+	pile_button.mouse_exited.connect(_animate_pile_button.bind(false, false))
+	pile_button.button_down.connect(_animate_pile_button.bind(true, true))
+	pile_button.button_up.connect(_on_pile_button_up)
+	_prepare_button_animation()
 	popup.visible = false
 	set_process_input(true)
 	_refresh_view()
@@ -46,6 +55,35 @@ func _refresh_view() -> void:
 
 func _toggle_popup() -> void:
 	popup.visible = not popup.visible
+
+func _prepare_button_animation() -> void:
+	for node in [pile_card_bottom, pile_card_middle, pile_card_top, count_label]:
+		node.pivot_offset = node.size * 0.5
+
+func _on_pile_button_up() -> void:
+	_animate_pile_button(pile_button.is_hovered(), false)
+
+func _animate_pile_button(is_hovered: bool, is_pressed: bool) -> void:
+	if _button_tween and _button_tween.is_valid():
+		_button_tween.kill()
+	var target_scale := Vector2.ONE
+	var target_modulate := Color.WHITE
+	if is_pressed:
+		target_scale = Vector2(0.94, 0.94)
+		target_modulate = Color(0.78, 0.86, 0.95, 1.0)
+	elif is_hovered:
+		target_scale = Vector2(1.06, 1.06)
+		target_modulate = Color(1.12, 1.16, 1.18, 1.0)
+	var badge_scale := Vector2(1.12, 1.12) if is_hovered or is_pressed else Vector2.ONE
+	_button_tween = create_tween()
+	_button_tween.set_parallel(true)
+	for node in [pile_card_bottom, pile_card_middle, pile_card_top]:
+		_button_tween.tween_property(node, "scale", target_scale, 0.12) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		_button_tween.tween_property(node, "modulate", target_modulate, 0.12) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	_button_tween.tween_property(count_label, "scale", badge_scale, 0.12) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func _render_cards() -> void:
 	for child in cards_container.get_children():
