@@ -56,6 +56,7 @@ func execute(
 		await _deal_planned_damage(false, plan.damage_to_enemy, plan.player_execute)
 		if plan.player_double_execute and plan.player_double_execute_damage > 0:
 			animator.show_exclamation(player_view, "Again!", Color("#D7A56A"))
+			animator.play_sfx("result_win")
 			await get_tree().create_timer(0.12).timeout
 			await _deal_planned_damage(
 				false,

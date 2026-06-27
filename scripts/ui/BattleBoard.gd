@@ -72,9 +72,12 @@ func set_shield_status(player_shields: int, enemy_shields: int) -> void:
 
 func set_cup_a_joe_status(is_active: bool) -> void:
 	var was_visible := player_cup_status.visible
-	player_cup_status.visible = is_active
+	if is_active:
+		player_cup_status.visible = true
 	if is_active and not was_visible:
 		_play_status_pulse_once(player_cup_pulse, Color(1.0, 0.77, 0.44, 0.52))
+	elif not is_active and was_visible:
+		_play_cup_status_expire(player_cup_status)
 
 
 func play_bleed_damage_feedback(is_player: bool, target_card: Control) -> void:
@@ -296,6 +299,26 @@ func _play_bleed_status_expire(status_icon: TextureRect) -> void:
 	tween.tween_property(status_icon, "modulate", Color(1.0, 0.45, 0.45, 1.0), 0.07) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	tween.tween_property(status_icon, "modulate", Color(1.0, 0.92, 0.86, 0.0), 0.18) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	await tween.finished
+	status_icon.visible = false
+	status_icon.modulate = Color.WHITE
+
+
+func _play_cup_status_expire(status_icon: TextureRect) -> void:
+	if not status_icon.visible:
+		return
+	status_icon.pivot_offset = status_icon.size * 0.5
+	status_icon.modulate = Color.WHITE
+
+	var tween := create_tween()
+	tween.tween_property(status_icon, "modulate", Color(1.0, 0.82, 0.48, 1.0), 0.08) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(status_icon, "modulate", Color(1.0, 1.0, 1.0, 0.72), 0.08) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(status_icon, "modulate", Color(1.0, 0.7, 0.32, 1.0), 0.07) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(status_icon, "modulate", Color(1.0, 0.92, 0.72, 0.0), 0.18) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	await tween.finished
 	status_icon.visible = false

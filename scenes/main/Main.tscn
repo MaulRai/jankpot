@@ -1,4 +1,4 @@
-[gd_scene load_steps=31 format=3 uid="uid://m1w3e3a3e3a3i"]
+[gd_scene load_steps=35 format=3 uid="uid://m1w3e3a3e3a3i"]
 
 [ext_resource type="Script" path="res://scripts/game/GameController.gd" id="1_abc12"]
 [ext_resource type="Script" path="res://scripts/main/GameplayIntro.gd" id="1_intro"]
@@ -29,6 +29,10 @@
 [ext_resource type="Resource" path="res://resources/weapons/ruby.tres" id="27_ruby"]
 [ext_resource type="Resource" path="res://resources/weapons/guillotine_blades.tres" id="28_guillotine_blades"]
 [ext_resource type="Resource" path="res://resources/weapons/hatter_slip.tres" id="29_hatter_slip"]
+[ext_resource type="Resource" path="res://resources/weapons/quartz.tres" id="30_quartz"]
+[ext_resource type="Resource" path="res://resources/weapons/bronze_razor.tres" id="31_bronze_razor"]
+[ext_resource type="Resource" path="res://resources/weapons/sculptural_sheet.tres" id="32_sculptural_sheet"]
+[ext_resource type="Resource" path="res://resources/weapons/rusty_shears.tres" id="33_rusty_shears"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_gameplay_background"]
 shader = ExtResource("25_gameplay_background_shader")
