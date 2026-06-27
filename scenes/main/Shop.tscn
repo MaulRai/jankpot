@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/main/Shop.gd" id="1_shop"]
 [ext_resource type="Theme" path="res://themes/game_theme.tres" id="2_theme"]
@@ -6,6 +6,8 @@
 [ext_resource type="Script" path="res://scripts/audio/BGMPlayer.gd" id="4_bgm_player"]
 [ext_resource type="Script" path="res://scripts/ui/PixelFramePanel.gd" id="5_pixel_frame"]
 [ext_resource type="Shader" path="res://shaders/main_menu_background.gdshader" id="6_background_shader"]
+[ext_resource type="Texture2D" path="res://assets/character/shopkeeper.png" id="7_shopkeeper"]
+[ext_resource type="Script" path="res://scripts/audio/SFXManager.gd" id="8_sfx_manager"]
 
 [sub_resource type="StyleBoxEmpty" id="Style_empty"]
 
@@ -26,6 +28,9 @@ script = ExtResource("1_shop")
 stream = ExtResource("3_bgm")
 volume_db = -6.0
 script = ExtResource("4_bgm_player")
+
+[node name="SFXManager" type="Node" parent="."]
+script = ExtResource("8_sfx_manager")
 
 [node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
@@ -68,12 +73,12 @@ anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 56.0
-offset_top = 42.0
+offset_top = 34.0
 offset_right = -56.0
-offset_bottom = -36.0
+offset_bottom = -28.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 14
 
 [node name="Header" type="HBoxContainer" parent="Content"]
 layout_mode = 2
@@ -156,6 +161,72 @@ size_flags_vertical = 4
 theme_override_constants/h_separation = 22
 theme_override_constants/v_separation = 18
 columns = 5
+
+[node name="ShopkeeperArea" type="HBoxContainer" parent="Content"]
+custom_minimum_size = Vector2(0, 166)
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="Shopkeeper" type="Control" parent="Content/ShopkeeperArea"]
+custom_minimum_size = Vector2(230, 166)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 8
+
+[node name="ShopkeeperSprite" type="TextureRect" parent="Content/ShopkeeperArea/Shopkeeper"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -115.0
+offset_top = -166.0
+offset_right = 115.0
+offset_bottom = 40.0
+grow_horizontal = 2
+grow_vertical = 0
+texture_filter = 1
+texture = ExtResource("7_shopkeeper")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ChatFrame" type="PanelContainer" parent="Content/ShopkeeperArea"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(690, 132)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("Style_empty")
+script = ExtResource("5_pixel_frame")
+base_tint = Color(0.055, 0.045, 0.052, 0.96)
+frame_outline_tint = Color(0.95, 0.76, 0.42, 0.9)
+base_outline_tint = Color(0.16, 0.11, 0.12, 0.96)
+base_fill_tint = Color(0.055, 0.045, 0.052, 0.96)
+component_scale = 1.5
+top_right_corner_variant = 1
+
+[node name="ChatMargin" type="MarginContainer" parent="Content/ShopkeeperArea/ChatFrame"]
+layout_mode = 2
+theme_override_constants/margin_left = 26
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 26
+theme_override_constants/margin_bottom = 20
+
+[node name="ShopkeeperLine" type="Label" parent="Content/ShopkeeperArea/ChatFrame/ChatMargin"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 92)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(1, 0.91, 0.58, 1)
+theme_override_colors/font_shadow_color = Color(0.02, 0.015, 0.02, 0.8)
+theme_override_constants/shadow_offset_y = 3
+theme_override_font_sizes/font_size = 22
+text = "Welcome back."
+autowrap_mode = 3
+vertical_alignment = 0
 
 [node name="CountdownTimer" type="Timer" parent="."]
 unique_name_in_owner = true

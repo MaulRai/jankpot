@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/main/MainMenu.gd" id="1_menu"]
 [ext_resource type="Theme" path="res://themes/game_theme.tres" id="2_theme"]
@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://scripts/audio/BGMPlayer.gd" id="4_bgm_player"]
 [ext_resource type="Script" path="res://scripts/ui/PixelFramePanel.gd" id="5_pixel_frame"]
 [ext_resource type="Shader" path="res://shaders/main_menu_background.gdshader" id="6_background_shader"]
+[ext_resource type="Script" path="res://scripts/audio/SFXManager.gd" id="7_sfx_manager"]
 
 [sub_resource type="StyleBoxEmpty" id="Style_empty"]
 
@@ -34,6 +35,9 @@ script = ExtResource("1_menu")
 [node name="BGM" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("3_bgm")
 script = ExtResource("4_bgm_player")
+
+[node name="SFXManager" type="Node" parent="."]
+script = ExtResource("7_sfx_manager")
 
 [node name="Background" type="ColorRect" parent="."]
 layout_mode = 1

@@ -34,7 +34,10 @@ func _ready() -> void:
 	_setup_button(resume_button, resume_frame)
 	_setup_button(main_menu_button, main_menu_frame)
 	resume_button.pressed.connect(_on_primary_pressed)
-	main_menu_button.pressed.connect(func() -> void: main_menu_requested.emit())
+	main_menu_button.pressed.connect(func() -> void:
+		_play_sfx("click")
+		main_menu_requested.emit()
+	)
 
 
 func is_open() -> bool:
@@ -112,6 +115,7 @@ func _apply_mode(mode: String) -> void:
 
 
 func _on_primary_pressed() -> void:
+	_play_sfx("click")
 	if _mode == MODE_DEFEAT:
 		try_again_requested.emit()
 	else:
@@ -153,3 +157,9 @@ func _kill_overlay_tween() -> void:
 	if _overlay_tween and _overlay_tween.is_valid():
 		_overlay_tween.kill()
 	_overlay_tween = null
+
+
+func _play_sfx(sfx_name: String, volume_offset_db: float = 0.0) -> void:
+	var manager: Node = get_tree().get_first_node_in_group("sfx_manager")
+	if manager:
+		manager.play_sfx(sfx_name, volume_offset_db)

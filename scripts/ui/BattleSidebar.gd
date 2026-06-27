@@ -37,7 +37,10 @@ func _ready() -> void:
 	pause_button.mouse_exited.connect(_on_pause_button_mouse_exited)
 	pause_button.button_down.connect(_tween_pause_button.bind(BUTTON_PRESS_SCALE, 0.06))
 	pause_button.button_up.connect(_on_pause_button_up)
-	pause_button.pressed.connect(func() -> void: pause_requested.emit())
+	pause_button.pressed.connect(func() -> void:
+		_play_sfx("click")
+		pause_requested.emit()
+	)
 
 func set_health(player_health: int, enemy_health: int) -> void:
 	_update_heart_row(player_hearts, player_health)
@@ -227,3 +230,9 @@ func _update_heart_row(container: HBoxContainer, health: int) -> void:
 		if heart:
 			heart.visible = true
 			heart.modulate = Color.WHITE if i < clamped_health else Color(0.16, 0.17, 0.2, 0.5)
+
+
+func _play_sfx(sfx_name: String, volume_offset_db: float = 0.0) -> void:
+	var manager: Node = get_tree().get_first_node_in_group("sfx_manager")
+	if manager:
+		manager.play_sfx(sfx_name, volume_offset_db)

@@ -11,7 +11,6 @@ const TOP_OFFSET := 230.0
 @onready var _transition_cover: ColorRect = $TransitionCover
 @onready var _game_controller: GameController = $GameController
 @onready var _sidebar: Control = $LeftPanel
-@onready var _sidebar_pause_button: Button = $LeftPanel/Margin/Sections/UtilityPanel/Margin/Buttons/PauseButton
 @onready var _pause_overlay: PauseOverlay = $PauseOverlay
 @onready var _discard_viewer: Control = $DiscardViewer
 @onready var _draw_pile: Control = $DrawPileVisual
@@ -29,7 +28,6 @@ func _ready() -> void:
 	_transition_cover.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_game_controller.battle_ended.connect(_on_battle_ended)
 	_sidebar.pause_requested.connect(_pause_game)
-	_sidebar_pause_button.pressed.connect(_pause_game)
 	_pause_overlay.resume_requested.connect(_resume_game)
 	_pause_overlay.main_menu_requested.connect(_go_to_main_menu)
 	_pause_overlay.try_again_requested.connect(_try_again)

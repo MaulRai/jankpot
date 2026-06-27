@@ -38,6 +38,7 @@ func _ready() -> void:
 
 
 func _on_play_button_pressed() -> void:
+	_play_sfx("click")
 	_play_button.disabled = true
 	_shop_button.disabled = true
 	_tween_button_frame(_play_frame, Vector2(1.12, 1.12), 0.09)
@@ -46,6 +47,7 @@ func _on_play_button_pressed() -> void:
 
 
 func _on_shop_button_pressed() -> void:
+	_play_sfx("click")
 	_play_button.disabled = true
 	_shop_button.disabled = true
 	_tween_button_frame(_shop_frame, Vector2(1.12, 1.12), 0.09)
@@ -189,3 +191,9 @@ func _tween_button_frame(frame: PixelFramePanel, target_scale: Vector2, duration
 		.set_trans(Tween.TRANS_BACK) \
 		.set_ease(Tween.EASE_OUT)
 	_button_tweens[frame] = tween
+
+
+func _play_sfx(sfx_name: String, volume_offset_db: float = 0.0) -> void:
+	var manager: Node = get_tree().get_first_node_in_group("sfx_manager")
+	if manager:
+		manager.play_sfx(sfx_name, volume_offset_db)

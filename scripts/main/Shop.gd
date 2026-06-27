@@ -7,6 +7,8 @@ const MAIN_MENU_SCENE_PATH := "res://scenes/main/MainMenu.tscn"
 const RESET_SECONDS        := 60 * 60 * 3
 const HOVER_SCALE          := Vector2(1.06, 1.06)
 const PRESS_SCALE          := Vector2(0.95, 0.95)
+const SHOPKEEPER_TYPE_INTERVAL := 0.018
+const SHOPKEEPER_THANKS_HOLD_RANGE := Vector2(6.0, 8.0)
 
 const STAR_CRUSH_FONT    := preload("res://fonts/Star Crush.ttf")
 const BASIC_PACK_TEXTURE := preload("res://assets/item/pack/basic-weapon-card-pack.png")
@@ -17,14 +19,67 @@ const SHIELD_TEXTURE     := preload("res://assets/item/shield.png")
 const REMEDY_KIT_TEXTURE := preload("res://assets/item/remedy-kit.png")
 const CUP_A_JOE_TEXTURE  := preload("res://assets/item/cup-a-joe.png")
 
+const SHOPKEEPER_LINES := [
+	"Welcome back. The shelves have been whispering about you.",
+	"Step softly. Some of these goods dislike desperate hands.",
+	"Coin first, confidence later.",
+	"Every duel leaves a mark. I sell ways to hide the scar.",
+	"Take your time. Bad decisions are cheaper when made slowly.",
+	"The table outside asks questions. I sell possible answers.",
+	"Nothing here is cursed. Not officially.",
+	"Browse carefully. Some tools are more honest than their owners.",
+	"Everything is discounted emotionally, not financially.",
+	"I polished the Shield. It still blocks better than most plans.",
+	"The Magic Ball says you will buy something. Suspicious, yes?",
+	"Remedy Kits are for people who said, 'I'll be fine.'",
+	"Cup-a-Joe: for when strategy needs caffeine.",
+	"If it breaks, it was probably rare.",
+	"Do not lick the Ruby. Again, not a suggestion.",
+	"The Hatter Slip moved itself to the front shelf. I did not ask why.",
+	"A Shield can save a clash. A Magic Ball can save a guess.",
+	"If Bleed is eating your hearts, Remedy Kit is cheaper than regret.",
+	"Do not trust luck. Improve it.",
+	"Quartz is simple: lose less, live longer.",
+	"Bronze Razor likes chance. Hatter Slip likes chance even more.",
+	"Sculptural Sheet turns a draw into a warning.",
+	"Rusty Shears is quiet until the wound starts counting.",
+	"Mist Veil is not about winning harder. It is about giving the enemy fewer answers.",
+	"Guillotine Blades end fights quickly. Sometimes yours.",
+	"Ruby does not prevent mistakes. It gives one of them back.",
+	"Spike Boulder rewards enemies who forget rocks can bite.",
+	"Cards in hand are not idle. Some are waiting.",
+	"Information is also damage, if used at the right time.",
+	"Magic Ball today? It predicts futures. Not refunds.",
+	"Shield is plain, reliable, and rarely dramatic. A rare quality.",
+	"Remedy Kit removes Bleed. It does not remove embarrassment.",
+	"Cup-a-Joe makes a winning attack strike twice. Drink before courage expires.",
+	"Looking for a random card? The sealed ones are shy.",
+	"Some weapons win clashes. Some weapons survive them.",
+	"Common cards are not weak. They are honest.",
+	"Rare cards are powerful because they make worse mistakes possible.",
+]
+
+const SHOPKEEPER_THANKS_LINES := [
+	"Thanks. May it behave better for you than it did for the last owner.",
+	"Thanks. A clean deal is a rare little comfort.",
+	"Thank you. Spend it wisely, or at least memorably.",
+	"Thanks. The shelf looks less crowded already.",
+]
+
 @onready var _offers_grid:  GridContainer  = %OffersGrid
 @onready var _reset_label:  Label          = %ResetLabel
 @onready var _back_button:  Button         = %BackButton
 @onready var _back_frame:   PixelFramePanel = %BackFrame
 @onready var _timer:        Timer          = %CountdownTimer
+@onready var _shopkeeper_line: Label       = %ShopkeeperLine
 
 var _frame_tweens: Dictionary = {}
 var _pack_opening: Control
+var _shopkeeper_tween: Tween
+var _shopkeeper_chatter_tween: Tween
+var _shopkeeper_type_tween: Tween
+var _shopkeeper_restore_token := 0
+var _shopkeeper_is_thanking := false
 
 
 func _ready() -> void:
@@ -33,11 +88,15 @@ func _ready() -> void:
 
 	_setup_frame_button(_back_button, _back_frame)
 	_back_button.pressed.connect(
-		func() -> void: get_tree().change_scene_to_file(MAIN_MENU_SCENE_PATH)
+		func() -> void:
+			_play_sfx("click")
+			get_tree().change_scene_to_file(MAIN_MENU_SCENE_PATH)
 	)
 	_timer.timeout.connect(_update_reset_label)
 	_populate_shop()
 	_update_reset_label()
+	var type_duration := _show_random_shopkeeper_line()
+	_schedule_shopkeeper_chatter(type_duration)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -198,6 +257,7 @@ func _on_button_up(button: Button, frame: PixelFramePanel) -> void:
 
 func _on_buy_pressed(button: Button, frame: PixelFramePanel, data: Dictionary) -> void:
 	var price := int(data["price"])
+	_play_sfx("chaching")
 	button.text = "BUY $%d" % price
 	_tween_frame(frame, Vector2(1.12, 1.12), 0.08)
 	await get_tree().create_timer(0.22).timeout
@@ -205,6 +265,7 @@ func _on_buy_pressed(button: Button, frame: PixelFramePanel, data: Dictionary) -
 		button.text = "$%d" % price
 	if is_instance_valid(frame):
 		_tween_frame(frame, HOVER_SCALE if button.is_hovered() else Vector2.ONE, 0.12)
+	_show_shopkeeper_thanks()
 	if data.get("kind", "") == "pack":
 		await _pack_opening.start(str(data.get("pack_id", "basic")), data["texture"] as Texture2D)
 
@@ -232,3 +293,71 @@ func _update_reset_label() -> void:
 
 func _current_reset_block() -> int:
 	return int(Time.get_unix_time_from_system() / RESET_SECONDS)
+
+
+func _show_random_shopkeeper_line() -> float:
+	return _set_shopkeeper_line(str(SHOPKEEPER_LINES.pick_random()))
+
+
+func _show_shopkeeper_thanks() -> void:
+	_shopkeeper_restore_token += 1
+	var token := _shopkeeper_restore_token
+	_shopkeeper_is_thanking = true
+	var type_duration := _set_shopkeeper_line(str(SHOPKEEPER_THANKS_LINES.pick_random()))
+
+	if _shopkeeper_tween and _shopkeeper_tween.is_valid():
+		_shopkeeper_tween.kill()
+	if _shopkeeper_chatter_tween and _shopkeeper_chatter_tween.is_valid():
+		_shopkeeper_chatter_tween.kill()
+	_shopkeeper_tween = create_tween()
+	_shopkeeper_tween.tween_interval(
+		type_duration + randf_range(
+			SHOPKEEPER_THANKS_HOLD_RANGE.x,
+			SHOPKEEPER_THANKS_HOLD_RANGE.y
+		)
+	)
+	_shopkeeper_tween.tween_callback(func() -> void:
+		if token == _shopkeeper_restore_token:
+			_shopkeeper_is_thanking = false
+			var next_type_duration := _show_random_shopkeeper_line()
+			_schedule_shopkeeper_chatter(next_type_duration)
+	)
+
+
+func _set_shopkeeper_line(line: String) -> float:
+	if not is_instance_valid(_shopkeeper_line):
+		return 0.0
+	if _shopkeeper_type_tween and _shopkeeper_type_tween.is_valid():
+		_shopkeeper_type_tween.kill()
+	_shopkeeper_line.text = line
+	_shopkeeper_line.visible_characters = 0
+
+	var character_count := line.length()
+	var type_duration := float(character_count) * SHOPKEEPER_TYPE_INTERVAL
+	_shopkeeper_type_tween = create_tween()
+	_shopkeeper_type_tween.tween_property(
+		_shopkeeper_line,
+		"visible_characters",
+		character_count,
+		type_duration
+	)
+	return type_duration
+
+
+func _schedule_shopkeeper_chatter(after_type_duration := 0.0) -> void:
+	if _shopkeeper_chatter_tween and _shopkeeper_chatter_tween.is_valid():
+		_shopkeeper_chatter_tween.kill()
+	_shopkeeper_chatter_tween = create_tween()
+	_shopkeeper_chatter_tween.tween_interval(after_type_duration + randf_range(7.0, 11.0))
+	_shopkeeper_chatter_tween.tween_callback(func() -> void:
+		if _shopkeeper_is_thanking:
+			return
+		var type_duration := _show_random_shopkeeper_line()
+		_schedule_shopkeeper_chatter(type_duration)
+	)
+
+
+func _play_sfx(sfx_name: String, volume_offset_db: float = 0.0) -> void:
+	var manager: Node = get_tree().get_first_node_in_group("sfx_manager")
+	if manager:
+		manager.play_sfx(sfx_name, volume_offset_db)

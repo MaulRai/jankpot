@@ -9,6 +9,8 @@ const STREAMS := {
 	"card_pickup": preload("res://audio/sfx/card-pickup.mp3"),
 	"card_placed": preload("res://audio/sfx/card-placed.mp3"),
 	"card_shuffle": preload("res://audio/sfx/card-shuffle.mp3"),
+	"chaching": preload("res://audio/sfx/chaching.mp3"),
+	"click": preload("res://audio/sfx/click.mp3"),
 	"downgrade": preload("res://audio/sfx/downgrade.mp3"),
 	"fragile": preload("res://audio/sfx/fragile.mp3"),
 	"fatal_hit": preload("res://audio/sfx/fatal-hit.mp3"),
@@ -30,6 +32,7 @@ const STREAMS := {
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	add_to_group("sfx_manager")
 
 
@@ -47,6 +50,7 @@ func play_sfx(
 	player.stream = audio_stream
 	player.volume_db = volume_db + volume_offset_db
 	player.pitch_scale = pitch_scale
+	player.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(player)
 	player.finished.connect(player.queue_free, CONNECT_ONE_SHOT)
 	player.play()
