@@ -360,11 +360,12 @@ theme_override_styles/hover = SubResource("Style_button_hover")
 theme_override_styles/pressed = SubResource("Style_button_hover")
 text = "Run Info"
 
-[node name="Options" type="Button" parent="Margin/Sections/UtilityPanel/Margin/Buttons"]
+[node name="PauseButton" type="Button" parent="Margin/Sections/UtilityPanel/Margin/Buttons"]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("Style_button")
 theme_override_styles/hover = SubResource("Style_button_hover")
 theme_override_styles/pressed = SubResource("Style_button_hover")
-text = "Options"
+text = "Pause"

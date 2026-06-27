@@ -1,4 +1,4 @@
-[gd_scene load_steps=35 format=3 uid="uid://m1w3e3a3e3a3i"]
+[gd_scene load_steps=36 format=3 uid="uid://m1w3e3a3e3a3i"]
 
 [ext_resource type="Script" path="res://scripts/game/GameController.gd" id="1_abc12"]
 [ext_resource type="Script" path="res://scripts/main/GameplayIntro.gd" id="1_intro"]
@@ -33,6 +33,7 @@
 [ext_resource type="Resource" path="res://resources/weapons/bronze_razor.tres" id="31_bronze_razor"]
 [ext_resource type="Resource" path="res://resources/weapons/sculptural_sheet.tres" id="32_sculptural_sheet"]
 [ext_resource type="Resource" path="res://resources/weapons/rusty_shears.tres" id="33_rusty_shears"]
+[ext_resource type="PackedScene" path="res://scenes/ui/PauseOverlay.tscn" id="34_pause_overlay"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_gameplay_background"]
 shader = ExtResource("25_gameplay_background_shader")
@@ -105,6 +106,7 @@ script = ExtResource("4_jkl78")
 starting_hand_indices = Array[int]([])
 
 [node name="LeftPanel" parent="." instance=ExtResource("12_sidebar")]
+z_index = 80
 
 [node name="ConsumableShelf" parent="." instance=ExtResource("16_shelf")]
 
@@ -134,6 +136,7 @@ offset_right = -40.0
 offset_bottom = 0.0
 grow_horizontal = 2
 grow_vertical = 0
+mouse_filter = 2
 script = ExtResource("6_pqr12")
 card_scene = ExtResource("7_stu34")
 
@@ -154,6 +157,8 @@ tooltip_scene = ExtResource("9_yz123")
 
 [node name="MagicBallModal" parent="." instance=ExtResource("17_magic_modal")]
 
+[node name="PauseOverlay" parent="." instance=ExtResource("34_pause_overlay")]
+
 [node name="TransitionCover" type="ColorRect" parent="."]
 z_index = 1000
 layout_mode = 1
@@ -162,5 +167,5 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 0
+mouse_filter = 2
 color = Color(0.008, 0.015, 0.014, 1)

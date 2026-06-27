@@ -1,0 +1,139 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/PauseOverlay.gd" id="1_overlay"]
+[ext_resource type="Texture2D" path="res://assets/ui/panel-window.png" id="2_panel_window"]
+[ext_resource type="Script" path="res://scripts/ui/PixelFramePanel.gd" id="3_pixel_frame"]
+
+[sub_resource type="StyleBoxEmpty" id="Style_empty"]
+
+[node name="PauseOverlay" type="Control"]
+z_index = 950
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+script = ExtResource("1_overlay")
+
+[node name="Dim" type="ColorRect" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.005, 0.009, 0.011, 0.72)
+
+[node name="PauseWindow" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -320.0
+offset_top = -240.0
+offset_right = 320.0
+offset_bottom = 240.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PanelImage" type="TextureRect" parent="PauseWindow"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture_filter = 1
+texture = ExtResource("2_panel_window")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Content" type="VBoxContainer" parent="PauseWindow"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -116.0
+offset_right = 150.0
+offset_bottom = 116.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 22
+alignment = 1
+
+[node name="Title" type="Label" parent="PauseWindow/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.55, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.7)
+theme_override_constants/shadow_offset_y = 4
+theme_override_font_sizes/font_size = 42
+text = "PAUSED"
+horizontal_alignment = 1
+
+[node name="ResumeFrame" type="PanelContainer" parent="PauseWindow/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(240, 66)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_styles/panel = SubResource("Style_empty")
+script = ExtResource("3_pixel_frame")
+base_tint = Color(0.12, 0.07, 0.12, 1)
+frame_outline_tint = Color(1, 0.86, 0.42, 1)
+base_outline_tint = Color(0.26, 0.12, 0.2, 1)
+base_fill_tint = Color(0.12, 0.07, 0.12, 1)
+component_scale = 2.0
+top_right_corner_variant = 1
+
+[node name="ResumeButton" type="Button" parent="PauseWindow/Content/ResumeFrame"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.93, 0.62, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 0.82, 1)
+theme_override_colors/font_pressed_color = Color(0.86, 0.68, 0.3, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("Style_empty")
+theme_override_styles/hover = SubResource("Style_empty")
+theme_override_styles/pressed = SubResource("Style_empty")
+theme_override_styles/focus = SubResource("Style_empty")
+text = "RESUME"
+flat = true
+
+[node name="MainMenuFrame" type="PanelContainer" parent="PauseWindow/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(240, 66)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_styles/panel = SubResource("Style_empty")
+script = ExtResource("3_pixel_frame")
+base_tint = Color(0.12, 0.07, 0.12, 1)
+frame_outline_tint = Color(1, 0.86, 0.42, 1)
+base_outline_tint = Color(0.26, 0.12, 0.2, 1)
+base_fill_tint = Color(0.12, 0.07, 0.12, 1)
+component_scale = 2.0
+top_right_corner_variant = 1
+
+[node name="MainMenuButton" type="Button" parent="PauseWindow/Content/MainMenuFrame"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.93, 0.62, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 0.82, 1)
+theme_override_colors/font_pressed_color = Color(0.86, 0.68, 0.3, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("Style_empty")
+theme_override_styles/hover = SubResource("Style_empty")
+theme_override_styles/pressed = SubResource("Style_empty")
+theme_override_styles/focus = SubResource("Style_empty")
+text = "MAIN MENU"
+flat = true

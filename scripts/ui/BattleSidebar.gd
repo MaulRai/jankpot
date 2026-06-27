@@ -1,7 +1,11 @@
 class_name BattleSidebar
 extends Panel
 
+signal pause_requested
+
 const MAX_HEALTH := 6
+const BUTTON_HOVER_SCALE := Vector2(1.04, 1.04)
+const BUTTON_PRESS_SCALE := Vector2(0.96, 0.96)
 
 @onready var enemy_hearts: HBoxContainer = %EnemyHearts
 @onready var player_hearts: HBoxContainer = %PlayerHearts
@@ -14,21 +18,46 @@ const MAX_HEALTH := 6
 @onready var turn_history: HBoxContainer = %TurnHistory
 @onready var trial_value: Label = %TrialValue
 @onready var clash_value: Label = %ClashValue
+@onready var pause_button: Button = %PauseButton
 
 var _heart_texture: Texture2D = preload("res://assets/ui/heart.png")
 var _enemy_history_cards: Array[CardDef] = []
 var _player_history_cards: Array[CardDef] = []
 var _history_turns: Array[int] = []
 var _history_turn := 0
+var _pause_button_tween: Tween
 
 func _ready() -> void:
 	_build_heart_row(enemy_hearts)
 	_build_heart_row(player_hearts)
 	set_health(MAX_HEALTH, MAX_HEALTH)
+	pause_button.pivot_offset = pause_button.size * 0.5
+	pause_button.resized.connect(func() -> void: pause_button.pivot_offset = pause_button.size * 0.5)
+	pause_button.mouse_entered.connect(_tween_pause_button.bind(BUTTON_HOVER_SCALE, 0.12))
+	pause_button.mouse_exited.connect(_on_pause_button_mouse_exited)
+	pause_button.button_down.connect(_tween_pause_button.bind(BUTTON_PRESS_SCALE, 0.06))
+	pause_button.button_up.connect(_on_pause_button_up)
+	pause_button.pressed.connect(func() -> void: pause_requested.emit())
 
 func set_health(player_health: int, enemy_health: int) -> void:
 	_update_heart_row(player_hearts, player_health)
 	_update_heart_row(enemy_hearts, enemy_health)
+
+func _on_pause_button_mouse_exited() -> void:
+	if pause_button.button_pressed:
+		return
+	_tween_pause_button(Vector2.ONE, 0.12)
+
+func _on_pause_button_up() -> void:
+	var target_scale := BUTTON_HOVER_SCALE if pause_button.is_hovered() else Vector2.ONE
+	_tween_pause_button(target_scale, 0.1)
+
+func _tween_pause_button(target_scale: Vector2, duration: float) -> void:
+	if _pause_button_tween and _pause_button_tween.is_valid():
+		_pause_button_tween.kill()
+	_pause_button_tween = create_tween()
+	_pause_button_tween.tween_property(pause_button, "scale", target_scale, duration) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func set_progress(trial_current: int, trial_total: int, clash: int) -> void:
 	trial_value.text = "%d / %d" % [trial_current, trial_total]
