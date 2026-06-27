@@ -3,9 +3,13 @@ extends Control
 
 const MAGIC_BALL_TEXTURE := preload("res://assets/item/magic-ball.png")
 const SHIELD_TEXTURE := preload("res://assets/item/shield.png")
+const REMEDY_KIT_TEXTURE := preload("res://assets/item/remedy-kit.png")
+const CUP_A_JOE_TEXTURE := preload("res://assets/item/cup-a-joe.png")
 
 signal magic_ball_requested
 signal shield_requested
+signal remedy_kit_requested
+signal cup_a_joe_requested
 
 const MAX_ITEMS := 5
 const CHAIN_SWAY_DEGREES := 2.2
@@ -22,6 +26,8 @@ var _buttons: Dictionary = {}
 func _ready() -> void:
 	_animate_chains()
 	add_shield()
+	add_remedy_kit()
+	add_cup_a_joe()
 
 func add_magic_ball() -> bool:
 	return _add_unique_consumable(
@@ -39,11 +45,33 @@ func add_shield() -> bool:
 		func() -> void: shield_requested.emit()
 	)
 
+func add_remedy_kit() -> bool:
+	return _add_unique_consumable(
+		&"remedy_kit",
+		REMEDY_KIT_TEXTURE,
+		"Remedy Kit\nOne use. Removes Ailments such as Bleed and Poison.",
+		func() -> void: remedy_kit_requested.emit()
+	)
+
+func add_cup_a_joe() -> bool:
+	return _add_unique_consumable(
+		&"cup_a_joe",
+		CUP_A_JOE_TEXTURE,
+		"Cup-a-Joe\nThis turn, if your card wins, it executes twice.",
+		func() -> void: cup_a_joe_requested.emit()
+	)
+
 func consume_magic_ball() -> void:
 	_consume(&"magic_ball")
 
 func consume_shield() -> void:
 	_consume(&"shield")
+
+func consume_remedy_kit() -> void:
+	_consume(&"remedy_kit")
+
+func consume_cup_a_joe() -> void:
+	_consume(&"cup_a_joe")
 
 func _add_unique_consumable(
 	item_id: StringName,

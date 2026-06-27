@@ -94,6 +94,8 @@ func _ready() -> void:
 	reward_overlay.reward_selected.connect(_on_reward_selected)
 	consumable_shelf.magic_ball_requested.connect(_on_magic_ball_requested)
 	consumable_shelf.shield_requested.connect(_on_shield_requested)
+	consumable_shelf.remedy_kit_requested.connect(_on_remedy_kit_requested)
+	consumable_shelf.cup_a_joe_requested.connect(_on_cup_a_joe_requested)
 	await _initialize_first_battle()
 
 
@@ -166,6 +168,24 @@ func _on_shield_requested() -> void:
 		return
 	_state.player_shield += 1
 	consumable_shelf.consume_shield()
+	_update_labels()
+
+
+func _on_remedy_kit_requested() -> void:
+	if round_status != "ongoing" or _is_animating:
+		return
+	if not _state.player_bleed_pending:
+		return
+	_state.player_bleed_pending = false
+	consumable_shelf.consume_remedy_kit()
+	_update_labels()
+
+
+func _on_cup_a_joe_requested() -> void:
+	if round_status != "ongoing" or _is_animating:
+		return
+	_state.player_cup_a_joe_pending = true
+	consumable_shelf.consume_cup_a_joe()
 	_update_labels()
 
 
@@ -251,6 +271,7 @@ func _update_labels() -> void:
 		_state.player_shield,
 		_state.enemy_shield
 	)
+	battle_board.set_cup_a_joe_status(_state.player_cup_a_joe_pending)
 	battle_sidebar.set_progress(2, 8, turn_count + 1)
 
 

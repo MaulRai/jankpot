@@ -4,6 +4,7 @@ extends Control
 const MAX_HEALTH := 6
 const BLEED_KEYWORD := "Bleed"
 const SHIELD_KEYWORD := "Shield"
+const CUP_A_JOE_KEYWORD := "Cup-a-Joe"
 
 @onready var player_hearts: HBoxContainer = %PlayerHearts
 @onready var enemy_hearts: HBoxContainer = %EnemyHearts
@@ -15,6 +16,8 @@ const SHIELD_KEYWORD := "Shield"
 @onready var enemy_shield_pulse: TextureRect = %EnemyShieldPulse
 @onready var player_shield_status: TextureRect = %PlayerShieldStatus
 @onready var enemy_shield_status: TextureRect = %EnemyShieldStatus
+@onready var player_cup_pulse: TextureRect = %PlayerCupPulse
+@onready var player_cup_status: TextureRect = %PlayerCupStatus
 
 var tooltip_manager: TooltipManager
 var _heart_texture: Texture2D = preload("res://assets/ui/heart.png")
@@ -28,10 +31,12 @@ func _ready() -> void:
 	set_health(MAX_HEALTH, MAX_HEALTH)
 	set_bleed_status(false, false)
 	set_shield_status(0, 0)
+	set_cup_a_joe_status(false)
 	_connect_status_hover(player_bleed_status, BLEED_KEYWORD)
 	_connect_status_hover(enemy_bleed_status, BLEED_KEYWORD)
 	_connect_status_hover(player_shield_status, SHIELD_KEYWORD)
 	_connect_status_hover(enemy_shield_status, SHIELD_KEYWORD)
+	_connect_status_hover(player_cup_status, CUP_A_JOE_KEYWORD)
 
 
 func set_tooltip_manager(manager: TooltipManager) -> void:
@@ -63,6 +68,13 @@ func set_shield_status(player_shields: int, enemy_shields: int) -> void:
 		_play_status_pulse_once(player_shield_pulse, Color(0.56, 0.85, 1.0, 0.52))
 	if enemy_shields > 0 and not enemy_was_visible:
 		_play_status_pulse_once(enemy_shield_pulse, Color(0.56, 0.85, 1.0, 0.52))
+
+
+func set_cup_a_joe_status(is_active: bool) -> void:
+	var was_visible := player_cup_status.visible
+	player_cup_status.visible = is_active
+	if is_active and not was_visible:
+		_play_status_pulse_once(player_cup_pulse, Color(1.0, 0.77, 0.44, 0.52))
 
 
 func play_bleed_damage_feedback(is_player: bool, target_card: Control) -> void:

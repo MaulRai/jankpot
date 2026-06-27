@@ -48,6 +48,8 @@ func execute(
 	if plan.enemy_execute:
 		animator.show_exclamation(enemy_view, "Execute!", Color("#FFD166"))
 		animator.play_sfx("fatal_hit", -1.0, randf_range(0.96, 1.04))
+	if plan.player_double_execute:
+		animator.show_exclamation(player_view, "Again!", Color("#D7A56A"))
 
 	if result == BattleResolver.Result.LOSE:
 		await _deal_planned_damage(true, plan.damage_to_player, plan.enemy_execute)

@@ -28,6 +28,11 @@ func build_plan(
 		_apply_player_effects(plan, state, result, player_card, enemy_card, player_luck)
 	if not enemy_card.is_skip:
 		_apply_enemy_effects(plan, state, result, player_card, enemy_card, enemy_luck)
+	if state.player_cup_a_joe_pending:
+		if result == BattleResolver.Result.WIN and plan.damage_to_enemy > 0:
+			plan.damage_to_enemy *= 2
+			plan.player_double_execute = true
+		state.player_cup_a_joe_pending = false
 	return plan
 
 
