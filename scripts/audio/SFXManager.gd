@@ -13,6 +13,7 @@ const STREAMS := {
 	"fragile": preload("res://audio/sfx/fragile.mp3"),
 	"fatal_hit": preload("res://audio/sfx/fatal-hit.mp3"),
 	"mist_veil": preload("res://audio/sfx/mist-veil.mp3"),
+	"power_up": preload("res://audio/sfx/power-up.mp3"),
 	"reflect": preload("res://audio/sfx/reflect.mp3"),
 	"regen": preload("res://audio/sfx/regen.mp3"),
 	"result_draw": preload("res://audio/sfx/result-draw.mp3"),

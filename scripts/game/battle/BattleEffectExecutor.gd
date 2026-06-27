@@ -48,14 +48,20 @@ func execute(
 	if plan.enemy_execute:
 		animator.show_exclamation(enemy_view, "Execute!", Color("#FFD166"))
 		animator.play_sfx("fatal_hit", -1.0, randf_range(0.96, 1.04))
-	if plan.player_double_execute:
-		animator.show_exclamation(player_view, "Again!", Color("#D7A56A"))
 
 	if result == BattleResolver.Result.LOSE:
 		await _deal_planned_damage(true, plan.damage_to_player, plan.enemy_execute)
 		await _deal_planned_damage(false, plan.damage_to_enemy, plan.player_execute)
 	else:
 		await _deal_planned_damage(false, plan.damage_to_enemy, plan.player_execute)
+		if plan.player_double_execute and plan.player_double_execute_damage > 0:
+			animator.show_exclamation(player_view, "Again!", Color("#D7A56A"))
+			await get_tree().create_timer(0.12).timeout
+			await _deal_planned_damage(
+				false,
+				plan.player_double_execute_damage,
+				plan.player_execute
+			)
 		await _deal_planned_damage(true, plan.damage_to_player, plan.enemy_execute)
 	if plan.player_blood_price:
 		await _apply_blood_price(player_view, true)

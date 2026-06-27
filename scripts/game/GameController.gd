@@ -185,6 +185,7 @@ func _on_cup_a_joe_requested() -> void:
 	if round_status != "ongoing" or _is_animating:
 		return
 	_state.player_cup_a_joe_pending = true
+	sfx_manager.play_sfx("power_up")
 	consumable_shelf.consume_cup_a_joe()
 	_update_labels()
 

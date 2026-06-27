@@ -24,6 +24,7 @@ var enemy_conceal := false
 var player_execute := false
 var enemy_execute := false
 var player_double_execute := false
+var player_double_execute_damage := 0
 var player_blood_price := false
 var enemy_blood_price := false
 var player_regen := false
