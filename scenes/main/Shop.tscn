@@ -1,6 +1,6 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=9 format=3]
 
-[ext_resource type="Script" path="res://scripts/main/MainMenu.gd" id="1_menu"]
+[ext_resource type="Script" path="res://scripts/main/Shop.gd" id="1_shop"]
 [ext_resource type="Theme" path="res://themes/game_theme.tres" id="2_theme"]
 [ext_resource type="AudioStream" path="res://audio/bgm/main-menu-loop.mp3" id="3_bgm"]
 [ext_resource type="Script" path="res://scripts/audio/BGMPlayer.gd" id="4_bgm_player"]
@@ -12,16 +12,7 @@
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_background"]
 shader = ExtResource("6_background_shader")
 
-[sub_resource type="LabelSettings" id="LabelSettings_title"]
-font_size = 112
-font_color = Color(0.96, 0.86, 0.42, 1)
-outline_size = 14
-outline_color = Color(0.12, 0.055, 0.12, 1)
-shadow_size = 8
-shadow_color = Color(0.02, 0.018, 0.03, 0.75)
-shadow_offset = Vector2(0, 8)
-
-[node name="MainMenu" type="Control"]
+[node name="Shop" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -29,7 +20,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("2_theme")
-script = ExtResource("1_menu")
+script = ExtResource("1_shop")
 
 [node name="BGM" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("3_bgm")
@@ -45,7 +36,6 @@ grow_vertical = 2
 color = Color(0.01, 0.045, 0.04, 1)
 
 [node name="BackgroundViewportContainer" type="SubViewportContainer" parent="."]
-unique_name_in_owner = true
 texture_filter = 1
 layout_mode = 1
 anchors_preset = 15
@@ -56,7 +46,6 @@ grow_vertical = 2
 stretch = true
 
 [node name="BackgroundViewport" type="SubViewport" parent="BackgroundViewportContainer"]
-unique_name_in_owner = true
 disable_3d = true
 size = Vector2i(320, 180)
 render_target_update_mode = 4
@@ -72,85 +61,102 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(1, 1, 1, 1)
 
-[node name="CenterContent" type="VBoxContainer" parent="."]
+[node name="Content" type="VBoxContainer" parent="."]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -240.0
-offset_top = -176.0
-offset_right = 240.0
-offset_bottom = 176.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 56.0
+offset_top = 42.0
+offset_right = -56.0
+offset_bottom = -36.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 22
+theme_override_constants/separation = 20
+
+[node name="Header" type="HBoxContainer" parent="Content"]
+layout_mode = 2
+theme_override_constants/separation = 18
 alignment = 1
 
-[node name="Title" type="Label" parent="CenterContent"]
+[node name="TitleGroup" type="VBoxContainer" parent="Content/Header"]
 layout_mode = 2
-text = "JANKPOT"
-label_settings = SubResource("LabelSettings_title")
-horizontal_alignment = 1
-vertical_alignment = 1
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
 
-[node name="PlayFrame" type="PanelContainer" parent="CenterContent"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(220, 72)
+[node name="Title" type="Label" parent="Content/Header/TitleGroup"]
 layout_mode = 2
-size_flags_horizontal = 4
-theme_override_styles/panel = SubResource("Style_empty")
-script = ExtResource("5_pixel_frame")
-base_tint = Color(0.12, 0.07, 0.12, 1)
-frame_outline_tint = Color(1, 0.86, 0.42, 1)
-base_outline_tint = Color(0.26, 0.12, 0.2, 1)
-base_fill_tint = Color(0.12, 0.07, 0.12, 1)
-component_scale = 2.0
-top_right_corner_variant = 1
-
-[node name="PlayButton" type="Button" parent="CenterContent/PlayFrame"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.93, 0.62, 1)
-theme_override_colors/font_hover_color = Color(1, 1, 0.82, 1)
-theme_override_colors/font_pressed_color = Color(0.86, 0.68, 0.3, 1)
-theme_override_colors/font_focus_color = Color(1, 1, 0.82, 1)
-theme_override_font_sizes/font_size = 28
-theme_override_styles/normal = SubResource("Style_empty")
-theme_override_styles/hover = SubResource("Style_empty")
-theme_override_styles/pressed = SubResource("Style_empty")
-theme_override_styles/focus = SubResource("Style_empty")
-theme_override_styles/disabled = SubResource("Style_empty")
-text = "PLAY"
-flat = true
-
-[node name="ShopFrame" type="PanelContainer" parent="CenterContent"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(220, 72)
-layout_mode = 2
-size_flags_horizontal = 4
-theme_override_styles/panel = SubResource("Style_empty")
-script = ExtResource("5_pixel_frame")
-base_tint = Color(0.12, 0.07, 0.12, 1)
-frame_outline_tint = Color(1, 0.86, 0.42, 1)
-base_outline_tint = Color(0.26, 0.12, 0.2, 1)
-base_fill_tint = Color(0.12, 0.07, 0.12, 1)
-component_scale = 2.0
-top_right_corner_variant = 1
-
-[node name="ShopButton" type="Button" parent="CenterContent/ShopFrame"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.93, 0.62, 1)
-theme_override_colors/font_hover_color = Color(1, 1, 0.82, 1)
-theme_override_colors/font_pressed_color = Color(0.86, 0.68, 0.3, 1)
-theme_override_colors/font_focus_color = Color(1, 1, 0.82, 1)
-theme_override_font_sizes/font_size = 28
-theme_override_styles/normal = SubResource("Style_empty")
-theme_override_styles/hover = SubResource("Style_empty")
-theme_override_styles/pressed = SubResource("Style_empty")
-theme_override_styles/focus = SubResource("Style_empty")
-theme_override_styles/disabled = SubResource("Style_empty")
+theme_override_colors/font_color = Color(0.96, 0.86, 0.42, 1)
+theme_override_colors/font_shadow_color = Color(0.02, 0.018, 0.03, 0.75)
+theme_override_constants/shadow_offset_y = 5
+theme_override_font_sizes/font_size = 64
 text = "SHOP"
+
+[node name="ResetLabel" type="Label" parent="Content/Header/TitleGroup"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.66, 0.94, 0.92, 1)
+theme_override_font_sizes/font_size = 16
+text = "CONSUMABLES RESET IN 03:00:00"
+
+[node name="BackFrame" type="PanelContainer" parent="Content/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(170, 58)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("Style_empty")
+script = ExtResource("5_pixel_frame")
+base_tint = Color(0.12, 0.07, 0.12, 1)
+frame_outline_tint = Color(1, 0.86, 0.42, 1)
+base_outline_tint = Color(0.26, 0.12, 0.2, 1)
+base_fill_tint = Color(0.12, 0.07, 0.12, 1)
+component_scale = 1.5
+top_right_corner_variant = 1
+
+[node name="BackButton" type="Button" parent="Content/Header/BackFrame"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.93, 0.62, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 0.82, 1)
+theme_override_colors/font_pressed_color = Color(0.86, 0.68, 0.3, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("Style_empty")
+theme_override_styles/hover = SubResource("Style_empty")
+theme_override_styles/pressed = SubResource("Style_empty")
+theme_override_styles/focus = SubResource("Style_empty")
+text = "BACK"
 flat = true
+
+[node name="ShopPanel" type="PanelContainer" parent="Content"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("Style_empty")
+script = ExtResource("5_pixel_frame")
+base_tint = Color(0.07, 0.09, 0.08, 0.92)
+frame_outline_tint = Color(0.95, 0.76, 0.42, 0.92)
+base_outline_tint = Color(0.13, 0.18, 0.16, 0.95)
+base_fill_tint = Color(0.07, 0.09, 0.08, 0.92)
+component_scale = 2.0
+top_right_corner_variant = 1
+
+[node name="Margin" type="MarginContainer" parent="Content/ShopPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 24
+
+[node name="OffersGrid" type="GridContainer" parent="Content/ShopPanel/Margin"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_constants/h_separation = 22
+theme_override_constants/v_separation = 18
+columns = 5
+
+[node name="CountdownTimer" type="Timer" parent="."]
+unique_name_in_owner = true
+wait_time = 1.0
+autostart = true

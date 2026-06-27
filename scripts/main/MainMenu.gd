@@ -1,6 +1,7 @@
 extends Control
 
 const GAME_SCENE_PATH := "res://scenes/main/Main.tscn"
+const SHOP_SCENE_PATH := "res://scenes/main/Shop.tscn"
 const HOVER_SCALE := Vector2(1.08, 1.08)
 const PRESSED_SCALE := Vector2(0.94, 0.94)
 const NORMAL_SCALE := Vector2.ONE
@@ -16,8 +17,10 @@ const SILHOUETTE_TEXTURES := [
 
 @onready var _play_button: Button = %PlayButton
 @onready var _play_frame: PixelFramePanel = %PlayFrame
+@onready var _shop_button: Button = %ShopButton
+@onready var _shop_frame: PixelFramePanel = %ShopFrame
 
-var _button_tween: Tween
+var _button_tweens: Dictionary = {}
 var _spinner_tween: Tween
 var _loading_layer: CanvasLayer
 var _loading_overlay: ColorRect
@@ -28,43 +31,45 @@ var _loading_spinner: Control
 func _ready() -> void:
 	_create_loading_overlay()
 	_play_button.grab_focus()
-	_play_frame.pivot_offset = _play_frame.size * 0.5
-	_play_frame.resized.connect(_center_play_frame_pivot)
-	_play_button.mouse_entered.connect(_on_play_button_mouse_entered)
-	_play_button.mouse_exited.connect(_on_play_button_mouse_exited)
-	_play_button.button_down.connect(_on_play_button_down)
-	_play_button.button_up.connect(_on_play_button_up)
+	_setup_menu_button(_play_button, _play_frame)
+	_setup_menu_button(_shop_button, _shop_frame)
 	_play_button.pressed.connect(_on_play_button_pressed)
-
-
-func _center_play_frame_pivot() -> void:
-	_play_frame.pivot_offset = _play_frame.size * 0.5
-
-
-func _on_play_button_mouse_entered() -> void:
-	_tween_play_frame(HOVER_SCALE, 0.12)
-
-
-func _on_play_button_mouse_exited() -> void:
-	if _play_button.button_pressed:
-		return
-	_tween_play_frame(NORMAL_SCALE, 0.12)
-
-
-func _on_play_button_down() -> void:
-	_tween_play_frame(PRESSED_SCALE, 0.06)
-
-
-func _on_play_button_up() -> void:
-	var target_scale := HOVER_SCALE if _play_button.is_hovered() else NORMAL_SCALE
-	_tween_play_frame(target_scale, 0.1)
+	_shop_button.pressed.connect(_on_shop_button_pressed)
 
 
 func _on_play_button_pressed() -> void:
 	_play_button.disabled = true
-	_tween_play_frame(Vector2(1.12, 1.12), 0.09)
+	_shop_button.disabled = true
+	_tween_button_frame(_play_frame, Vector2(1.12, 1.12), 0.09)
 	await _show_loading_screen()
 	await _switch_to_gameplay()
+
+
+func _on_shop_button_pressed() -> void:
+	_play_button.disabled = true
+	_shop_button.disabled = true
+	_tween_button_frame(_shop_frame, Vector2(1.12, 1.12), 0.09)
+	get_tree().change_scene_to_file(SHOP_SCENE_PATH)
+
+
+func _setup_menu_button(button: Button, frame: PixelFramePanel) -> void:
+	frame.pivot_offset = frame.size * 0.5
+	frame.resized.connect(func() -> void: frame.pivot_offset = frame.size * 0.5)
+	button.mouse_entered.connect(_tween_button_frame.bind(frame, HOVER_SCALE, 0.12))
+	button.mouse_exited.connect(_on_menu_button_mouse_exited.bind(button, frame))
+	button.button_down.connect(_tween_button_frame.bind(frame, PRESSED_SCALE, 0.06))
+	button.button_up.connect(_on_menu_button_up.bind(button, frame))
+
+
+func _on_menu_button_mouse_exited(button: Button, frame: PixelFramePanel) -> void:
+	if button.button_pressed:
+		return
+	_tween_button_frame(frame, NORMAL_SCALE, 0.12)
+
+
+func _on_menu_button_up(button: Button, frame: PixelFramePanel) -> void:
+	var target_scale := HOVER_SCALE if button.is_hovered() else NORMAL_SCALE
+	_tween_button_frame(frame, target_scale, 0.1)
 
 
 func _create_loading_overlay() -> void:
@@ -174,10 +179,13 @@ func _switch_to_gameplay() -> void:
 	queue_free()
 
 
-func _tween_play_frame(target_scale: Vector2, duration: float) -> void:
-	if _button_tween:
-		_button_tween.kill()
-	_button_tween = create_tween()
-	_button_tween.tween_property(_play_frame, "scale", target_scale, duration) \
+func _tween_button_frame(frame: PixelFramePanel, target_scale: Vector2, duration: float) -> void:
+	if _button_tweens.has(frame):
+		var old_tween := _button_tweens[frame] as Tween
+		if old_tween and old_tween.is_valid():
+			old_tween.kill()
+	var tween := create_tween()
+	tween.tween_property(frame, "scale", target_scale, duration) \
 		.set_trans(Tween.TRANS_BACK) \
 		.set_ease(Tween.EASE_OUT)
+	_button_tweens[frame] = tween
