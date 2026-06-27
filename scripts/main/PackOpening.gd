@@ -8,6 +8,9 @@ const WeaponCatalogData  = preload("res://scripts/data/WeaponCatalog.gd")
 const CardRevealFxScript := preload("res://scripts/main/CardRevealFx.gd")
 
 const STAR_CRUSH_FONT := preload("res://fonts/Star Crush.ttf")
+const ITEM_REVEALING_SFX := preload("res://audio/sfx/item-revealing.mp3")
+const ITEM_REVEALED_SFX := preload("res://audio/sfx/item-revealed.mp3")
+const HIT_SFX := preload("res://audio/sfx/hit.mp3")
 
 const PACK_STATE_CLOSED   := "closed"
 const PACK_STATE_REVEALED := "revealed"
@@ -202,12 +205,21 @@ func _open_floating_pack() -> void:
 	var pack_id := str(_pack_texture.get_meta("pack_id", "basic"))
 	var reward  := _roll_pack_card(pack_id)
 
+	_play_sfx(HIT_SFX, -4.0)
+	_play_sfx(ITEM_REVEALING_SFX)
 	var shake := _pack_stage.create_tween()
-	shake.tween_property(_pack_texture, "rotation_degrees", -12.0, 0.06)
-	shake.tween_property(_pack_texture, "rotation_degrees",  13.0, 0.06)
-	shake.tween_property(_pack_texture, "rotation_degrees",  -8.0, 0.05)
-	shake.tween_property(_pack_texture, "rotation_degrees",   0.0, 0.05)
+	shake.tween_property(_pack_texture, "rotation_degrees", -12.0, 0.09)
+	shake.tween_property(_pack_texture, "rotation_degrees",  13.0, 0.09)
+	shake.tween_property(_pack_texture, "rotation_degrees", -11.0, 0.09)
+	shake.tween_property(_pack_texture, "rotation_degrees",  12.0, 0.09)
+	shake.tween_property(_pack_texture, "rotation_degrees",  -9.0, 0.09)
+	shake.tween_property(_pack_texture, "rotation_degrees",  10.0, 0.09)
+	shake.tween_property(_pack_texture, "rotation_degrees",  -7.0, 0.09)
+	shake.tween_property(_pack_texture, "rotation_degrees",   8.0, 0.09)
+	shake.tween_property(_pack_texture, "rotation_degrees",  -4.0, 0.09)
+	shake.tween_property(_pack_texture, "rotation_degrees",   0.0, 0.10)
 	await shake.finished
+	_play_sfx(ITEM_REVEALED_SFX)
 
 	_emit_pack_sparks(_pack_texture.global_position + _pack_texture.size * 0.5)
 
@@ -477,3 +489,14 @@ func _rarity_color(rarity: String) -> Color:
 		WeaponCatalogData.RARITY_UNCOMMON: return Color(0.62, 0.82, 1.0,  1.0)
 		WeaponCatalogData.RARITY_RARE:     return Color(1.0,  0.72, 0.96, 1.0)
 	return Color(1.0, 0.9, 0.55, 1.0)
+
+
+func _play_sfx(stream: AudioStream, volume_db: float = -2.0) -> void:
+	if not stream or not _pack_layer:
+		return
+	var player := AudioStreamPlayer.new()
+	player.stream = stream
+	player.volume_db = volume_db
+	_pack_layer.add_child(player)
+	player.finished.connect(player.queue_free, CONNECT_ONE_SHOT)
+	player.play()

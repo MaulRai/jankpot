@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/main/Shop.gd" id="1_shop"]
 [ext_resource type="Theme" path="res://themes/game_theme.tres" id="2_theme"]
-[ext_resource type="AudioStream" path="res://audio/bgm/main-menu-loop.mp3" id="3_bgm"]
+[ext_resource type="AudioStream" path="res://audio/bgm/shop-loop.mp3" id="3_bgm"]
 [ext_resource type="Script" path="res://scripts/audio/BGMPlayer.gd" id="4_bgm_player"]
 [ext_resource type="Script" path="res://scripts/ui/PixelFramePanel.gd" id="5_pixel_frame"]
 [ext_resource type="Shader" path="res://shaders/main_menu_background.gdshader" id="6_background_shader"]
@@ -24,6 +24,7 @@ script = ExtResource("1_shop")
 
 [node name="BGM" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("3_bgm")
+volume_db = -6.0
 script = ExtResource("4_bgm_player")
 
 [node name="Background" type="ColorRect" parent="."]
