@@ -1,6 +1,6 @@
 extends Control
 
-const GAME_SCENE_PATH := "res://scenes/main/Main.tscn"
+const PREPARATION_SCENE_PATH := "res://scenes/main/Preparation.tscn"
 const SHOP_SCENE_PATH := "res://scenes/main/Shop.tscn"
 const HOVER_SCALE := Vector2(1.08, 1.08)
 const PRESSED_SCALE := Vector2(0.94, 0.94)
@@ -43,7 +43,7 @@ func _on_play_button_pressed() -> void:
 	_shop_button.disabled = true
 	_tween_button_frame(_play_frame, Vector2(1.12, 1.12), 0.09)
 	await _show_loading_screen()
-	await _switch_to_gameplay()
+	await _switch_to_preparation()
 
 
 func _on_shop_button_pressed() -> void:
@@ -165,16 +165,16 @@ func _show_loading_screen() -> void:
 	await get_tree().create_timer(LOADING_HOLD_DURATION).timeout
 
 
-func _switch_to_gameplay() -> void:
-	var packed_scene := load(GAME_SCENE_PATH) as PackedScene
+func _switch_to_preparation() -> void:
+	var packed_scene := load(PREPARATION_SCENE_PATH) as PackedScene
 	if not packed_scene:
-		get_tree().change_scene_to_file(GAME_SCENE_PATH)
+		get_tree().change_scene_to_file(PREPARATION_SCENE_PATH)
 		return
 
-	var gameplay_scene := packed_scene.instantiate()
+	var preparation_scene := packed_scene.instantiate()
 	var tree := get_tree()
-	tree.root.add_child(gameplay_scene)
-	tree.current_scene = gameplay_scene
+	tree.root.add_child(preparation_scene)
+	tree.current_scene = preparation_scene
 	await tree.process_frame
 	await tree.process_frame
 	_loading_layer.queue_free()

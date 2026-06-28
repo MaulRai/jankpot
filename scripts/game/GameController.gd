@@ -6,6 +6,8 @@ const BattleStateData = preload("res://scripts/game/battle/BattleState.gd")
 const BattleEffectResolverData = preload("res://scripts/game/battle/BattleEffectResolver.gd")
 const BattleEffectExecutorData = preload("res://scripts/game/battle/BattleEffectExecutor.gd")
 const BattleAnimatorData = preload("res://scripts/animation/BattleAnimator.gd")
+const RunConfigData = preload("res://scripts/data/RunConfig.gd")
+const PlayerStorageData = preload("res://scripts/data/PlayerStorage.gd")
 
 signal turn_resolved
 signal battle_ended(winner: String)
@@ -96,13 +98,16 @@ func _ready() -> void:
 	consumable_shelf.shield_requested.connect(_on_shield_requested)
 	consumable_shelf.remedy_kit_requested.connect(_on_remedy_kit_requested)
 	consumable_shelf.cup_a_joe_requested.connect(_on_cup_a_joe_requested)
+	_stock_consumables_from_storage()
 	await _initialize_first_battle()
 
 
 func _initialize_first_battle() -> void:
 	_is_animating = true
 	hand_view.set_dragging_enabled(false)
-	var selected_enemy := enemy_controller.select_random_non_boss(0)
+	var selected_enemy := _select_stage_enemy(0)
+	deck_manager.assigned_deck = PlayerStorageData.selected_weapon_cards()
+	deck_manager.deck_blueprint.clear()
 	deck_manager.setup_starting_deck()
 	_animator.update_pile_visuals()
 	await get_tree().process_frame
@@ -160,6 +165,7 @@ func _on_magic_ball_requested() -> void:
 		wrong_types.erase(prediction)
 		prediction = wrong_types.pick_random() as CardDef.CardType
 	consumable_shelf.consume_magic_ball()
+	_on_storage_consumable_used(PlayerStorageData.CONSUMABLE_MAGIC_BALL)
 	magic_ball_modal.show_prediction(prediction)
 
 
@@ -168,6 +174,7 @@ func _on_shield_requested() -> void:
 		return
 	_state.player_shield += 1
 	consumable_shelf.consume_shield()
+	_on_storage_consumable_used(PlayerStorageData.CONSUMABLE_SHIELD)
 	_update_labels()
 
 
@@ -178,6 +185,7 @@ func _on_remedy_kit_requested() -> void:
 		return
 	_state.player_bleed_pending = false
 	consumable_shelf.consume_remedy_kit()
+	_on_storage_consumable_used(PlayerStorageData.CONSUMABLE_REMEDY_KIT)
 	_update_labels()
 
 
@@ -187,6 +195,7 @@ func _on_cup_a_joe_requested() -> void:
 	_state.player_cup_a_joe_pending = true
 	sfx_manager.play_sfx("power_up")
 	consumable_shelf.consume_cup_a_joe()
+	_on_storage_consumable_used(PlayerStorageData.CONSUMABLE_CUP_A_JOE)
 	_update_labels()
 
 
@@ -284,8 +293,13 @@ func _end_battle() -> void:
 		winner = "Enemy"
 	elif enemy_hp <= 0 and player_hp > 0:
 		winner = "Player"
+	if winner == "Player":
+		_award_battle_money()
 	battle_ended.emit(winner)
 	if winner == "Player":
+		if RunConfigData.is_final_stage(stage_number):
+			_is_animating = false
+			return
 		reward_overlay.show_choices(WeaponCatalogData.generate_reward_choices(
 			3, deck_manager.get_types_with_basic_weapon()
 		))
@@ -311,7 +325,7 @@ func start_battle() -> void:
 	battle_sidebar.clear_history()
 	hand_view.set_cards([])
 	var upgrade_count := clampi(stage_number - 1, 0, 9)
-	battle_sidebar.set_enemy_info(enemy_controller.select_random_non_boss(upgrade_count))
+	battle_sidebar.set_enemy_info(_select_stage_enemy(upgrade_count))
 	deck_manager.setup_starting_deck()
 	await _animator.refill_hand()
 	await _prepare_enemy_card()
@@ -421,3 +435,42 @@ func _has_hatter_slip(cards: Array[CardDef], excluded_card: CardDef) -> bool:
 				and WeaponCatalogData.EFFECT_HATTER_SLIP in card.effects:
 			return true
 	return false
+
+
+func _select_stage_enemy(upgrade_count: int) -> Dictionary:
+	var enemy_id := RunConfigData.enemy_id_for_stage(stage_number)
+	if enemy_id.is_empty():
+		return enemy_controller.select_random_non_boss(upgrade_count)
+	return enemy_controller.select_enemy(enemy_id, upgrade_count)
+
+
+func _stock_consumables_from_storage() -> void:
+	var counts := PlayerStorageData.consumable_counts()
+	if int(counts.get(PlayerStorageData.CONSUMABLE_MAGIC_BALL, 0)) > 0:
+		consumable_shelf.add_magic_ball()
+	if int(counts.get(PlayerStorageData.CONSUMABLE_SHIELD, 0)) > 0:
+		consumable_shelf.add_shield()
+	if int(counts.get(PlayerStorageData.CONSUMABLE_REMEDY_KIT, 0)) > 0:
+		consumable_shelf.add_remedy_kit()
+	if int(counts.get(PlayerStorageData.CONSUMABLE_CUP_A_JOE, 0)) > 0:
+		consumable_shelf.add_cup_a_joe()
+
+
+func _on_storage_consumable_used(consumable_id: String) -> void:
+	var remaining := PlayerStorageData.consume_consumable(consumable_id)
+	if remaining <= 0:
+		return
+	match consumable_id:
+		PlayerStorageData.CONSUMABLE_MAGIC_BALL:
+			consumable_shelf.add_magic_ball()
+		PlayerStorageData.CONSUMABLE_SHIELD:
+			consumable_shelf.add_shield()
+		PlayerStorageData.CONSUMABLE_REMEDY_KIT:
+			consumable_shelf.add_remedy_kit()
+		PlayerStorageData.CONSUMABLE_CUP_A_JOE:
+			consumable_shelf.add_cup_a_joe()
+
+
+func _award_battle_money() -> void:
+	var is_boss := bool(enemy_controller.current_enemy.get("is_boss", false))
+	PlayerStorageData.add_money(3 if is_boss else 1)

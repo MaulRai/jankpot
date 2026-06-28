@@ -1,0 +1,24 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/main/Preparation.gd" id="1_prep"]
+[ext_resource type="Theme" path="res://themes/game_theme.tres" id="2_theme"]
+[ext_resource type="AudioStream" path="res://audio/bgm/main-menu-loop.mp3" id="3_bgm"]
+[ext_resource type="Script" path="res://scripts/audio/BGMPlayer.gd" id="4_bgm_player"]
+[ext_resource type="Script" path="res://scripts/audio/SFXManager.gd" id="5_sfx_manager"]
+
+[node name="Preparation" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_prep")
+
+[node name="BGM" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("3_bgm")
+script = ExtResource("4_bgm_player")
+
+[node name="SFXManager" type="Node" parent="."]
+script = ExtResource("5_sfx_manager")

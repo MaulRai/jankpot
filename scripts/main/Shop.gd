@@ -2,6 +2,7 @@ extends Control
 
 const WeaponCatalogData = preload("res://scripts/data/WeaponCatalog.gd")
 const PackOpeningScript := preload("res://scripts/main/PackOpening.gd")
+const PlayerStorageData = preload("res://scripts/data/PlayerStorage.gd")
 
 const MAIN_MENU_SCENE_PATH := "res://scenes/main/MainMenu.tscn"
 const RESET_SECONDS        := 60 * 60 * 3
@@ -9,6 +10,8 @@ const HOVER_SCALE          := Vector2(1.06, 1.06)
 const PRESS_SCALE          := Vector2(0.95, 0.95)
 const SHOPKEEPER_TYPE_INTERVAL := 0.018
 const SHOPKEEPER_THANKS_HOLD_RANGE := Vector2(6.0, 8.0)
+const SHOPKEEPER_BLIP_MIN_INTERVAL := 0.095
+const SHOPKEEPER_BLIP_STREAM := preload("res://audio/blip/shopkeeper-neutral.mp3")
 
 const STAR_CRUSH_FONT    := preload("res://fonts/Star Crush.ttf")
 const BASIC_PACK_TEXTURE := preload("res://assets/item/pack/basic-weapon-card-pack.png")
@@ -72,6 +75,7 @@ const SHOPKEEPER_THANKS_LINES := [
 @onready var _back_frame:   PixelFramePanel = %BackFrame
 @onready var _timer:        Timer          = %CountdownTimer
 @onready var _shopkeeper_line: Label       = %ShopkeeperLine
+@onready var _money_label: Label          = %MoneyLabel
 
 var _frame_tweens: Dictionary = {}
 var _pack_opening: Control
@@ -80,11 +84,14 @@ var _shopkeeper_chatter_tween: Tween
 var _shopkeeper_type_tween: Tween
 var _shopkeeper_restore_token := 0
 var _shopkeeper_is_thanking := false
+var _last_shopkeeper_blip_msec := -100000
+var _shopkeeper_blips_enabled := false
 
 
 func _ready() -> void:
 	_pack_opening = PackOpeningScript.new()
 	_pack_opening.initialise(self)
+	_pack_opening.card_awarded.connect(PlayerStorageData.add_weapon)
 
 	_setup_frame_button(_back_button, _back_frame)
 	_back_button.pressed.connect(
@@ -95,7 +102,8 @@ func _ready() -> void:
 	_timer.timeout.connect(_update_reset_label)
 	_populate_shop()
 	_update_reset_label()
-	var type_duration := _show_random_shopkeeper_line()
+	_update_money_label()
+	var type_duration := _show_random_shopkeeper_line(true)
 	_schedule_shopkeeper_chatter(type_duration)
 
 
@@ -140,10 +148,10 @@ func _rotating_consumables() -> Array:
 
 func _all_consumables() -> Array:
 	return [
-		{ "name": "Magic Ball",  "price": 4, "description": "Predicts the enemy's next weapon.",  "texture": MAGIC_BALL_TEXTURE, "kind": "consumable" },
-		{ "name": "Shield",      "price": 2, "description": "Blocks 1 DMG.",                      "texture": SHIELD_TEXTURE,     "kind": "consumable" },
-		{ "name": "Remedy Kit",  "price": 2, "description": "Removes Bleed.",                     "texture": REMEDY_KIT_TEXTURE, "kind": "consumable" },
-		{ "name": "Cup-a-Joe",   "price": 2, "description": "Win attacks twice this turn.",       "texture": CUP_A_JOE_TEXTURE,  "kind": "consumable" },
+		{ "name": "Magic Ball",  "price": 4, "description": "Predicts the enemy's next weapon.",  "texture": MAGIC_BALL_TEXTURE, "kind": "consumable", "item_id": PlayerStorageData.CONSUMABLE_MAGIC_BALL },
+		{ "name": "Shield",      "price": 2, "description": "Blocks 1 DMG.",                      "texture": SHIELD_TEXTURE,     "kind": "consumable", "item_id": PlayerStorageData.CONSUMABLE_SHIELD },
+		{ "name": "Remedy Kit",  "price": 2, "description": "Removes Bleed.",                     "texture": REMEDY_KIT_TEXTURE, "kind": "consumable", "item_id": PlayerStorageData.CONSUMABLE_REMEDY_KIT },
+		{ "name": "Cup-a-Joe",   "price": 2, "description": "Win attacks twice this turn.",       "texture": CUP_A_JOE_TEXTURE,  "kind": "consumable", "item_id": PlayerStorageData.CONSUMABLE_CUP_A_JOE },
 	]
 
 
@@ -208,7 +216,8 @@ func _create_offer(data: Dictionary) -> Control:
 	card.add_child(buy_frame)
 
 	var buy_button := Button.new()
-	buy_button.text = "$%d" % int(data["price"])
+	var price := int(data["price"])
+	buy_button.text = _format_buy_button_text(price, false)
 	buy_button.flat = true
 	buy_button.add_theme_font_size_override("font_size", 21)
 	buy_button.add_theme_color_override("font_color",         Color(1.0,  0.93, 0.62, 1.0))
@@ -218,6 +227,18 @@ func _create_offer(data: Dictionary) -> Control:
 		buy_button.add_theme_stylebox_override(style, StyleBoxEmpty.new())
 	buy_frame.add_child(buy_button)
 	_setup_frame_button(buy_button, buy_frame)
+	buy_button.mouse_entered.connect(
+		func() -> void: _set_buy_button_text(buy_button, price, true)
+	)
+	buy_button.mouse_exited.connect(
+		func() -> void: _set_buy_button_text(buy_button, price, false)
+	)
+	buy_button.button_down.connect(
+		func() -> void: _set_buy_button_text(buy_button, price, true)
+	)
+	buy_button.button_up.connect(
+		func() -> void: _set_buy_button_text(buy_button, price, buy_button.is_hovered())
+	)
 	buy_button.pressed.connect(_on_buy_pressed.bind(buy_button, buy_frame, data))
 
 	return card
@@ -257,17 +278,29 @@ func _on_button_up(button: Button, frame: PixelFramePanel) -> void:
 
 func _on_buy_pressed(button: Button, frame: PixelFramePanel, data: Dictionary) -> void:
 	var price := int(data["price"])
+	if not PlayerStorageData.spend_money(price):
+		_play_sfx("buzzer")
+		_tween_frame(frame, Vector2(0.94, 0.94), 0.06)
+		_set_shopkeeper_line("Coin first, confidence later.", true)
+		await get_tree().create_timer(0.12).timeout
+		if is_instance_valid(frame):
+			_tween_frame(frame, HOVER_SCALE if button.is_hovered() else Vector2.ONE, 0.12)
+		return
+
 	_play_sfx("chaching")
-	button.text = "BUY $%d" % price
+	_set_buy_button_text(button, price, true)
+	_update_money_label()
 	_tween_frame(frame, Vector2(1.12, 1.12), 0.08)
 	await get_tree().create_timer(0.22).timeout
 	if is_instance_valid(button):
-		button.text = "$%d" % price
+		_set_buy_button_text(button, price, button.is_hovered())
 	if is_instance_valid(frame):
 		_tween_frame(frame, HOVER_SCALE if button.is_hovered() else Vector2.ONE, 0.12)
 	_show_shopkeeper_thanks()
 	if data.get("kind", "") == "pack":
 		await _pack_opening.start(str(data.get("pack_id", "basic")), data["texture"] as Texture2D)
+	elif data.get("kind", "") == "consumable":
+		PlayerStorageData.add_consumable(str(data.get("item_id", "")))
 
 
 func _tween_frame(frame: PixelFramePanel, target_scale: Vector2, duration: float) -> void:
@@ -280,6 +313,15 @@ func _tween_frame(frame: PixelFramePanel, target_scale: Vector2, duration: float
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	_frame_tweens[frame] = tween
 
+
+func _format_buy_button_text(price: int, show_action: bool) -> String:
+	return "BUY $%d" % price if show_action else "$%d" % price
+
+
+func _set_buy_button_text(button: Button, price: int, show_action: bool) -> void:
+	if is_instance_valid(button):
+		button.text = _format_buy_button_text(price, show_action)
+
 func _update_reset_label() -> void:
 	var seconds_left := maxi(0,
 		(_current_reset_block() + 1) * RESET_SECONDS - Time.get_unix_time_from_system()
@@ -291,19 +333,23 @@ func _update_reset_label() -> void:
 	]
 
 
+func _update_money_label() -> void:
+	_money_label.text = "$%d" % PlayerStorageData.money()
+
+
 func _current_reset_block() -> int:
 	return int(Time.get_unix_time_from_system() / RESET_SECONDS)
 
 
-func _show_random_shopkeeper_line() -> float:
-	return _set_shopkeeper_line(str(SHOPKEEPER_LINES.pick_random()))
+func _show_random_shopkeeper_line(play_blips := false) -> float:
+	return _set_shopkeeper_line(str(SHOPKEEPER_LINES.pick_random()), play_blips)
 
 
 func _show_shopkeeper_thanks() -> void:
 	_shopkeeper_restore_token += 1
 	var token := _shopkeeper_restore_token
 	_shopkeeper_is_thanking = true
-	var type_duration := _set_shopkeeper_line(str(SHOPKEEPER_THANKS_LINES.pick_random()))
+	var type_duration := _set_shopkeeper_line(str(SHOPKEEPER_THANKS_LINES.pick_random()), true)
 
 	if _shopkeeper_tween and _shopkeeper_tween.is_valid():
 		_shopkeeper_tween.kill()
@@ -324,23 +370,24 @@ func _show_shopkeeper_thanks() -> void:
 	)
 
 
-func _set_shopkeeper_line(line: String) -> float:
+func _set_shopkeeper_line(line: String, play_blips := false) -> float:
 	if not is_instance_valid(_shopkeeper_line):
 		return 0.0
 	if _shopkeeper_type_tween and _shopkeeper_type_tween.is_valid():
 		_shopkeeper_type_tween.kill()
 	_shopkeeper_line.text = line
 	_shopkeeper_line.visible_characters = 0
+	_last_shopkeeper_blip_msec = -100000
+	_shopkeeper_blips_enabled = play_blips
 
 	var character_count := line.length()
 	var type_duration := float(character_count) * SHOPKEEPER_TYPE_INTERVAL
 	_shopkeeper_type_tween = create_tween()
-	_shopkeeper_type_tween.tween_property(
-		_shopkeeper_line,
-		"visible_characters",
-		character_count,
-		type_duration
-	)
+	for visible_count in range(1, character_count + 1):
+		_shopkeeper_type_tween.tween_callback(
+			_reveal_shopkeeper_character.bind(line, visible_count)
+		)
+		_shopkeeper_type_tween.tween_interval(SHOPKEEPER_TYPE_INTERVAL)
 	return type_duration
 
 
@@ -361,3 +408,41 @@ func _play_sfx(sfx_name: String, volume_offset_db: float = 0.0) -> void:
 	var manager: Node = get_tree().get_first_node_in_group("sfx_manager")
 	if manager:
 		manager.play_sfx(sfx_name, volume_offset_db)
+
+
+func _reveal_shopkeeper_character(line: String, visible_count: int) -> void:
+	if not is_instance_valid(_shopkeeper_line):
+		return
+	_shopkeeper_line.visible_characters = visible_count
+	if _shopkeeper_blips_enabled and _should_play_shopkeeper_blip(line, visible_count):
+		_play_shopkeeper_blip()
+
+
+func _should_play_shopkeeper_blip(line: String, visible_count: int) -> bool:
+	var index := visible_count - 1
+	if index < 0 or index >= line.length():
+		return false
+
+	var character := line.substr(index, 1)
+	if character.strip_edges().is_empty():
+		return false
+	if ".,!?;:'\"-".contains(character):
+		return false
+
+	var now_msec := Time.get_ticks_msec()
+	if float(now_msec - _last_shopkeeper_blip_msec) < SHOPKEEPER_BLIP_MIN_INTERVAL * 1000.0:
+		return false
+
+	_last_shopkeeper_blip_msec = now_msec
+	return true
+
+
+func _play_shopkeeper_blip() -> void:
+	var player := AudioStreamPlayer.new()
+	player.stream = SHOPKEEPER_BLIP_STREAM
+	player.volume_db = -12.0
+	player.pitch_scale = randf_range(0.96, 1.04)
+	player.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(player)
+	player.finished.connect(player.queue_free, CONNECT_ONE_SHOT)
+	player.play()

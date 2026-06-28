@@ -4,6 +4,8 @@
 class_name PackOpening
 extends Control
 
+signal card_awarded(card: CardDef)
+
 const WeaponCatalogData  = preload("res://scripts/data/WeaponCatalog.gd")
 const CardRevealFxScript := preload("res://scripts/main/CardRevealFx.gd")
 
@@ -233,6 +235,7 @@ func _open_floating_pack() -> void:
 	_pack_texture.visible = false
 
 	await _reveal_card(reward)
+	card_awarded.emit(reward)
 
 	_pack_prompt.text = "TAP ANYWHERE TO CONTINUE"
 	var prompt_tween := _pack_stage.create_tween()
