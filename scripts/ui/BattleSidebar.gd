@@ -19,6 +19,8 @@ const BUTTON_PRESS_SCALE := Vector2(0.96, 0.96)
 @onready var trial_value: Label = %TrialValue
 @onready var clash_value: Label = %ClashValue
 @onready var pause_button: Button = %PauseButton
+@onready var money_display: Control = %MoneyDisplay
+@onready var money_label: Label = %MoneyLabel
 
 var _heart_texture: Texture2D = preload("res://assets/ui/heart.png")
 var _enemy_history_cards: Array[CardDef] = []
@@ -26,6 +28,11 @@ var _player_history_cards: Array[CardDef] = []
 var _history_turns: Array[int] = []
 var _history_turn := 0
 var _pause_button_tween: Tween
+var _money_tween: Tween
+var _money_gain_label: Label
+var _player_health_displayed := 0
+var _enemy_health_displayed := 0
+var _heart_fill_tweens: Dictionary = {}
 
 func _ready() -> void:
 	_build_heart_row(enemy_hearts)
@@ -43,8 +50,10 @@ func _ready() -> void:
 	)
 
 func set_health(player_health: int, enemy_health: int) -> void:
-	_update_heart_row(player_hearts, player_health)
-	_update_heart_row(enemy_hearts, enemy_health)
+	_update_heart_row(player_hearts, player_health, _player_health_displayed)
+	_update_heart_row(enemy_hearts, enemy_health, _enemy_health_displayed)
+	_player_health_displayed = clampi(player_health, 0, MAX_HEALTH)
+	_enemy_health_displayed = clampi(enemy_health, 0, MAX_HEALTH)
 
 func _on_pause_button_mouse_exited() -> void:
 	if pause_button.button_pressed:
@@ -66,10 +75,55 @@ func set_progress(trial_current: int, trial_total: int, clash: int) -> void:
 	trial_value.text = "%d / %d" % [trial_current, trial_total]
 	clash_value.text = str(clash)
 
+func set_money(amount: int) -> void:
+	money_label.text = str(maxi(0, amount))
+
+func animate_money_gain(amount: int) -> void:
+	if amount <= 0:
+		return
+	if _money_tween and _money_tween.is_valid():
+		_money_tween.kill()
+	if _money_gain_label and is_instance_valid(_money_gain_label):
+		_money_gain_label.queue_free()
+	money_display.scale = Vector2.ONE
+	var gain_label := Label.new()
+	_money_gain_label = gain_label
+	gain_label.text = "+$%d" % amount
+	gain_label.z_index = 20
+	gain_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	gain_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	gain_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	gain_label.add_theme_font_size_override("font_size", 22)
+	gain_label.add_theme_color_override("font_color", Color(0.55, 1.0, 0.74, 1.0))
+	gain_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.08, 0.04, 0.85))
+	gain_label.add_theme_constant_override("shadow_offset_x", 1)
+	gain_label.add_theme_constant_override("shadow_offset_y", 2)
+	money_display.add_child(gain_label)
+	gain_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	gain_label.position = Vector2(-4.0, -8.0)
+
+	_money_tween = create_tween()
+	_money_tween.set_parallel(true)
+	_money_tween.tween_property(money_display, "scale", Vector2(1.08, 1.08), 0.12) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_money_tween.tween_property(gain_label, "position:y", -34.0, 0.62) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_money_tween.tween_property(gain_label, "modulate:a", 0.0, 0.42) \
+		.set_delay(0.2).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	_money_tween.chain().tween_property(money_display, "scale", Vector2.ONE, 0.12) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	_money_tween.finished.connect(func() -> void:
+		if is_instance_valid(gain_label):
+			gain_label.queue_free()
+		if _money_gain_label == gain_label:
+			_money_gain_label = null
+	)
+
 func set_enemy_info(enemy_data: Dictionary) -> void:
 	enemy_name.text = str(enemy_data.get("name", "Unknown Rival"))
 	behavior.text = str(enemy_data.get("description", "No known pattern."))
-	reward.text = "REWARD  -  %s" % str(enemy_data.get("reward", "Choose 1 Upgrade"))
+	var default_reward := "$$$" if bool(enemy_data.get("is_boss", false)) else "$"
+	reward.text = "REWARD  -  %s" % str(enemy_data.get("reward", default_reward))
 	var icon_path := str(enemy_data.get("icon", ""))
 	enemy_icon.visible = not icon_path.is_empty() and ResourceLoader.exists(icon_path)
 	if enemy_icon.visible:
@@ -223,13 +277,53 @@ func _build_heart_row(container: HBoxContainer) -> void:
 		heart.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		container.add_child(heart)
 
-func _update_heart_row(container: HBoxContainer, health: int) -> void:
+func _update_heart_row(container: HBoxContainer, health: int, previous_health := -1) -> void:
 	var clamped_health := clampi(health, 0, MAX_HEALTH)
+	var previous := clampi(previous_health, 0, MAX_HEALTH)
+	var should_animate_fill := previous_health >= 0 and clamped_health > previous
+	_kill_heart_fill_tween(container)
 	for i in range(container.get_child_count()):
 		var heart := container.get_child(i) as TextureRect
 		if heart:
 			heart.visible = true
 			heart.modulate = Color.WHITE if i < clamped_health else Color(0.16, 0.17, 0.2, 0.5)
+			heart.scale = Vector2.ONE
+			if should_animate_fill and i >= previous and i < clamped_health:
+				heart.modulate.a = 0.0
+				heart.scale = Vector2(0.68, 0.68)
+				heart.pivot_offset = heart.size * 0.5
+	if should_animate_fill:
+		_play_heart_fill_sequence(container, previous, clamped_health)
+
+
+func _play_heart_fill_sequence(container: HBoxContainer, start_index: int, end_health: int) -> void:
+	var tween := create_tween()
+	tween.set_parallel(true)
+	_heart_fill_tweens[container] = tween
+	for i in range(start_index, end_health):
+		var heart := container.get_child(i) as TextureRect
+		if not heart:
+			continue
+		var delay := float(i - start_index) * 0.07
+		tween.tween_property(heart, "modulate:a", 1.0, 0.16) \
+			.set_delay(delay).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tween.tween_property(heart, "scale", Vector2(1.18, 1.18), 0.12) \
+			.set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tween.tween_property(heart, "scale", Vector2.ONE, 0.12) \
+			.set_delay(delay + 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.finished.connect(func() -> void:
+		if _heart_fill_tweens.get(container) == tween:
+			_heart_fill_tweens.erase(container)
+	)
+
+
+func _kill_heart_fill_tween(container: HBoxContainer) -> void:
+	if not _heart_fill_tweens.has(container):
+		return
+	var tween := _heart_fill_tweens[container] as Tween
+	if tween and tween.is_valid():
+		tween.kill()
+	_heart_fill_tweens.erase(container)
 
 
 func _play_sfx(sfx_name: String, volume_offset_db: float = 0.0) -> void:

@@ -17,7 +17,7 @@ func to_dictionary() -> Dictionary:
 		"description": description,
 		"rule": rule,
 		"icon": icon_path,
-		"reward": "Choose 1 Upgrade",
+		"reward": "$$$" if is_boss else "$",
 	}
 	if is_boss:
 		data["is_boss"] = true

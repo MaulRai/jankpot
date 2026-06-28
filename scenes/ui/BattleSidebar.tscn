@@ -1,7 +1,8 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/BattleSidebar.gd" id="1_sidebar"]
 [ext_resource type="Script" path="res://scripts/ui/PixelFramePanel.gd" id="2_pixel_frame"]
+[ext_resource type="Texture2D" path="res://assets/ui/money-display.png" id="3_money_display"]
 
 [sub_resource type="StyleBoxFlat" id="Style_sidebar"]
 bg_color = Color(0.055, 0.063, 0.078, 0.98)
@@ -132,7 +133,7 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.98, 0.8, 0.32, 1)
 theme_override_font_sizes/font_size = 14
-text = "REWARD  •  Choose 1 Upgrade"
+text = "REWARD  -  $"
 
 [node name="HealthPanel" type="PanelContainer" parent="Margin/Sections"]
 visible = false
@@ -351,6 +352,46 @@ layout_mode = 2
 size_flags_vertical = 8
 theme_override_constants/separation = 8
 
+[node name="MoneyDisplay" type="Control" parent="Margin/Sections/UtilityPanel/Margin/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 33)
+layout_mode = 2
+size_flags_horizontal = 8
+
+[node name="Texture" type="TextureRect" parent="Margin/Sections/UtilityPanel/Margin/Buttons/MoneyDisplay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture_filter = 1
+texture = ExtResource("3_money_display")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Padding" type="MarginContainer" parent="Margin/Sections/UtilityPanel/Margin/Buttons/MoneyDisplay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_right = 12
+
+[node name="MoneyLabel" type="Label" parent="Margin/Sections/UtilityPanel/Margin/Buttons/MoneyDisplay/Padding"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.92, 0.54, 1)
+theme_override_colors/font_shadow_color = Color(0.13, 0.055, 0.015, 0.9)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 20
+text = "0"
+horizontal_alignment = 2
+vertical_alignment = 1
+
 [node name="RunInfo" type="Button" parent="Margin/Sections/UtilityPanel/Margin/Buttons"]
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
@@ -369,3 +410,7 @@ theme_override_styles/normal = SubResource("Style_button")
 theme_override_styles/hover = SubResource("Style_button_hover")
 theme_override_styles/pressed = SubResource("Style_button_hover")
 text = "Pause"
+
+[node name="Spacer" type="Control" parent="Margin/Sections/UtilityPanel/Margin/Buttons"]
+layout_mode = 2
+size_flags_vertical = 3

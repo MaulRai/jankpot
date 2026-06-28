@@ -17,6 +17,7 @@ const SHELF_SWAY_PIXELS := 3.0
 const CHAIN_SWAY_DURATION := 1.8
 const ITEM_HOVER_SCALE := Vector2(1.08, 1.08)
 const ITEM_PRESS_SCALE := Vector2(0.92, 0.92)
+const COMPLETE_POPUP_TEXT := "Complete"
 
 @onready var slots: HBoxContainer = %Slots
 @onready var shelf_body: Control = %ShelfBody
@@ -25,6 +26,8 @@ const ITEM_PRESS_SCALE := Vector2(0.92, 0.92)
 
 var _buttons: Dictionary = {}
 var _button_tweens: Dictionary = {}
+var _complete_tween: Tween
+var _complete_popup: Label
 
 func _ready() -> void:
 	_animate_chains()
@@ -72,6 +75,49 @@ func consume_remedy_kit() -> void:
 
 func consume_cup_a_joe() -> void:
 	_consume(&"cup_a_joe")
+
+func show_level_complete() -> void:
+	if _complete_tween and _complete_tween.is_valid():
+		_complete_tween.kill()
+	if _complete_popup and is_instance_valid(_complete_popup):
+		_complete_popup.queue_free()
+	var popup := Label.new()
+	_complete_popup = popup
+	popup.text = COMPLETE_POPUP_TEXT
+	popup.z_index = 30
+	popup.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	popup.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	popup.add_theme_font_size_override("font_size", 28)
+	popup.add_theme_color_override("font_color", Color(1.0, 0.9, 0.48, 1.0))
+	popup.add_theme_color_override("font_shadow_color", Color(0.0, 0.05, 0.04, 0.85))
+	popup.add_theme_constant_override("shadow_offset_x", 2)
+	popup.add_theme_constant_override("shadow_offset_y", 3)
+	add_child(popup)
+	popup.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	popup.offset_left = 0.0
+	popup.offset_right = 0.0
+	popup.offset_top = 192.0
+	popup.offset_bottom = 230.0
+	popup.modulate.a = 0.0
+	popup.scale = Vector2(0.88, 0.88)
+	popup.pivot_offset = Vector2(size.x * 0.5, 18.0)
+
+	_complete_tween = create_tween()
+	_complete_tween.set_parallel(true)
+	_complete_tween.tween_property(popup, "modulate:a", 1.0, 0.16) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	_complete_tween.tween_property(popup, "scale", Vector2(1.08, 1.08), 0.2) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_complete_tween.tween_property(popup, "position:y", popup.position.y + 14.0, 1.32) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_complete_tween.tween_property(popup, "modulate:a", 0.0, 0.4) \
+		.set_delay(1.25).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	_complete_tween.finished.connect(func() -> void:
+		if is_instance_valid(popup):
+			popup.queue_free()
+		if _complete_popup == popup:
+			_complete_popup = null
+	)
 
 func _add_unique_consumable(
 	item_id: StringName,

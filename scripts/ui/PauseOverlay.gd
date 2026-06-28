@@ -10,10 +10,12 @@ const PRESSED_SCALE := Vector2(0.94, 0.94)
 const NORMAL_SCALE := Vector2.ONE
 const MODE_PAUSE := "pause"
 const MODE_DEFEAT := "defeat"
+const MODE_VICTORY := "victory"
 
 @onready var dim: ColorRect = %Dim
 @onready var pause_window: Control = %PauseWindow
 @onready var title: Label = %Title
+@onready var reward_info: Label = %RewardInfo
 @onready var resume_frame: PixelFramePanel = %ResumeFrame
 @onready var main_menu_frame: PixelFramePanel = %MainMenuFrame
 @onready var resume_button: Button = %ResumeButton
@@ -24,6 +26,7 @@ var _button_tweens: Dictionary = {}
 var _overlay_tween: Tween
 var _is_open := false
 var _mode := MODE_PAUSE
+var _victory_money := 0
 
 
 func _ready() -> void:
@@ -55,6 +58,12 @@ func open_pause() -> void:
 
 func open_defeat() -> void:
 	_apply_mode(MODE_DEFEAT)
+	await _open()
+
+
+func open_victory(money_earned: int) -> void:
+	_victory_money = maxi(0, money_earned)
+	_apply_mode(MODE_VICTORY)
 	await _open()
 
 
@@ -104,9 +113,18 @@ func close_pause() -> void:
 
 func _apply_mode(mode: String) -> void:
 	_mode = mode
+	reward_info.visible = false
+	resume_frame.visible = true
 	if mode == MODE_DEFEAT:
 		title.text = "DEFEAT"
 		resume_button.text = "TRY AGAIN"
+		main_menu_button.text = "MAIN MENU"
+		return
+	if mode == MODE_VICTORY:
+		title.text = "VICTORY"
+		reward_info.text = "Earned $%d" % _victory_money
+		reward_info.visible = true
+		resume_frame.visible = false
 		main_menu_button.text = "MAIN MENU"
 		return
 	title.text = "PAUSED"

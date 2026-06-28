@@ -11,6 +11,7 @@ const PlayerStorageData = preload("res://scripts/data/PlayerStorage.gd")
 
 signal turn_resolved
 signal battle_ended(winner: String)
+signal boss_victory(money_earned: int)
 
 @onready var deck_manager: DeckManager = $DeckManager
 @onready var battle_resolver: BattleResolver = $BattleResolver
@@ -19,7 +20,7 @@ signal battle_ended(winner: String)
 @onready var battle_board: Control = get_node("../CenterBoard")
 @onready var player_slot: CardSlot = get_node("../CenterBoard/PlayerSlot")
 @onready var enemy_slot: CardSlot = get_node("../CenterBoard/EnemySlot")
-@onready var battle_sidebar: Control = get_node("../LeftPanel")
+@onready var battle_sidebar: BattleSidebar = get_node("../LeftPanel")
 @onready var tooltip_manager: TooltipManager = get_node("../TooltipManager")
 @onready var draw_pile_visual: Control = get_node("../DrawPileVisual")
 @onready var pile_card_bottom: TextureRect = get_node("../DrawPileVisual/PileCardBottom")
@@ -28,7 +29,7 @@ signal battle_ended(winner: String)
 @onready var pile_count_label: Label = get_node("../DrawPileVisual/CountLabel")
 @onready var reward_overlay: Control = get_node("../RewardOverlay")
 @onready var discard_viewer: Control = get_node("../DiscardViewer")
-@onready var consumable_shelf: Control = get_node("../ConsumableShelf")
+@onready var consumable_shelf: ConsumableShelf = get_node("../ConsumableShelf")
 @onready var magic_ball_modal: Control = get_node("../MagicBallModal")
 @onready var sfx_manager: Node = get_node("../SFXManager")
 
@@ -39,6 +40,7 @@ var _effect_executor: Node
 var _is_animating := false
 var _pending_enemy_card: CardDef
 var _enemy_preview_view: CardView
+var _run_money_earned := 0
 
 var player_hp: int:
 	get: return _state.player_hp
@@ -93,7 +95,6 @@ func _ready() -> void:
 	hand_view.card_play_requested.connect(_on_card_play_requested)
 	hand_view.card_drag_started.connect(_on_hand_card_drag_started)
 	hand_view.card_drag_ended.connect(_on_hand_card_drag_ended)
-	reward_overlay.reward_selected.connect(_on_reward_selected)
 	consumable_shelf.magic_ball_requested.connect(_on_magic_ball_requested)
 	consumable_shelf.shield_requested.connect(_on_shield_requested)
 	consumable_shelf.remedy_kit_requested.connect(_on_remedy_kit_requested)
@@ -111,6 +112,7 @@ func _initialize_first_battle() -> void:
 	deck_manager.setup_starting_deck()
 	_animator.update_pile_visuals()
 	await get_tree().process_frame
+	battle_sidebar.set_money(_run_money_earned)
 	battle_sidebar.set_enemy_info(selected_enemy)
 	await _refill_hand_or_give_skip()
 	await _prepare_enemy_card()
@@ -298,19 +300,14 @@ func _end_battle() -> void:
 	battle_ended.emit(winner)
 	if winner == "Player":
 		if RunConfigData.is_final_stage(stage_number):
+			boss_victory.emit(_run_money_earned)
 			_is_animating = false
 			return
-		reward_overlay.show_choices(WeaponCatalogData.generate_reward_choices(
-			3, deck_manager.get_types_with_basic_weapon()
-		))
+		consumable_shelf.show_level_complete()
+		stage_number += 1
+		await start_battle()
 	else:
 		_is_animating = false
-
-
-func _on_reward_selected(card: CardDef) -> void:
-	deck_manager.replace_basic_with_upgrade(card)
-	stage_number += 1
-	await start_battle()
 
 
 func start_battle() -> void:
@@ -473,4 +470,8 @@ func _on_storage_consumable_used(consumable_id: String) -> void:
 
 func _award_battle_money() -> void:
 	var is_boss := bool(enemy_controller.current_enemy.get("is_boss", false))
-	PlayerStorageData.add_money(3 if is_boss else 1)
+	var amount := 3 if is_boss else 1
+	PlayerStorageData.add_money(amount)
+	_run_money_earned += amount
+	battle_sidebar.set_money(_run_money_earned)
+	battle_sidebar.animate_money_gain(amount)

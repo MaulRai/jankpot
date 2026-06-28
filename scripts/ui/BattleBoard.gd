@@ -23,6 +23,9 @@ var tooltip_manager: TooltipManager
 var _heart_texture: Texture2D = preload("res://assets/ui/heart.png")
 var _bleed_texture: Texture2D = preload("res://assets/icon/effect/bleed.png")
 var _shield_texture: Texture2D = preload("res://assets/item/shield.png")
+var _player_health_displayed := 0
+var _enemy_health_displayed := 0
+var _heart_fill_tweens: Dictionary = {}
 
 
 func _ready() -> void:
@@ -44,8 +47,10 @@ func set_tooltip_manager(manager: TooltipManager) -> void:
 
 
 func set_health(player_health: int, enemy_health: int) -> void:
-	_update_heart_row(player_hearts, player_health)
-	_update_heart_row(enemy_hearts, enemy_health)
+	_update_heart_row(player_hearts, player_health, _player_health_displayed)
+	_update_heart_row(enemy_hearts, enemy_health, _enemy_health_displayed)
+	_player_health_displayed = clampi(player_health, 0, MAX_HEALTH)
+	_enemy_health_displayed = clampi(enemy_health, 0, MAX_HEALTH)
 
 
 func set_bleed_status(player_bleeding: bool, enemy_bleeding: bool) -> void:
@@ -213,13 +218,53 @@ func _build_heart_row(container: HBoxContainer) -> void:
 		container.add_child(heart)
 
 
-func _update_heart_row(container: HBoxContainer, health: int) -> void:
+func _update_heart_row(container: HBoxContainer, health: int, previous_health := -1) -> void:
 	var clamped_health := clampi(health, 0, MAX_HEALTH)
+	var previous := clampi(previous_health, 0, MAX_HEALTH)
+	var should_animate_fill := previous_health >= 0 and clamped_health > previous
+	_kill_heart_fill_tween(container)
 	for i in range(container.get_child_count()):
 		var heart := container.get_child(i) as TextureRect
 		if heart:
 			heart.visible = true
 			heart.modulate = Color.WHITE if i < clamped_health else Color(0.16, 0.17, 0.2, 0.5)
+			heart.scale = Vector2.ONE
+			if should_animate_fill and i >= previous and i < clamped_health:
+				heart.modulate.a = 0.0
+				heart.scale = Vector2(0.68, 0.68)
+				heart.pivot_offset = heart.size * 0.5
+	if should_animate_fill:
+		_play_heart_fill_sequence(container, previous, clamped_health)
+
+
+func _play_heart_fill_sequence(container: HBoxContainer, start_index: int, end_health: int) -> void:
+	var tween := create_tween()
+	tween.set_parallel(true)
+	_heart_fill_tweens[container] = tween
+	for i in range(start_index, end_health):
+		var heart := container.get_child(i) as TextureRect
+		if not heart:
+			continue
+		var delay := float(i - start_index) * 0.07
+		tween.tween_property(heart, "modulate:a", 1.0, 0.16) \
+			.set_delay(delay).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tween.tween_property(heart, "scale", Vector2(1.18, 1.18), 0.12) \
+			.set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tween.tween_property(heart, "scale", Vector2.ONE, 0.12) \
+			.set_delay(delay + 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.finished.connect(func() -> void:
+		if _heart_fill_tweens.get(container) == tween:
+			_heart_fill_tweens.erase(container)
+	)
+
+
+func _kill_heart_fill_tween(container: HBoxContainer) -> void:
+	if not _heart_fill_tweens.has(container):
+		return
+	var tween := _heart_fill_tweens[container] as Tween
+	if tween and tween.is_valid():
+		tween.kill()
+	_heart_fill_tweens.erase(container)
 
 
 func _connect_status_hover(status_label: TextureRect, keyword: String) -> void:

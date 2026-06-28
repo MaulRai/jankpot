@@ -27,6 +27,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_transition_cover.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_game_controller.battle_ended.connect(_on_battle_ended)
+	_game_controller.boss_victory.connect(_on_boss_victory)
 	_sidebar.pause_requested.connect(_pause_game)
 	_pause_overlay.resume_requested.connect(_resume_game)
 	_pause_overlay.main_menu_requested.connect(_go_to_main_menu)
@@ -75,6 +76,12 @@ func _on_battle_ended(winner: String) -> void:
 	_defeat_active = true
 	get_tree().paused = true
 	await _pause_overlay.open_defeat()
+
+
+func _on_boss_victory(money_earned: int) -> void:
+	_defeat_active = true
+	get_tree().paused = true
+	await _pause_overlay.open_victory(money_earned)
 
 
 func _play_intro() -> void:
