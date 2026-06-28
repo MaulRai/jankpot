@@ -26,4 +26,5 @@ timers/tooltip_delay_sec=0.0
 [rendering]
 
 rendering_device/driver.windows="d3d12"
+textures/vram_compression/import_etc2_astc=true
 environment/defaults/default_clear_color=Color(0.008, 0.015, 0.014, 1)
