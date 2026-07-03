@@ -5,8 +5,10 @@ const MAGIC_BALL_TEXTURE := preload("res://assets/item/magic-ball.png")
 const SHIELD_TEXTURE := preload("res://assets/item/shield.png")
 const REMEDY_KIT_TEXTURE := preload("res://assets/item/remedy-kit.png")
 const CUP_A_JOE_TEXTURE := preload("res://assets/item/cup-a-joe.png")
+const MOONLIGHT_TEXTURE := preload("res://assets/item/moonlight.png")
 const SNAKE_OIL_TEXTURE := preload("res://assets/item/snake-oil.png")
 
+signal moonlight_requested
 signal magic_ball_requested
 signal shield_requested
 signal remedy_kit_requested
@@ -78,11 +80,19 @@ func add_cup_a_joe() -> bool:
 		func() -> void: cup_a_joe_requested.emit()
 	)
 
+func add_moonlight() -> bool:
+	return _add_unique_consumable(
+		&"moonlight",
+		MOONLIGHT_TEXTURE,
+		"Moonlight\n$2. Discard up to 2 cards, then draw that many.",
+		func() -> void: moonlight_requested.emit()
+	)
+
 func add_snake_oil() -> bool:
 	return _add_unique_consumable(
 		&"snake_oil",
 		SNAKE_OIL_TEXTURE,
-		"Snake Oil\Inflict 1 poison. If lose twice in a row, inflict 2 instead.",
+		"Snake Oil\nInflict 1 poison. If lose twice in a row, inflict 2 instead.",
 		func() -> void: snake_oil_requested.emit()
 	)
 
@@ -97,6 +107,9 @@ func consume_remedy_kit() -> void:
 
 func consume_cup_a_joe() -> void:
 	_consume(&"cup_a_joe")
+
+func consume_moonlight() -> void:
+	_consume(&"moonlight")
 
 func consume_snake_oil() -> void:
 	_consume(&"snake_oil")
@@ -313,5 +326,7 @@ func restore_shelf(items: Array) -> void:
 				add_remedy_kit()
 			"cup_a_joe":
 				add_cup_a_joe()
+			"moonlight":
+				add_moonlight()
 			"snake_oil":
 				add_snake_oil()

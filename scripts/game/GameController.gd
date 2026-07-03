@@ -41,6 +41,7 @@ var _effect_executor: Node
 var _is_animating := false
 var _pending_enemy_card: CardDef
 var _enemy_preview_view: CardView
+var _pick_mode: PickMode
 var _run_money_earned := 0
 
 var player_hp: int:
@@ -100,6 +101,7 @@ func _ready() -> void:
 	consumable_shelf.shield_requested.connect(_on_shield_requested)
 	consumable_shelf.remedy_kit_requested.connect(_on_remedy_kit_requested)
 	consumable_shelf.cup_a_joe_requested.connect(_on_cup_a_joe_requested)
+	consumable_shelf.moonlight_requested.connect(_on_moonlight_requested)
 	consumable_shelf.snake_oil_requested.connect(_on_snake_oil_requested)
 	_stock_consumables_from_storage()
 	await _initialize_first_battle()
@@ -209,20 +211,67 @@ func _on_cup_a_joe_requested() -> void:
 	_update_labels()
 
 
+func _on_moonlight_requested() -> void:
+	if round_status != "ongoing" or _is_animating:
+		return
+	_is_animating = true
+
+	if not PlayerStorageData.spend_money(2):
+		sfx_manager.play_sfx("buzzer")
+		_is_animating = false
+		return
+
+	consumable_shelf.consume_moonlight()
+	_on_storage_consumable_used(PlayerStorageData.CONSUMABLE_MOONLIGHT)
+
+	# Show pick mode for player to select cards to discard
+	var hand_cards: Array[CardDef] = []
+	for card in deck_manager.hand:
+		if not card.is_skip:
+			hand_cards.append(card)
+
+	if not _pick_mode:
+		_pick_mode = PickMode.new()
+		_pick_mode.card_scene = hand_view.card_scene
+		add_child(_pick_mode)
+		_pick_mode.z_index = 100
+
+	_pick_mode.start(hand_cards, 2, _on_moonlight_discard_chosen)
+
+	sfx_manager.play_sfx("card_pickup")
+
+
+func _on_moonlight_discard_chosen(selected: Array[CardDef]) -> void:
+	# Discard the chosen cards and draw the same number
+	for card in selected:
+		deck_manager.play_card(card.id)
+
+	# Draw replacement cards — DeckManager.draw_until_full handles pile shuffle
+	deck_manager.draw_until_full(3)
+	hand_view.set_cards(deck_manager.hand)
+
+	_pick_mode.cleanup()
+	_update_labels()
+	_is_animating = false
+
+	# Re-bless the enemy's card choice once hand is settled
+	await _prepare_enemy_card()
+
+
 func _on_snake_oil_requested() -> void:
 	if round_status != "ongoing" or _is_animating:
 		return
 	_is_animating = true
-	
+
 	var poison_amount := 1
 	if _check_double_loss_history():
 		poison_amount = 2
-		
+
 	consumable_shelf.consume_snake_oil()
 	_on_storage_consumable_used(PlayerStorageData.CONSUMABLE_SNAKE_OIL)
-	
+
 	sfx_manager.play_sfx("poison")
-	
+
 	var enemy_card_view := enemy_slot.get_child(0) as CardView
 	if is_instance_valid(enemy_card_view):
 		_animator.show_exclamation(
@@ -230,10 +279,10 @@ func _on_snake_oil_requested() -> void:
 			"Poisoned!",
 			Color(EffectKeywordData.get_color("Poison"))
 		)
-	
+
 	_state.enemy_poison_turns += poison_amount
 	_update_labels()
-	
+
 	var shake_target: Control = enemy_card_view if is_instance_valid(enemy_card_view) else enemy_slot
 	await _animator.shake(shake_target)
 	_is_animating = false
@@ -245,7 +294,7 @@ func _check_double_loss_history() -> bool:
 	var size := player_history.size()
 	if size < 2:
 		return false
-	
+
 	var last_result := BattleResolver.resolve_cards(player_history[size - 1], enemy_history[size - 1])
 	var prev_result := BattleResolver.resolve_cards(player_history[size - 2], enemy_history[size - 2])
 	return last_result == BattleResolver.Result.LOSE and prev_result == BattleResolver.Result.LOSE
@@ -349,7 +398,7 @@ func _end_battle() -> void:
 		winner = "Enemy"
 	elif enemy_hp <= 0 and player_hp > 0:
 		winner = "Player"
-	
+
 	var bonus_text := ""
 	if winner == "Player":
 		if turn_count <= 10:
@@ -357,7 +406,7 @@ func _end_battle() -> void:
 		elif turn_count <= 15:
 			bonus_text = "Speedrun!"
 		_award_battle_money()
-	
+
 	battle_ended.emit(winner)
 	if winner == "Player":
 		if RunConfigData.is_final_stage(stage_number):
@@ -503,8 +552,6 @@ func _select_stage_enemy(upgrade_count: int) -> Dictionary:
 
 
 func _stock_consumables_from_storage() -> void:
-	
-	
 	var selected := PlayerStorageData.selected_consumables()
 	var counts := PlayerStorageData.consumable_counts()
 	for id in selected:
@@ -518,37 +565,26 @@ func _stock_consumables_from_storage() -> void:
 					consumable_shelf.add_remedy_kit()
 				PlayerStorageData.CONSUMABLE_CUP_A_JOE:
 					consumable_shelf.add_cup_a_joe()
+				PlayerStorageData.CONSUMABLE_MOONLIGHT:
+					consumable_shelf.add_moonlight()
 				PlayerStorageData.CONSUMABLE_SNAKE_OIL:
 					consumable_shelf.add_snake_oil()
 
 
 func _on_storage_consumable_used(consumable_id: String) -> void:
-	var remaining := PlayerStorageData.consume_consumable(consumable_id)
-	if remaining <= 0:
-		return
-	match consumable_id:
-		PlayerStorageData.CONSUMABLE_MAGIC_BALL:
-			consumable_shelf.add_magic_ball()
-		PlayerStorageData.CONSUMABLE_SHIELD:
-			consumable_shelf.add_shield()
-		PlayerStorageData.CONSUMABLE_REMEDY_KIT:
-			consumable_shelf.add_remedy_kit()
-		PlayerStorageData.CONSUMABLE_CUP_A_JOE:
-			consumable_shelf.add_cup_a_joe()
-		PlayerStorageData.CONSUMABLE_SNAKE_OIL:
-			consumable_shelf.add_snake_oil()
+	PlayerStorageData.consume_consumable(consumable_id)
 
 
 func _award_battle_money() -> void:
 	var is_boss := bool(enemy_controller.current_enemy.get("is_boss", false))
 	var amount := 3 if is_boss else 1
-	
+
 	var bonus := 0
 	if turn_count <= 10:
 		bonus = 2
 	elif turn_count <= 15:
 		bonus = 1
-		
+
 	var total := amount + bonus
 	_run_money_earned += total
 	battle_sidebar.set_money(_run_money_earned)

@@ -10,8 +10,10 @@ const CONSUMABLE_SHIELD := "shield"
 const CONSUMABLE_REMEDY_KIT := "remedy_kit"
 const CONSUMABLE_CUP_A_JOE := "cup_a_joe"
 const CONSUMABLE_SNAKE_OIL := "snake_oil"
+const CONSUMABLE_MOONLIGHT := "moonlight"
 
 static var _loaded := false
+
 static var _money := 0
 static var _weapon_ids: Array[String] = []
 static var _selected_weapon_indices: Array[int] = []
@@ -182,14 +184,12 @@ static func add_consumable(consumable_id: String, amount := 1) -> void:
 
 static func consume_consumable(consumable_id: String, amount := 1) -> int:
 	ensure_loaded()
-	var remaining := maxi(0, int(_consumable_counts.get(consumable_id, 0)) - amount)
-	if remaining <= 0:
-		_consumable_counts.erase(consumable_id)
-		_selected_consumable_ids.erase(consumable_id)
-	else:
-		_consumable_counts[consumable_id] = remaining
+	# A selected consumable can only be used once across the whole run.
+	# Remove the entire stack and deselect it so it cannot be restocked.
+	_consumable_counts.erase(consumable_id)
+	_selected_consumable_ids.erase(consumable_id)
 	save()
-	return remaining
+	return 0
 
 
 static func selected_consumables() -> Array[String]:

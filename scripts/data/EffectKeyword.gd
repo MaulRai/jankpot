@@ -11,6 +11,7 @@ const KEYWORD_COLORS := {
 	"Downgrade": "#D5A86E",
 	"Fragile": "#FF9DB5",
 	"Poison": "#A855F7",
+	"Moonlight": "#D4A8FF",
 }
 
 const KEYWORD_DESCRIPTIONS := {
@@ -23,6 +24,7 @@ const KEYWORD_DESCRIPTIONS := {
 	"Downgrade": "Becomes its basic weapon for the rest of the current battle.",
 	"Fragile": "Temporarily disappears for the rest of the current battle after it breaks.",
 	"Poison": "Deals 1 damage at the end of every turn for a set number of turns.",
+	"Moonlight": "Discard up to 2 cards, then draw that many. Costs $2.",
 }
 
 static func get_color(keyword: String) -> String:
