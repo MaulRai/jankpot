@@ -1,0 +1,419 @@
+
+D:.
+�   .gitattributes
+�   .gitignore
+�   export_presets.cfg
+�   icon.svg
+�   icon.svg.import
+�   IMPLEMENTATION.md
+�   project.godot
+�   README.md
+�   structure
+�   
++---.agents
++---.github
+�   +---workflows
+�           deploy.yml
+�                             
++---.kimchi
+�   +---ferments
++---assets
+�   +---character
+�   �       shopkeeper.png
+�   �       shopkeeper.png.import
+�   �       
+�   +---icon
+�   �   +---effect
+�   �   �       bleed.png
+�   �   �       bleed.png.import
+�   �   �       
+�   �   +---enemy
+�   �           blood-magpie.png
+�   �           blood-magpie.png.import
+�   �           bruise-toad.png
+�   �           bruise-toad.png.import
+�   �           cowardly-knight.png
+�   �           cowardly-knight.png.import
+�   �           dice-imp.png
+�   �           dice-imp.png.import
+�   �           duelist-finch.png
+�   �           duelist-finch.png.import
+�   �           echo-goblin.png
+�   �           echo-goblin.png.import
+�   �           fog-witch.png
+�   �           fog-witch.png.import
+�   �           gambler-hare.png
+�   �           gambler-hare.png.import
+�   �           guillotine-duke.png
+�   �           guillotine-duke.png.import
+�   �           hatter-mimic.png
+�   �           hatter-mimic.png.import
+�   �           iron-tortoise.png
+�   �           iron-tortoise.png.import
+�   �           ledger-golem.png
+�   �           ledger-golem.png.import
+�   �           mad-hatter.png
+�   �           mad-hatter.png.import
+�   �           mirror-jester.png
+�   �           mirror-jester.png.import
+�   �           paper-moth.png
+�   �           paper-moth.png.import
+�   �           pebble-grunt.png
+�   �           pebble-grunt.png.import
+�   �           tin-cutter.png
+�   �           tin-cutter.png.import
+�   �           vengeful-crow.png
+�   �           vengeful-crow.png.import
+�   �           
+�   +---item
+�   �   �   cup-a-joe.png
+�   �   �   cup-a-joe.png.import
+�   �   �   magic-ball.png
+�   �   �   magic-ball.png.import
+�   �   �   remedy-kit.png
+�   �   �   remedy-kit.png.import
+�   �   �   shield.png
+�   �   �   shield.png.import
+�   �   �   
+�   �   +---pack
+�   �           basic-weapon-card-pack.png
+�   �           basic-weapon-card-pack.png.import
+�   �           premium-weapon-card-pack.png
+�   �           premium-weapon-card-pack.png.import
+�   �           
+�   +---ui
+�   �   �   card-back.png
+�   �   �   card-back.png.import
+�   �   �   card-base.png
+�   �   �   card-base.png.import
+�   �   �   card-box.png
+�   �   �   card-box.png.import
+�   �   �   card-slot.png
+�   �   �   card-slot.png.import
+�   �   �   chain.png
+�   �   �   chain.png.import
+�   �   �   heart.png
+�   �   �   heart.png.import
+�   �   �   magic-ball-window.png
+�   �   �   magic-ball-window.png.import
+�   �   �   money-display.png
+�   �   �   money-display.png.import
+�   �   �   panel-window.png
+�   �   �   panel-window.png.import
+�   �   �   shelf.png
+�   �   �   shelf.png.import
+�   �   �   shop-display.png
+�   �   �   shop-display.png.import
+�   �   �   silhouette-paper.png
+�   �   �   silhouette-paper.png.import
+�   �   �   silhouette-rock.png
+�   �   �   silhouette-rock.png.import
+�   �   �   silhouette-scissor.png
+�   �   �   silhouette-scissor.png.import
+�   �   �   
+�   �   +---component
+�   �           base.png
+�   �           base.png.import
+�   �           corner-shining.png
+�   �           corner-shining.png.import
+�   �           corner.png
+�   �           corner.png.import
+�   �           magic-ball-window.aseprite
+�   �           side.png
+�   �           side.png.import
+�   �           
+�   +---weapon
+�           paper-1.png
+�           paper-1.png.import
+�           paper-2.png
+�           paper-2.png.import
+�           paper-3.png
+�           paper-3.png.import
+�           paper-4.png
+�           paper-4.png.import
+�           rock-1.png
+�           rock-1.png.import
+�           rock-2.png
+�           rock-2.png.import
+�           rock-3.png
+�           rock-3.png.import
+�           rock-4.png
+�           rock-4.png.import
+�           scissors-1.png
+�           scissors-1.png.import
+�           scissors-2.png
+�           scissors-2.png.import
+�           scissors-3.png
+�           scissors-3.png.import
+�           scissors-4.png
+�           scissors-4.png.import
+�           skip.png
+�           skip.png.import
+�           
++---audio
+�   +---bgm
+�   �       battle-loop.mp3
+�   �       battle-loop.mp3.import
+�   �       main-loop.wav
+�   �       main-loop.wav.import
+�   �       main-menu-loop.mp3
+�   �       main-menu-loop.mp3.import
+�   �       shop-loop.mp3
+�   �       shop-loop.mp3.import
+�   �       
+�   +---blip
+�   �       shopkeeper-neutral.mp3
+�   �       shopkeeper-neutral.mp3.import
+�   �       
+�   +---sfx
+�           bleed.mp3
+�           bleed.mp3.import
+�           block.mp3
+�           block.mp3.import
+�           bonus-attack.mp3
+�           bonus-attack.mp3.import
+�           buzzer.mp3
+�           buzzer.mp3.import
+�           card-leave.mp3
+�           card-leave.mp3.import
+�           card-pickup.mp3
+�           card-pickup.mp3.import
+�           card-placed.mp3
+�           card-placed.mp3.import
+�           card-shuffle.mp3
+�           card-shuffle.mp3.import
+�           chaching.mp3
+�           chaching.mp3.import
+�           click.mp3
+�           click.mp3.import
+�           coins-falling.mp3
+�           coins-falling.mp3.import
+�           consume-potion.mp3
+�           consume-potion.mp3.import
+�           downgrade.mp3
+�           downgrade.mp3.import
+�           fatal-hit.mp3
+�           fatal-hit.mp3.import
+�           fragile.mp3
+�           fragile.mp3.import
+�           hit.mp3
+�           hit.mp3.import
+�           item-revealed.mp3
+�           item-revealed.mp3.import
+�           item-revealing.mp3
+�           item-revealing.mp3.import
+�           mist-veil.mp3
+�           mist-veil.mp3.import
+�           power-up.mp3
+�           power-up.mp3.import
+�           reflect.mp3
+�           reflect.mp3.import
+�           regen.mp3
+�           regen.mp3.import
+�           result-draw.mp3
+�           result-draw.mp3.import
+�           result-lose.mp3
+�           result-lose.mp3.import
+�           result-win.mp3
+�           result-win.mp3.import
+�           revive.mp3
+�           revive.mp3.import
+�           reward-item-hover.mp3
+�           reward-item-hover.mp3.import
+�           reward-item-selected.mp3
+�           reward-item-selected.mp3.import
+�           shield.mp3
+�           shield.mp3.import
+�           special-selected.mp3
+�           special-selected.mp3.import
+�           stage-lose.mp3
+�           stage-lose.mp3.import
+�           stage-win.mp3
+�           stage-win.mp3.import
+�           unused-select.mp3
+�           unused-select.mp3.import
+�           
++---fonts
+�       1001fonts-star-crush-eula.txt
+�       Star Crush.otf
+�       Star Crush.otf.import
+�       Star Crush.ttf
+�       Star Crush.ttf.import
+�       
++---markdown
+�       enemy-mode.md
+�       
++---resources
+�   �   WeaponLibrary.tres
+�   �   
+�   +---enemies
+�   �       blood_magpie.tres
+�   �       bruise_toad.tres
+�   �       cowardly_knight.tres
+�   �       dice_imp.tres
+�   �       duelist_finch.tres
+�   �       echo_goblin.tres
+�   �       fog_witch.tres
+�   �       gambler_hare.tres
+�   �       guillotine_duke.tres
+�   �       hatter_mimic.tres
+�   �       iron_tortoise.tres
+�   �       ledger_golem.tres
+�   �       mad_hatter.tres
+�   �       mirror_jester.tres
+�   �       paper_moth.tres
+�   �       pebble_grunt.tres
+�   �       tin_cutter.tres
+�   �       vengeful_crow.tres
+�   �       
+�   +---weapons
+�           basic_paper.tres
+�           basic_rock.tres
+�           basic_scissors.tres
+�           bronze_razor.tres
+�           guillotine_blades.tres
+�           hatter_slip.tres
+�           mist_veil.tres
+�           quartz.tres
+�           ruby.tres
+�           rusty_shears.tres
+�           sculptural_sheet.tres
+�           spiked_boulder.tres
+�           spike_boulder.tres
+�           
++---scenes
+�   +---game
+�   �       BattleBoard.tscn
+�   �       
+�   +---main
+�   �       Main.tscn
+�   �       MainMenu.tscn
+�   �       Preparation.tscn
+�   �       Shop.tscn
+�   �       
+�   +---ui
+�           BattleSidebar.tscn
+�           CardSlot.tscn
+�           CardView.tscn
+�           ConsumableShelf.tscn
+�           DiscardViewer.tscn
+�           DrawPileViewer.tscn
+�           MagicBallModal.tscn
+�           PauseOverlay.tscn
+�           RewardOverlay.tscn
+�           TooltipBox.tscn
+�           
++---scripts
+�   +---animation
+�   �       BattleAnimator.gd
+�   �       BattleAnimator.gd.uid
+�   �       CardExitAnimator.gd
+�   �       CardExitAnimator.gd.uid
+�   �       
+�   +---audio
+�   �       BGMPlayer.gd
+�   �       BGMPlayer.gd.uid
+�   �       SFXManager.gd
+�   �       SFXManager.gd.uid
+�   �       
+�   +---data
+�   �       CardDef.gd
+�   �       CardDef.gd.uid
+�   �       EffectKeyword.gd
+�   �       EffectKeyword.gd.uid
+�   �       EnemyCatalog.gd
+�   �       EnemyCatalog.gd.uid
+�   �       EnemyDef.gd
+�   �       EnemyDef.gd.uid
+�   �       PlayerStorage.gd
+�   �       PlayerStorage.gd.uid
+�   �       RunConfig.gd
+�   �       RunConfig.gd.uid
+�   �       WeaponCatalog.gd
+�   �       WeaponCatalog.gd.uid
+�   �       WeaponLibrary.gd
+�   �       WeaponLibrary.gd.uid
+�   �       
+�   +---game
+�   �   �   BattleResolver.gd
+�   �   �   BattleResolver.gd.uid
+�   �   �   DeckManager.gd
+�   �   �   DeckManager.gd.uid
+�   �   �   EnemyController.gd
+�   �   �   EnemyController.gd.uid
+�   �   �   GameController.gd
+�   �   �   GameController.gd.uid
+�   �   �   
+�   �   +---battle
+�   �   �       BattleEffectExecutor.gd
+�   �   �       BattleEffectExecutor.gd.uid
+�   �   �       BattleEffectPlan.gd
+�   �   �       BattleEffectPlan.gd.uid
+�   �   �       BattleEffectResolver.gd
+�   �   �       BattleEffectResolver.gd.uid
+�   �   �       BattleState.gd
+�   �   �       BattleState.gd.uid
+�   �   �       
+�   �   +---enemy
+�   �           EnemyBattleDeck.gd
+�   �           EnemyBattleDeck.gd.uid
+�   �           EnemyStrategyContext.gd
+�   �           EnemyStrategyContext.gd.uid
+�   �           EnemyStrategyEvaluator.gd
+�   �           EnemyStrategyEvaluator.gd.uid
+�   �           
+�   +---main
+�   �       CardRevealFx.gd
+�   �       CardRevealFx.gd.uid
+�   �       GameplayIntro.gd
+�   �       GameplayIntro.gd.uid
+�   �       MainMenu.gd
+�   �       MainMenu.gd.uid
+�   �       PackOpening.gd
+�   �       PackOpening.gd.uid
+�   �       Preparation.gd
+�   �       Preparation.gd.uid
+�   �       Shop.gd
+�   �       Shop.gd.uid
+�   �       
+�   +---ui
+�           BattleBoard.gd
+�           BattleBoard.gd.uid
+�           BattleSidebar.gd
+�           BattleSidebar.gd.uid
+�           CardSlot.gd
+�           CardSlot.gd.uid
+�           CardView.gd
+�           CardView.gd.uid
+�           ConsumableShelf.gd
+�           ConsumableShelf.gd.uid
+�           DiscardViewer.gd
+�           DiscardViewer.gd.uid
+�           DrawPileViewer.gd
+�           DrawPileViewer.gd.uid
+�           HandView.gd
+�           HandView.gd.uid
+�           MagicBallModal.gd
+�           MagicBallModal.gd.uid
+�           PauseOverlay.gd
+�           PauseOverlay.gd.uid
+�           PixelFramePanel.gd
+�           PixelFramePanel.gd.uid
+�           RewardOverlay.gd
+�           RewardOverlay.gd.uid
+�           TooltipManager.gd
+�           TooltipManager.gd.uid
+�           
++---shaders
+�       gameplay_background.gdshader
+�       gameplay_background.gdshader.uid
+�       main_menu_background.gdshader
+�       main_menu_background.gdshader.uid
+�       
++---tests
+�       TestRunner.gd
+�       TestRunner.gd.uid
+�       
++---themes
+        game_theme.tres
+        
