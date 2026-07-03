@@ -26,18 +26,14 @@ func build_plan(
 	plan.old_player_poison = state.player_poison_turns
 	plan.old_enemy_poison = state.enemy_poison_turns
 	if state.player_poison_turns > 0:
-		plan.damage_to_player += 1
 		state.player_poison_turns -= 1
 		plan.new_player_poison = state.player_poison_turns
-		plan.immediate_sfx.append("poison")
 	else:
 		plan.new_player_poison = 0
 		
 	if state.enemy_poison_turns > 0:
-		plan.damage_to_enemy += 1
 		state.enemy_poison_turns -= 1
 		plan.new_enemy_poison = state.enemy_poison_turns
-		plan.immediate_sfx.append("poison")
 	else:
 		plan.new_enemy_poison = 0
 

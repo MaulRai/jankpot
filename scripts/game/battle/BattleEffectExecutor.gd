@@ -83,6 +83,8 @@ func execute(
 		animator.play_sfx("bleed")
 		health_display.play_bleed_damage_feedback(true, player_view)
 		await _deal_damage(true, 1)
+	if plan.old_enemy_poison > 0 or plan.old_player_poison > 0:
+		_sync_poison_status(plan)
 	if plan.old_enemy_poison > 0:
 		animator.play_sfx("poison")
 		health_display.play_poison_damage_feedback(false, enemy_view)

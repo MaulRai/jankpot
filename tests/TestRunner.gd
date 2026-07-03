@@ -148,26 +148,34 @@ func _expect(condition: bool, message: String) -> void:
 func _test_poison_ticks() -> void:
 	var resolver: RefCounted = BattleEffectResolverData.new()
 	var state: Resource = BattleStateData.new()
-	state.player_poison_turns = 2
+	state.enemy_poison_turns = 2
 	var rock := WeaponCatalogData.create_basic(CardDef.CardType.ROCK)
 	var scissors := WeaponCatalogData.create_basic(CardDef.CardType.SCISSORS)
 	var player_hand: Array[CardDef] = [rock]
 	var enemy_hand: Array[CardDef] = [scissors]
 	
-	# Turn 1
+	# Turn 1 — enemy has 2 poison stacks; should decrement to 1, damage handled by executor
 	var plan: RefCounted = resolver.build_plan(
 		BattleResolver.Result.WIN, rock, scissors, player_hand, enemy_hand, state
 	)
-	_expect(plan.old_player_poison == 2, "Expected old poison count to be 2")
-	_expect(plan.new_player_poison == 1, "Expected new poison count to be 1")
-	_expect(state.player_poison_turns == 1, "Expected state poison turns to decrement to 1")
-	_expect(plan.damage_to_player == 1, "Expected player to take 1 poison damage")
+	_expect(plan.old_enemy_poison == 2, "Turn1: old_enemy_poison should be 2")
+	_expect(plan.new_enemy_poison == 1, "Turn1: new_enemy_poison should be 1")
+	_expect(state.enemy_poison_turns == 1, "Turn1: state should decrement to 1")
+	# poison damage is NOT in plan.damage_to_enemy — executor deals it separately
+	_expect(plan.damage_to_enemy == 1, "Turn1: base damage to enemy (win) should be 1")
 	
-	# Turn 2
+	# Turn 2 — enemy has 1 poison stack; should decrement to 0
 	plan = resolver.build_plan(
 		BattleResolver.Result.WIN, rock, scissors, player_hand, enemy_hand, state
 	)
-	_expect(plan.old_player_poison == 1, "Expected old poison count to be 1")
-	_expect(plan.new_player_poison == 0, "Expected new poison count to be 0")
-	_expect(state.player_poison_turns == 0, "Expected state poison turns to decrement to 0")
-	_expect(plan.damage_to_player == 1, "Expected player to take 1 poison damage")
+	_expect(plan.old_enemy_poison == 1, "Turn2: old_enemy_poison should be 1")
+	_expect(plan.new_enemy_poison == 0, "Turn2: new_enemy_poison should be 0")
+	_expect(state.enemy_poison_turns == 0, "Turn2: state should decrement to 0")
+	_expect(plan.damage_to_enemy == 1, "Turn2: base damage to enemy (win) should be 1")
+	
+	# Turn 3 — no more poison
+	plan = resolver.build_plan(
+		BattleResolver.Result.WIN, rock, scissors, player_hand, enemy_hand, state
+	)
+	_expect(plan.old_enemy_poison == 0, "Turn3: old_enemy_poison should be 0")
+	_expect(plan.new_enemy_poison == 0, "Turn3: new_enemy_poison should be 0")

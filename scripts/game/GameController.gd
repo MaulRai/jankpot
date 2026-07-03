@@ -222,13 +222,15 @@ func _on_snake_oil_requested() -> void:
 	
 	sfx_manager.play_sfx("poison")
 	
-	var enemy_view: Control = enemy_slot.get_child(0) as CardView if enemy_slot.get_child_count() > 0 else enemy_slot
-	_animator.show_exclamation(enemy_view, "Poison +%d!" % poison_amount, Color("#5AF15A"))
+	var enemy_card_view := enemy_slot.get_child(0) as CardView
+	if is_instance_valid(enemy_card_view):
+		_animator.show_exclamation(enemy_card_view, "Poison +%d!" % poison_amount, Color("#5AF15A"))
 	
 	_state.enemy_poison_turns += poison_amount
 	_update_labels()
 	
-	await _animator.shake(enemy_view)
+	var shake_target: Control = enemy_card_view if is_instance_valid(enemy_card_view) else enemy_slot
+	await _animator.shake(shake_target)
 	_is_animating = false
 
 
@@ -509,6 +511,8 @@ func _stock_consumables_from_storage() -> void:
 					consumable_shelf.add_remedy_kit()
 				PlayerStorageData.CONSUMABLE_CUP_A_JOE:
 					consumable_shelf.add_cup_a_joe()
+				PlayerStorageData.CONSUMABLE_SNAKE_OIL:
+					consumable_shelf.add_snake_oil()
 
 
 func _on_storage_consumable_used(consumable_id: String) -> void:
@@ -524,6 +528,8 @@ func _on_storage_consumable_used(consumable_id: String) -> void:
 			consumable_shelf.add_remedy_kit()
 		PlayerStorageData.CONSUMABLE_CUP_A_JOE:
 			consumable_shelf.add_cup_a_joe()
+		PlayerStorageData.CONSUMABLE_SNAKE_OIL:
+			consumable_shelf.add_snake_oil()
 
 
 func _award_battle_money() -> void:
