@@ -303,15 +303,22 @@ func _end_battle() -> void:
 		winner = "Enemy"
 	elif enemy_hp <= 0 and player_hp > 0:
 		winner = "Player"
+	
+	var bonus_text := ""
 	if winner == "Player":
+		if turn_count <= 10:
+			bonus_text = "Instant Kill!"
+		elif turn_count <= 15:
+			bonus_text = "Speedrun!"
 		_award_battle_money()
+	
 	battle_ended.emit(winner)
 	if winner == "Player":
 		if RunConfigData.is_final_stage(stage_number):
 			boss_victory.emit(_run_money_earned)
 			_is_animating = false
 			return
-		consumable_shelf.show_level_complete()
+		consumable_shelf.show_level_complete(bonus_text)
 		stage_number += 1
 		await start_battle()
 	else:
@@ -483,11 +490,21 @@ func _on_storage_consumable_used(consumable_id: String) -> void:
 func _award_battle_money() -> void:
 	var is_boss := bool(enemy_controller.current_enemy.get("is_boss", false))
 	var amount := 3 if is_boss else 1
-	_run_money_earned += amount
+	
+	var bonus := 0
+	if turn_count <= 10:
+		bonus = 2
+	elif turn_count <= 15:
+		bonus = 1
+		
+	var total := amount + bonus
+	_run_money_earned += total
 	battle_sidebar.set_money(_run_money_earned)
-	battle_sidebar.animate_money_gain(amount)
+	battle_sidebar.animate_money_gain(total)
 	if sfx_manager:
 		sfx_manager.play_sfx("coins_falling")
+		if bonus > 0:
+			sfx_manager.play_sfx("chaching")
 
 
 func cash_out_run_money() -> int:

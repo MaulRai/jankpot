@@ -88,7 +88,7 @@ func consume_remedy_kit() -> void:
 func consume_cup_a_joe() -> void:
 	_consume(&"cup_a_joe")
 
-func show_level_complete() -> void:
+func show_level_complete(bonus_text := "") -> void:
 	if _complete_tween and _complete_tween.is_valid():
 		_complete_tween.kill()
 	if _complete_popup and is_instance_valid(_complete_popup):
@@ -124,9 +124,47 @@ func show_level_complete() -> void:
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	_complete_tween.tween_property(popup, "modulate:a", 0.0, 0.4) \
 		.set_delay(1.25).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+
+	var bonus_label: Label = null
+	if not bonus_text.is_empty():
+		bonus_label = Label.new()
+		bonus_label.text = bonus_text
+		bonus_label.z_index = 30
+		bonus_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		bonus_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		bonus_label.add_theme_font_size_override("font_size", 22)
+		var text_color := Color(0.35, 0.88, 1.0, 1.0) if bonus_text == "Speedrun!" else Color(1.0, 0.42, 0.42, 1.0)
+		bonus_label.add_theme_color_override("font_color", text_color)
+		bonus_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.05, 0.04, 0.85))
+		bonus_label.add_theme_constant_override("shadow_offset_x", 2)
+		bonus_label.add_theme_constant_override("shadow_offset_y", 3)
+		var star_crush_path := "res://fonts/Star Crush.otf"
+		if ResourceLoader.exists(star_crush_path):
+			bonus_label.add_theme_font_override("font", load(star_crush_path))
+		add_child(bonus_label)
+		bonus_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
+		bonus_label.offset_left = 0.0
+		bonus_label.offset_right = 0.0
+		bonus_label.offset_top = 236.0
+		bonus_label.offset_bottom = 270.0
+		bonus_label.modulate.a = 0.0
+		bonus_label.scale = Vector2(0.8, 0.8)
+		bonus_label.pivot_offset = Vector2(size.x * 0.5, 17.0)
+
+		_complete_tween.tween_property(bonus_label, "modulate:a", 1.0, 0.16).set_delay(0.15) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		_complete_tween.tween_property(bonus_label, "scale", Vector2.ONE, 0.2).set_delay(0.15) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		_complete_tween.tween_property(bonus_label, "position:y", bonus_label.position.y + 14.0, 1.32).set_delay(0.15) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		_complete_tween.tween_property(bonus_label, "modulate:a", 0.0, 0.4) \
+			.set_delay(1.25).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+
 	_complete_tween.finished.connect(func() -> void:
 		if is_instance_valid(popup):
 			popup.queue_free()
+		if is_instance_valid(bonus_label):
+			bonus_label.queue_free()
 		if _complete_popup == popup:
 			_complete_popup = null
 	)
