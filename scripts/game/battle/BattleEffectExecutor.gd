@@ -35,6 +35,8 @@ func execute(
 		animator.play_sfx(sfx)
 		if sfx == "bleed":
 			_sync_bleed_status(plan)
+		elif sfx == "poison":
+			_sync_poison_status(plan)
 	if plan.disable_enemy_type >= 0:
 		enemy_controller.disable_type_once(plan.disable_enemy_type as CardDef.CardType)
 		animator.show_exclamation(player_view, "Concealed!", Color("#AAAAFF"))
@@ -81,6 +83,14 @@ func execute(
 		animator.play_sfx("bleed")
 		health_display.play_bleed_damage_feedback(true, player_view)
 		await _deal_damage(true, 1)
+	if plan.old_enemy_poison > 0:
+		animator.play_sfx("poison")
+		health_display.play_poison_damage_feedback(false, enemy_view)
+		await _deal_damage(false, 1)
+	if plan.old_player_poison > 0:
+		animator.play_sfx("poison")
+		health_display.play_poison_damage_feedback(true, player_view)
+		await _deal_damage(true, 1)
 	_apply_recovery(plan)
 	_apply_card_mutations(plan, player_card, enemy_card)
 	update_labels.call()
@@ -114,6 +124,13 @@ func _sync_bleed_status(plan: RefCounted) -> void:
 	health_display.set_bleed_status(
 		state.player_bleed_pending or plan.old_player_bleed,
 		state.enemy_bleed_pending or plan.old_enemy_bleed
+	)
+
+
+func _sync_poison_status(plan: RefCounted) -> void:
+	health_display.set_poison_status(
+		state.player_poison_turns + plan.old_player_poison,
+		state.enemy_poison_turns + plan.old_enemy_poison
 	)
 
 

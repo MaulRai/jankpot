@@ -17,10 +17,29 @@ func build_plan(
 	plan.result_sfx = _result_sfx(result)
 	plan.damage_to_enemy = 1 if result == BattleResolver.Result.WIN else 0
 	plan.damage_to_player = 1 if result == BattleResolver.Result.LOSE else 0
+	
 	plan.old_player_bleed = state.player_bleed_pending
 	plan.old_enemy_bleed = state.enemy_bleed_pending
 	state.player_bleed_pending = false
 	state.enemy_bleed_pending = false
+
+	plan.old_player_poison = state.player_poison_turns
+	plan.old_enemy_poison = state.enemy_poison_turns
+	if state.player_poison_turns > 0:
+		plan.damage_to_player += 1
+		state.player_poison_turns -= 1
+		plan.new_player_poison = state.player_poison_turns
+		plan.immediate_sfx.append("poison")
+	else:
+		plan.new_player_poison = 0
+		
+	if state.enemy_poison_turns > 0:
+		plan.damage_to_enemy += 1
+		state.enemy_poison_turns -= 1
+		plan.new_enemy_poison = state.enemy_poison_turns
+		plan.immediate_sfx.append("poison")
+	else:
+		plan.new_enemy_poison = 0
 
 	var player_luck := _luck_bonus(player_hand, player_card)
 	var enemy_luck := _luck_bonus(enemy_hand, enemy_card)

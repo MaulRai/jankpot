@@ -5,11 +5,13 @@ const MAGIC_BALL_TEXTURE := preload("res://assets/item/magic-ball.png")
 const SHIELD_TEXTURE := preload("res://assets/item/shield.png")
 const REMEDY_KIT_TEXTURE := preload("res://assets/item/remedy-kit.png")
 const CUP_A_JOE_TEXTURE := preload("res://assets/item/cup-a-joe.png")
+const SNAKE_OIL_TEXTURE := preload("res://assets/item/snake-oil.png")
 
 signal magic_ball_requested
 signal shield_requested
 signal remedy_kit_requested
 signal cup_a_joe_requested
+signal snake_oil_requested
 
 const MAX_ITEMS := 5
 const CHAIN_SWAY_DEGREES := 2.2
@@ -76,6 +78,14 @@ func add_cup_a_joe() -> bool:
 		func() -> void: cup_a_joe_requested.emit()
 	)
 
+func add_snake_oil() -> bool:
+	return _add_unique_consumable(
+		&"snake_oil",
+		SNAKE_OIL_TEXTURE,
+		"Snake Oil\nInflict 1 poison. Lose 2x last clash: 2.",
+		func() -> void: snake_oil_requested.emit()
+	)
+
 func consume_magic_ball() -> void:
 	_consume(&"magic_ball")
 
@@ -87,6 +97,9 @@ func consume_remedy_kit() -> void:
 
 func consume_cup_a_joe() -> void:
 	_consume(&"cup_a_joe")
+
+func consume_snake_oil() -> void:
+	_consume(&"snake_oil")
 
 func show_level_complete(bonus_text := "") -> void:
 	if _complete_tween and _complete_tween.is_valid():
@@ -300,3 +313,5 @@ func restore_shelf(items: Array) -> void:
 				add_remedy_kit()
 			"cup_a_joe":
 				add_cup_a_joe()
+			"snake_oil":
+				add_snake_oil()

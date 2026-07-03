@@ -9,6 +9,7 @@ const CONSUMABLE_MAGIC_BALL := "magic_ball"
 const CONSUMABLE_SHIELD := "shield"
 const CONSUMABLE_REMEDY_KIT := "remedy_kit"
 const CONSUMABLE_CUP_A_JOE := "cup_a_joe"
+const CONSUMABLE_SNAKE_OIL := "snake_oil"
 
 static var _loaded := false
 static var _money := 0

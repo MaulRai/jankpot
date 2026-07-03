@@ -18,6 +18,7 @@ func _initialize() -> void:
 	_test_enemy_deck()
 	_test_basic_effect_plans()
 	_test_reaction_order()
+	_test_poison_ticks()
 	await _test_scene_smoke()
 	if failures.is_empty():
 		print("TESTS PASSED")
@@ -142,3 +143,31 @@ func _test_scene_smoke() -> void:
 func _expect(condition: bool, message: String) -> void:
 	if not condition:
 		failures.append(message)
+
+
+func _test_poison_ticks() -> void:
+	var resolver: RefCounted = BattleEffectResolverData.new()
+	var state: Resource = BattleStateData.new()
+	state.player_poison_turns = 2
+	var rock := WeaponCatalogData.create_basic(CardDef.CardType.ROCK)
+	var scissors := WeaponCatalogData.create_basic(CardDef.CardType.SCISSORS)
+	var player_hand: Array[CardDef] = [rock]
+	var enemy_hand: Array[CardDef] = [scissors]
+	
+	# Turn 1
+	var plan: RefCounted = resolver.build_plan(
+		BattleResolver.Result.WIN, rock, scissors, player_hand, enemy_hand, state
+	)
+	_expect(plan.old_player_poison == 2, "Expected old poison count to be 2")
+	_expect(plan.new_player_poison == 1, "Expected new poison count to be 1")
+	_expect(state.player_poison_turns == 1, "Expected state poison turns to decrement to 1")
+	_expect(plan.damage_to_player == 1, "Expected player to take 1 poison damage")
+	
+	# Turn 2
+	plan = resolver.build_plan(
+		BattleResolver.Result.WIN, rock, scissors, player_hand, enemy_hand, state
+	)
+	_expect(plan.old_player_poison == 1, "Expected old poison count to be 1")
+	_expect(plan.new_player_poison == 0, "Expected new poison count to be 0")
+	_expect(state.player_poison_turns == 0, "Expected state poison turns to decrement to 0")
+	_expect(plan.damage_to_player == 1, "Expected player to take 1 poison damage")

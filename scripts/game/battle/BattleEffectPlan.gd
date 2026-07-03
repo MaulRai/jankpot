@@ -17,6 +17,11 @@ var old_enemy_bleed := false
 var new_player_bleed := false
 var new_enemy_bleed := false
 
+var old_player_poison := 0
+var old_enemy_poison := 0
+var new_player_poison := 0
+var new_enemy_poison := 0
+
 var disable_enemy_type := -1
 var disable_player_type := -1
 var player_conceal := false

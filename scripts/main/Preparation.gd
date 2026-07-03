@@ -11,6 +11,8 @@ const MAGIC_BALL_TEXTURE := preload("res://assets/item/magic-ball.png")
 const SHIELD_TEXTURE := preload("res://assets/item/shield.png")
 const REMEDY_KIT_TEXTURE := preload("res://assets/item/remedy-kit.png")
 const CUP_A_JOE_TEXTURE := preload("res://assets/item/cup-a-joe.png")
+const SNAKE_OIL_TEXTURE := preload("res://assets/item/snake-oil.png")
+const TOOLTIP_BOX_SCENE := preload("res://scenes/ui/TooltipBox.tscn")
 
 const STAGES := [
 	{
@@ -54,6 +56,7 @@ var _collection_sections: VBoxContainer
 var _selected_count_label: Label
 var _selected_count_feedback_tween: Tween
 var _consumable_grid: GridContainer
+var _active_tooltip: Control = null
 
 
 func _ready() -> void:
@@ -200,6 +203,8 @@ func _make_card_preview(card: CardDef, selected: bool) -> Control:
 	wrapper.custom_minimum_size = Vector2(168, 252)
 	wrapper.mouse_filter = Control.MOUSE_FILTER_STOP
 	wrapper.gui_input.connect(_on_card_preview_gui_input.bind(int(card.get_meta("storage_index", -1))))
+	wrapper.mouse_entered.connect(_on_card_mouse_entered.bind(wrapper, card))
+	wrapper.mouse_exited.connect(_on_card_mouse_exited)
 
 	if selected:
 		var selected_back := TextureRect.new()
@@ -284,6 +289,7 @@ func _add_owned_consumables(parent: GridContainer) -> void:
 		{ "id": PlayerStorageData.CONSUMABLE_SHIELD, "name": "Shield", "texture": SHIELD_TEXTURE },
 		{ "id": PlayerStorageData.CONSUMABLE_REMEDY_KIT, "name": "Remedy Kit", "texture": REMEDY_KIT_TEXTURE },
 		{ "id": PlayerStorageData.CONSUMABLE_CUP_A_JOE, "name": "Cup-a-Joe", "texture": CUP_A_JOE_TEXTURE },
+		{ "id": PlayerStorageData.CONSUMABLE_SNAKE_OIL, "name": "Snake Oil", "texture": SNAKE_OIL_TEXTURE },
 	]
 	var has_any := false
 	for definition in definitions:
@@ -767,3 +773,53 @@ func _set_chevron_disabled(button: Button, disabled: bool) -> void:
 		var icon := button.get_child(0) as TextureRect
 		if icon:
 			icon.modulate = Color(0.24, 0.24, 0.24, 0.5) if disabled else Color.WHITE
+
+
+func _on_card_mouse_entered(wrapper: Control, card: CardDef) -> void:
+	if not card or not card.keywords or card.keywords.is_empty():
+		return
+	var tooltip_pos := wrapper.global_position + Vector2(wrapper.size.x + 12.0, 8.0)
+	_show_tooltip(card.keywords, tooltip_pos)
+
+
+func _on_card_mouse_exited() -> void:
+	_hide_tooltip()
+
+
+func _show_tooltip(keywords: Array[String], global_pos: Vector2) -> void:
+	_hide_tooltip()
+	if keywords.is_empty():
+		return
+	var tooltip := TOOLTIP_BOX_SCENE.instantiate() as Control
+	var text := ""
+	for kw in keywords:
+		var desc := EffectKeyword.get_description(kw)
+		if desc:
+			text += "[color=%s]%s[/color]: %s\n" % [EffectKeyword.get_color(kw), kw, desc]
+	var rich_label := tooltip.get_node_or_null("Panel/RichTextLabel") as RichTextLabel
+	if rich_label:
+		rich_label.text = text.strip_edges()
+	if text.is_empty():
+		tooltip.queue_free()
+		return
+	add_child(tooltip)
+	_active_tooltip = tooltip
+
+	var local_position := get_global_transform().affine_inverse() * global_pos
+	var tooltip_size := tooltip.size
+	var viewport_size := get_viewport_rect().size
+	local_position.x = clampf(local_position.x, 8.0, maxf(8.0, viewport_size.x - tooltip_size.x - 8.0))
+	local_position.y = clampf(local_position.y, 8.0, maxf(8.0, viewport_size.y - tooltip_size.y - 8.0))
+	tooltip.position = local_position
+	tooltip.z_index = 2600
+	tooltip.modulate.a = 0.0
+	var tween := create_tween()
+	tween.tween_property(tooltip, "modulate:a", 1.0, 0.1)
+
+
+func _hide_tooltip() -> void:
+	if _active_tooltip:
+		if _active_tooltip.get_parent() == self:
+			remove_child(_active_tooltip)
+		_active_tooltip.queue_free()
+		_active_tooltip = null

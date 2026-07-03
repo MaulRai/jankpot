@@ -21,6 +21,7 @@ const MAGIC_BALL_TEXTURE := preload("res://assets/item/magic-ball.png")
 const SHIELD_TEXTURE     := preload("res://assets/item/shield.png")
 const REMEDY_KIT_TEXTURE := preload("res://assets/item/remedy-kit.png")
 const CUP_A_JOE_TEXTURE  := preload("res://assets/item/cup-a-joe.png")
+const SNAKE_OIL_TEXTURE  := preload("res://assets/item/snake-oil.png")
 
 const SHOPKEEPER_LINES := [
 	"Welcome back. The shelves have been whispering about you.",
@@ -40,7 +41,7 @@ const SHOPKEEPER_LINES := [
 	"Do not lick the Ruby. Again, not a suggestion.",
 	"The Hatter Slip moved itself to the front shelf. I did not ask why.",
 	"A Shield can save a clash. A Magic Ball can save a guess.",
-	"If Bleed is eating your hearts, Remedy Kit is cheaper than regret.",
+	"If ailments are eating your hearts, Remedy Kit is cheaper than regret.",
 	"Do not trust luck. Improve it.",
 	"Quartz is simple: lose less, live longer.",
 	"Bronze Razor likes chance. Hatter Slip likes chance even more.",
@@ -54,7 +55,7 @@ const SHOPKEEPER_LINES := [
 	"Information is also damage, if used at the right time.",
 	"Magic Ball today? It predicts futures. Not refunds.",
 	"Shield is plain, reliable, and rarely dramatic. A rare quality.",
-	"Remedy Kit removes Bleed. It does not remove embarrassment.",
+	"Remedy Kit removes Bleed and Poison. It does not remove embarrassment.",
 	"Cup-a-Joe makes a winning attack strike twice. Drink before courage expires.",
 	"Looking for a random card? The sealed ones are shy.",
 	"Some weapons win clashes. Some weapons survive them.",
@@ -150,8 +151,9 @@ func _all_consumables() -> Array:
 	return [
 		{ "name": "Magic Ball",  "price": 4, "description": "Predicts the enemy's next weapon.",  "texture": MAGIC_BALL_TEXTURE, "kind": "consumable", "item_id": PlayerStorageData.CONSUMABLE_MAGIC_BALL },
 		{ "name": "Shield",      "price": 2, "description": "Blocks 1 DMG.",                      "texture": SHIELD_TEXTURE,     "kind": "consumable", "item_id": PlayerStorageData.CONSUMABLE_SHIELD },
-		{ "name": "Remedy Kit",  "price": 2, "description": "Removes Bleed.",                     "texture": REMEDY_KIT_TEXTURE, "kind": "consumable", "item_id": PlayerStorageData.CONSUMABLE_REMEDY_KIT },
+		{ "name": "Remedy Kit",  "price": 2, "description": "Removes all ailments (Bleed, Poison).",   "texture": REMEDY_KIT_TEXTURE, "kind": "consumable", "item_id": PlayerStorageData.CONSUMABLE_REMEDY_KIT },
 		{ "name": "Cup-a-Joe",   "price": 2, "description": "Win attacks twice this turn.",       "texture": CUP_A_JOE_TEXTURE,  "kind": "consumable", "item_id": PlayerStorageData.CONSUMABLE_CUP_A_JOE },
+		{ "name": "Snake Oil",   "price": 6, "description": "Inflict 1 poison. Lose 2x last clash: 2.", "texture": SNAKE_OIL_TEXTURE,  "kind": "consumable", "item_id": PlayerStorageData.CONSUMABLE_SNAKE_OIL },
 	]
 
 

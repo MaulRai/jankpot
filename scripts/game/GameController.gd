@@ -99,6 +99,7 @@ func _ready() -> void:
 	consumable_shelf.shield_requested.connect(_on_shield_requested)
 	consumable_shelf.remedy_kit_requested.connect(_on_remedy_kit_requested)
 	consumable_shelf.cup_a_joe_requested.connect(_on_cup_a_joe_requested)
+	consumable_shelf.snake_oil_requested.connect(_on_snake_oil_requested)
 	_stock_consumables_from_storage()
 	await _initialize_first_battle()
 
@@ -188,9 +189,10 @@ func _on_shield_requested() -> void:
 func _on_remedy_kit_requested() -> void:
 	if round_status != "ongoing" or _is_animating:
 		return
-	if not _state.player_bleed_pending:
+	if not _state.player_bleed_pending and _state.player_poison_turns <= 0:
 		return
 	_state.player_bleed_pending = false
+	_state.player_poison_turns = 0
 	consumable_shelf.consume_remedy_kit()
 	_on_storage_consumable_used(PlayerStorageData.CONSUMABLE_REMEDY_KIT)
 	_update_labels()
@@ -204,6 +206,42 @@ func _on_cup_a_joe_requested() -> void:
 	consumable_shelf.consume_cup_a_joe()
 	_on_storage_consumable_used(PlayerStorageData.CONSUMABLE_CUP_A_JOE)
 	_update_labels()
+
+
+func _on_snake_oil_requested() -> void:
+	if round_status != "ongoing" or _is_animating:
+		return
+	_is_animating = true
+	
+	var poison_amount := 1
+	if _check_double_loss_history():
+		poison_amount = 2
+		
+	consumable_shelf.consume_snake_oil()
+	_on_storage_consumable_used(PlayerStorageData.CONSUMABLE_SNAKE_OIL)
+	
+	sfx_manager.play_sfx("poison")
+	
+	var enemy_view: Control = enemy_slot.get_child(0) as CardView if enemy_slot.get_child_count() > 0 else enemy_slot
+	_animator.show_exclamation(enemy_view, "Poison +%d!" % poison_amount, Color("#5AF15A"))
+	
+	_state.enemy_poison_turns += poison_amount
+	_update_labels()
+	
+	await _animator.shake(enemy_view)
+	_is_animating = false
+
+
+func _check_double_loss_history() -> bool:
+	var player_history := battle_sidebar._player_history_cards
+	var enemy_history := battle_sidebar._enemy_history_cards
+	var size := player_history.size()
+	if size < 2:
+		return false
+	
+	var last_result := BattleResolver.resolve_cards(player_history[size - 1], enemy_history[size - 1])
+	var prev_result := BattleResolver.resolve_cards(player_history[size - 2], enemy_history[size - 2])
+	return last_result == BattleResolver.Result.LOSE and prev_result == BattleResolver.Result.LOSE
 
 
 func _play_card(card_data: CardDef, card_view: CardView) -> void:
@@ -289,6 +327,7 @@ func _update_labels() -> void:
 		_state.enemy_shield
 	)
 	battle_board.set_cup_a_joe_status(_state.player_cup_a_joe_pending)
+	battle_board.set_poison_status(_state.player_poison_turns, _state.enemy_poison_turns)
 	var total_trials := RunConfigData.encounter_ids.size()
 	if total_trials == 0:
 		total_trials = 3

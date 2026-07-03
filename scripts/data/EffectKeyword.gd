@@ -10,6 +10,7 @@ const KEYWORD_COLORS := {
 	"Conceal": "#AAAAFF",
 	"Downgrade": "#D5A86E",
 	"Fragile": "#FF9DB5",
+	"Poison": "#5AF15A",
 }
 
 const KEYWORD_DESCRIPTIONS := {
@@ -21,6 +22,7 @@ const KEYWORD_DESCRIPTIONS := {
 	"Conceal": "Disables or hides an option.",
 	"Downgrade": "Becomes its basic weapon for the rest of the current battle.",
 	"Fragile": "Temporarily disappears for the rest of the current battle after it breaks.",
+	"Poison": "Deals 1 damage at the end of every turn for a set number of turns.",
 }
 
 static func get_color(keyword: String) -> String:

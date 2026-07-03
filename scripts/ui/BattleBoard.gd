@@ -19,10 +19,18 @@ const CUP_A_JOE_KEYWORD := "Cup-a-Joe"
 @onready var player_cup_pulse: TextureRect = %PlayerCupPulse
 @onready var player_cup_status: TextureRect = %PlayerCupStatus
 
+const POISON_KEYWORD := "Poison"
+
+var player_poison_status: TextureRect
+var enemy_poison_status: TextureRect
+var player_poison_pulse: TextureRect
+var enemy_poison_pulse: TextureRect
+
 var tooltip_manager: TooltipManager
 var _heart_texture: Texture2D = preload("res://assets/ui/heart.png")
 var _bleed_texture: Texture2D = preload("res://assets/icon/effect/bleed.png")
 var _shield_texture: Texture2D = preload("res://assets/item/shield.png")
+var _poison_texture: Texture2D = preload("res://assets/icon/effect/poison.png")
 var _player_health_displayed := 0
 var _enemy_health_displayed := 0
 var _heart_fill_tweens: Dictionary = {}
@@ -31,15 +39,19 @@ var _heart_fill_tweens: Dictionary = {}
 func _ready() -> void:
 	_build_heart_row(player_hearts)
 	_build_heart_row(enemy_hearts)
+	_initialize_poison_nodes()
 	set_health(0, 0)
 	set_bleed_status(false, false)
 	set_shield_status(0, 0)
 	set_cup_a_joe_status(false)
+	set_poison_status(0, 0)
 	_connect_status_hover(player_bleed_status, BLEED_KEYWORD)
 	_connect_status_hover(enemy_bleed_status, BLEED_KEYWORD)
 	_connect_status_hover(player_shield_status, SHIELD_KEYWORD)
 	_connect_status_hover(enemy_shield_status, SHIELD_KEYWORD)
 	_connect_status_hover(player_cup_status, CUP_A_JOE_KEYWORD)
+	_connect_status_hover(player_poison_status, POISON_KEYWORD)
+	_connect_status_hover(enemy_poison_status, POISON_KEYWORD)
 
 
 func set_tooltip_manager(manager: TooltipManager) -> void:
@@ -442,3 +454,165 @@ func _play_card_status_overlay(
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	await tween.finished
 	overlay.queue_free()
+
+
+func _initialize_poison_nodes() -> void:
+	# Player Poison Status
+	player_poison_status = TextureRect.new()
+	player_poison_status.name = "PlayerPoisonStatus"
+	player_poison_status.texture = _poison_texture
+	player_poison_status.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	player_poison_status.stretch_mode = TextureRect.STRETCH_SCALE
+	player_poison_status.mouse_filter = Control.MOUSE_FILTER_PASS
+	player_poison_status.size = Vector2(40, 40)
+	player_poison_status.layout_mode = 1
+	player_poison_status.anchor_left = 0.0
+	player_poison_status.anchor_right = 0.0
+	player_poison_status.anchor_top = 0.5
+	player_poison_status.anchor_bottom = 0.5
+	player_poison_status.offset_left = -164.0
+	player_poison_status.offset_top = 122.0
+	player_poison_status.offset_right = -124.0
+	player_poison_status.offset_bottom = 162.0
+	player_poison_status.visible = false
+	add_child(player_poison_status)
+
+	var p_badge := Label.new()
+	p_badge.name = "Badge"
+	p_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	p_badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	p_badge.add_theme_font_size_override("font_size", 12)
+	p_badge.add_theme_color_override("font_color", Color(1.0, 0.95, 0.55, 1.0))
+	p_badge.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
+	p_badge.add_theme_constant_override("shadow_offset_y", 2)
+	p_badge.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	p_badge.offset_left = -20
+	p_badge.offset_top = -20
+	p_badge.offset_right = 0
+	p_badge.offset_bottom = 0
+	p_badge.size = Vector2(20, 20)
+	player_poison_status.add_child(p_badge)
+
+	# Player Poison Pulse
+	player_poison_pulse = TextureRect.new()
+	player_poison_pulse.name = "PlayerPoisonPulse"
+	player_poison_pulse.texture = _poison_texture
+	player_poison_pulse.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	player_poison_pulse.stretch_mode = TextureRect.STRETCH_SCALE
+	player_poison_pulse.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	player_poison_pulse.size = Vector2(40, 40)
+	player_poison_pulse.layout_mode = 1
+	player_poison_pulse.anchor_left = 0.0
+	player_poison_pulse.anchor_right = 0.0
+	player_poison_pulse.anchor_top = 0.5
+	player_poison_pulse.anchor_bottom = 0.5
+	player_poison_pulse.offset_left = -164.0
+	player_poison_pulse.offset_top = 122.0
+	player_poison_pulse.offset_right = -124.0
+	player_poison_pulse.offset_bottom = 162.0
+	player_poison_pulse.modulate = Color(0.36, 1.0, 0.36, 0.0)
+	player_poison_pulse.visible = false
+	add_child(player_poison_pulse)
+
+	# Enemy Poison Status
+	enemy_poison_status = TextureRect.new()
+	enemy_poison_status.name = "EnemyPoisonStatus"
+	enemy_poison_status.texture = _poison_texture
+	enemy_poison_status.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	enemy_poison_status.stretch_mode = TextureRect.STRETCH_SCALE
+	enemy_poison_status.mouse_filter = Control.MOUSE_FILTER_PASS
+	enemy_poison_status.size = Vector2(40, 40)
+	enemy_poison_status.layout_mode = 1
+	enemy_poison_status.anchor_left = 1.0
+	enemy_poison_status.anchor_right = 1.0
+	enemy_poison_status.anchor_top = 0.5
+	enemy_poison_status.anchor_bottom = 0.5
+	enemy_poison_status.offset_left = 124.0
+	enemy_poison_status.offset_top = 122.0
+	enemy_poison_status.offset_right = 164.0
+	enemy_poison_status.offset_bottom = 162.0
+	enemy_poison_status.visible = false
+	add_child(enemy_poison_status)
+
+	var e_badge := Label.new()
+	e_badge.name = "Badge"
+	e_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	e_badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	e_badge.add_theme_font_size_override("font_size", 12)
+	e_badge.add_theme_color_override("font_color", Color(1.0, 0.95, 0.55, 1.0))
+	e_badge.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
+	e_badge.add_theme_constant_override("shadow_offset_y", 2)
+	e_badge.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	e_badge.offset_left = -20
+	e_badge.offset_top = -20
+	e_badge.offset_right = 0
+	e_badge.offset_bottom = 0
+	e_badge.size = Vector2(20, 20)
+	enemy_poison_status.add_child(e_badge)
+
+	# Enemy Poison Pulse
+	enemy_poison_pulse = TextureRect.new()
+	enemy_poison_pulse.name = "EnemyPoisonPulse"
+	enemy_poison_pulse.texture = _poison_texture
+	enemy_poison_pulse.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	enemy_poison_pulse.stretch_mode = TextureRect.STRETCH_SCALE
+	enemy_poison_pulse.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	enemy_poison_pulse.size = Vector2(40, 40)
+	enemy_poison_pulse.layout_mode = 1
+	enemy_poison_pulse.anchor_left = 1.0
+	enemy_poison_pulse.anchor_right = 1.0
+	enemy_poison_pulse.anchor_top = 0.5
+	enemy_poison_pulse.anchor_bottom = 0.5
+	enemy_poison_pulse.offset_left = 124.0
+	enemy_poison_pulse.offset_top = 122.0
+	enemy_poison_pulse.offset_right = 164.0
+	enemy_poison_pulse.offset_bottom = 162.0
+	enemy_poison_pulse.modulate = Color(0.36, 1.0, 0.36, 0.0)
+	enemy_poison_pulse.visible = false
+	add_child(enemy_poison_pulse)
+
+
+func set_poison_status(player_poison_turns: int, enemy_poison_turns: int) -> void:
+	if not player_poison_status: player_poison_status = get_node_or_null("PlayerPoisonStatus")
+	if not enemy_poison_status: enemy_poison_status = get_node_or_null("EnemyPoisonStatus")
+	if not player_poison_pulse: player_poison_pulse = get_node_or_null("PlayerPoisonPulse")
+	if not enemy_poison_pulse: enemy_poison_pulse = get_node_or_null("EnemyPoisonPulse")
+	
+	if not player_poison_status:
+		return
+
+	var player_was_visible := player_poison_status.visible
+	var enemy_was_visible := enemy_poison_status.visible
+
+	player_poison_status.visible = player_poison_turns > 0
+	if player_poison_turns > 0:
+		var badge := player_poison_status.get_node_or_null("Badge") as Label
+		if badge:
+			badge.text = str(player_poison_turns)
+
+	enemy_poison_status.visible = enemy_poison_turns > 0
+	if enemy_poison_turns > 0:
+		var badge := enemy_poison_status.get_node_or_null("Badge") as Label
+		if badge:
+			badge.text = str(enemy_poison_turns)
+
+	if player_poison_turns > 0 and not player_was_visible:
+		_play_bleed_pulse_once(player_poison_pulse)
+	if enemy_poison_turns > 0 and not enemy_was_visible:
+		_play_bleed_pulse_once(enemy_poison_pulse)
+
+
+func play_poison_damage_feedback(is_player: bool, target_card: Control) -> void:
+	_play_bleed_status_expire(player_poison_status if is_player else enemy_poison_status)
+	_play_card_poison_overlay(target_card)
+
+
+func _play_card_poison_overlay(target_card: Control) -> void:
+	if not target_card or not is_instance_valid(target_card):
+		return
+	_play_card_status_overlay(
+		target_card,
+		_poison_texture,
+		Color(0.26, 1.0, 0.26, 0.78),
+		Vector2(1.95, 1.95)
+	)
