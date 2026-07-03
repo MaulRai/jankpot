@@ -10,7 +10,7 @@ const KEYWORD_COLORS := {
 	"Conceal": "#AAAAFF",
 	"Downgrade": "#D5A86E",
 	"Fragile": "#FF9DB5",
-	"Poison": "#5AF15A",
+	"Poison": "#A855F7",
 }
 
 const KEYWORD_DESCRIPTIONS := {

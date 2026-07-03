@@ -5,6 +5,7 @@ const MAX_HEALTH := 6
 const BLEED_KEYWORD := "Bleed"
 const SHIELD_KEYWORD := "Shield"
 const CUP_A_JOE_KEYWORD := "Cup-a-Joe"
+const EffectKeywordData = preload("res://scripts/data/EffectKeyword.gd")
 
 @onready var player_hearts: HBoxContainer = %PlayerHearts
 @onready var enemy_hearts: HBoxContainer = %EnemyHearts
@@ -510,7 +511,8 @@ func _initialize_poison_nodes() -> void:
 	player_poison_pulse.offset_top = 122.0
 	player_poison_pulse.offset_right = -124.0
 	player_poison_pulse.offset_bottom = 162.0
-	player_poison_pulse.modulate = Color(0.36, 1.0, 0.36, 0.0)
+	player_poison_pulse.modulate = Color(EffectKeywordData.get_color("Poison"))
+	player_poison_pulse.modulate.a = 0.0
 	player_poison_pulse.visible = false
 	add_child(player_poison_pulse)
 
@@ -567,7 +569,8 @@ func _initialize_poison_nodes() -> void:
 	enemy_poison_pulse.offset_top = 122.0
 	enemy_poison_pulse.offset_right = 164.0
 	enemy_poison_pulse.offset_bottom = 162.0
-	enemy_poison_pulse.modulate = Color(0.36, 1.0, 0.36, 0.0)
+	enemy_poison_pulse.modulate = Color(EffectKeywordData.get_color("Poison"))
+	enemy_poison_pulse.modulate.a = 0.0
 	enemy_poison_pulse.visible = false
 	add_child(enemy_poison_pulse)
 
@@ -597,22 +600,48 @@ func set_poison_status(player_poison_turns: int, enemy_poison_turns: int) -> voi
 			badge.text = str(enemy_poison_turns)
 
 	if player_poison_turns > 0 and not player_was_visible:
-		_play_bleed_pulse_once(player_poison_pulse)
+		_play_poison_pulse_once(player_poison_pulse)
 	if enemy_poison_turns > 0 and not enemy_was_visible:
-		_play_bleed_pulse_once(enemy_poison_pulse)
+		_play_poison_pulse_once(enemy_poison_pulse)
 
 
 func play_poison_damage_feedback(is_player: bool, target_card: Control) -> void:
-	_play_bleed_status_expire(player_poison_status if is_player else enemy_poison_status)
+	_play_poison_status_expire(player_poison_status if is_player else enemy_poison_status)
 	_play_card_poison_overlay(target_card)
+
+
+func _play_poison_pulse_once(pulse_icon: TextureRect) -> void:
+	_play_status_pulse_once(pulse_icon, Color(EffectKeywordData.get_color("Poison")))
+
+
+func _play_poison_status_expire(status_icon: TextureRect) -> void:
+	if not status_icon.visible:
+		return
+	status_icon.pivot_offset = status_icon.size * 0.5
+	status_icon.modulate = Color.WHITE
+
+	var tween := create_tween()
+	tween.tween_property(status_icon, "modulate", Color(0.66, 0.33, 0.97, 1.0), 0.08) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(status_icon, "modulate", Color(1.0, 1.0, 1.0, 0.72), 0.08) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(status_icon, "modulate", Color(0.58, 0.27, 0.95, 1.0), 0.07) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(status_icon, "modulate", Color(0.94, 0.90, 1.0, 0.0), 0.18) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	await tween.finished
+	status_icon.visible = false
+	status_icon.modulate = Color.WHITE
 
 
 func _play_card_poison_overlay(target_card: Control) -> void:
 	if not target_card or not is_instance_valid(target_card):
 		return
+	var poison_tint := Color(EffectKeywordData.get_color("Poison"))
+	poison_tint.a = 0.78
 	_play_card_status_overlay(
 		target_card,
 		_poison_texture,
-		Color(0.26, 1.0, 0.26, 0.78),
+		poison_tint,
 		Vector2(1.95, 1.95)
 	)

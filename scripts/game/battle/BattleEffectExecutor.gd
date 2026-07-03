@@ -1,6 +1,8 @@
 class_name BattleEffectExecutor
 extends Node
 
+const EffectKeywordData = preload("res://scripts/data/EffectKeyword.gd")
+
 var state: Resource
 var animator: Node
 var deck_manager: Node
@@ -87,10 +89,20 @@ func execute(
 		_sync_poison_status(plan)
 	if plan.old_enemy_poison > 0:
 		animator.play_sfx("poison")
+		animator.show_exclamation(
+			enemy_view,
+			"Poisoned!",
+			Color(EffectKeywordData.get_color("Poison"))
+		)
 		health_display.play_poison_damage_feedback(false, enemy_view)
 		await _deal_damage(false, 1)
 	if plan.old_player_poison > 0:
 		animator.play_sfx("poison")
+		animator.show_exclamation(
+			player_view,
+			"Poisoned!",
+			Color(EffectKeywordData.get_color("Poison"))
+		)
 		health_display.play_poison_damage_feedback(true, player_view)
 		await _deal_damage(true, 1)
 	_apply_recovery(plan)

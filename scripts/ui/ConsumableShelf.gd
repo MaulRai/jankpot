@@ -82,7 +82,7 @@ func add_snake_oil() -> bool:
 	return _add_unique_consumable(
 		&"snake_oil",
 		SNAKE_OIL_TEXTURE,
-		"Snake Oil\nInflict 1 poison. Lose 2x last clash: 2.",
+		"Snake Oil\Inflict 1 poison. If lose twice in a row, inflict 2 instead.",
 		func() -> void: snake_oil_requested.emit()
 	)
 

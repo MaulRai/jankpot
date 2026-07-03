@@ -8,6 +8,7 @@ const BattleEffectExecutorData = preload("res://scripts/game/battle/BattleEffect
 const BattleAnimatorData = preload("res://scripts/animation/BattleAnimator.gd")
 const RunConfigData = preload("res://scripts/data/RunConfig.gd")
 const PlayerStorageData = preload("res://scripts/data/PlayerStorage.gd")
+const EffectKeywordData = preload("res://scripts/data/EffectKeyword.gd")
 
 signal turn_resolved
 signal battle_ended(winner: String)
@@ -224,7 +225,11 @@ func _on_snake_oil_requested() -> void:
 	
 	var enemy_card_view := enemy_slot.get_child(0) as CardView
 	if is_instance_valid(enemy_card_view):
-		_animator.show_exclamation(enemy_card_view, "Poison +%d!" % poison_amount, Color("#5AF15A"))
+		_animator.show_exclamation(
+			enemy_card_view,
+			"Poisoned!",
+			Color(EffectKeywordData.get_color("Poison"))
+		)
 	
 	_state.enemy_poison_turns += poison_amount
 	_update_labels()
@@ -498,6 +503,8 @@ func _select_stage_enemy(upgrade_count: int) -> Dictionary:
 
 
 func _stock_consumables_from_storage() -> void:
+	
+	
 	var selected := PlayerStorageData.selected_consumables()
 	var counts := PlayerStorageData.consumable_counts()
 	for id in selected:
