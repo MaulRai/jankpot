@@ -30,7 +30,19 @@ var _complete_tween: Tween
 var _complete_popup: Label
 
 func _ready() -> void:
+	_ensure_nodes_bound()
 	_animate_chains()
+
+
+func _ensure_nodes_bound() -> void:
+	if not slots:
+		slots = get_node_or_null("%Slots") as HBoxContainer
+	if not shelf_body:
+		shelf_body = get_node_or_null("%ShelfBody") as Control
+	if not left_chain:
+		left_chain = get_node_or_null("%LeftChain") as TextureRect
+	if not right_chain:
+		right_chain = get_node_or_null("%RightChain") as TextureRect
 
 func add_magic_ball() -> bool:
 	return _add_unique_consumable(
@@ -125,6 +137,7 @@ func _add_unique_consumable(
 	tooltip: String,
 	pressed_callback: Callable
 ) -> bool:
+	_ensure_nodes_bound()
 	if slots.get_child_count() >= MAX_ITEMS or _has_item(item_id):
 		return false
 	var button := _create_item_button(texture, tooltip)
@@ -227,6 +240,7 @@ func get_active_items() -> Array[String]:
 
 
 func clear_shelf() -> void:
+	_ensure_nodes_bound()
 	for key in _buttons.keys():
 		var button = _buttons[key]
 		if is_instance_valid(button):
@@ -235,6 +249,7 @@ func clear_shelf() -> void:
 
 
 func restore_shelf(items: Array) -> void:
+	_ensure_nodes_bound()
 	clear_shelf()
 	for item in items:
 		var name_str := str(item)
