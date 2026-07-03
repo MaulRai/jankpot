@@ -380,15 +380,13 @@ func _build_stage_selector(parent: VBoxContainer) -> void:
 	row.add_theme_constant_override("separation", 8)
 	parent.add_child(row)
 
-	var prev_bundle := _make_chevron_icon_button(true, Vector2(36, 78), 1.0)
-	var prev_frame := prev_bundle["frame"] as PixelFramePanel
-	_stage_prev_button = prev_bundle["button"] as Button
+	_stage_prev_button = _make_chevron_flat_button(true, Vector2(36, 78))
 	_stage_prev_button.pressed.connect(func() -> void:
 		_selected_stage_index = maxi(0, _selected_stage_index - 1)
 		_play_sfx("click")
 		_update_stage_selector()
 	)
-	row.add_child(prev_frame)
+	row.add_child(_stage_prev_button)
 
 	_stage_panel = PixelFramePanel.new()
 	_stage_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -441,15 +439,13 @@ func _build_stage_selector(parent: VBoxContainer) -> void:
 	_stage_title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	text_stack.add_child(_stage_title_label)
 
-	var next_bundle := _make_chevron_icon_button(false, Vector2(36, 78), 1.0)
-	var next_frame := next_bundle["frame"] as PixelFramePanel
-	_stage_next_button = next_bundle["button"] as Button
+	_stage_next_button = _make_chevron_flat_button(false, Vector2(36, 78))
 	_stage_next_button.pressed.connect(func() -> void:
 		_selected_stage_index = mini(STAGES.size() - 1, _selected_stage_index + 1)
 		_play_sfx("click")
 		_update_stage_selector()
 	)
-	row.add_child(next_frame)
+	row.add_child(_stage_next_button)
 
 
 func _update_stage_selector() -> void:
@@ -465,8 +461,8 @@ func _update_stage_selector() -> void:
 	_stage_title_label.add_theme_font_size_override("font_size", _stage_title_font_size(str(stage["name"])))
 	_stage_title_label.add_theme_color_override("font_color", Color(1.0, 0.95, 0.72, 1.0))
 	_stage_icon.texture = load(str(stage["icon"])) if ResourceLoader.exists(str(stage["icon"])) else null
-	_stage_prev_button.disabled = _selected_stage_index <= 0
-	_stage_next_button.disabled = _selected_stage_index >= STAGES.size() - 1
+	_set_chevron_disabled(_stage_prev_button, _selected_stage_index <= 0)
+	_set_chevron_disabled(_stage_next_button, _selected_stage_index >= STAGES.size() - 1)
 
 
 func _on_play_pressed() -> void:
@@ -657,7 +653,8 @@ func _reset_selected_count_visual() -> void:
 
 func _make_back_button() -> Dictionary:
 	var frame := PixelFramePanel.new()
-	frame.custom_minimum_size = Vector2(250, 48)
+	frame.custom_minimum_size = Vector2(210, 48)
+	frame.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	_configure_pixel_frame(
 		frame,
 		Color(0.12, 0.07, 0.12, 1.0),
@@ -699,23 +696,12 @@ func _make_back_button() -> Dictionary:
 	return { "frame": frame, "button": button }
 
 
-func _make_chevron_icon_button(is_left: bool, minimum_size: Vector2, frame_scale := 1.0) -> Dictionary:
-	var frame := PixelFramePanel.new()
-	frame.custom_minimum_size = minimum_size
-	_configure_pixel_frame(
-		frame,
-		Color(0.12, 0.07, 0.12, 1.0),
-		Color(1.0, 0.86, 0.42, 1.0),
-		Color(0.26, 0.12, 0.2, 1.0),
-		frame_scale
-	)
-
+func _make_chevron_flat_button(is_left: bool, minimum_size: Vector2) -> Button:
 	var button := Button.new()
+	button.custom_minimum_size = minimum_size
 	button.flat = true
 	for style in ["normal", "hover", "pressed", "focus", "disabled"]:
 		button.add_theme_stylebox_override(style, StyleBoxEmpty.new())
-	frame.add_child(button)
-	_setup_menu_button_preparations(button, frame)
 
 	var icon := TextureRect.new()
 	icon.texture = preload("res://assets/ui/chevron-left.png")
@@ -724,16 +710,26 @@ func _make_chevron_icon_button(is_left: bool, minimum_size: Vector2, frame_scale
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	icon.flip_h = not is_left
-	icon.size = Vector2(16, 16)
+	icon.size = Vector2(24, 24)
 	
 	icon.set_anchors_preset(Control.PRESET_CENTER)
-	icon.offset_left = -8
-	icon.offset_top = -8
-	icon.offset_right = 8
-	icon.offset_bottom = 8
+	icon.offset_left = -12
+	icon.offset_top = -12
+	icon.offset_right = 12
+	icon.offset_bottom = 12
 	button.add_child(icon)
 
-	return { "frame": frame, "button": button }
+	button.pivot_offset = minimum_size * 0.5
+	button.resized.connect(func() -> void: button.pivot_offset = button.size * 0.5)
+	button.mouse_entered.connect(func() -> void: _tween_node_scale(button, HOVER_SCALE, 0.12))
+	button.mouse_exited.connect(func() -> void: _tween_node_scale(button, NORMAL_SCALE, 0.12))
+	button.button_down.connect(func() -> void: _tween_node_scale(button, PRESSED_SCALE, 0.06))
+	button.button_up.connect(func() -> void:
+		var target_scale := HOVER_SCALE if button.is_hovered() else NORMAL_SCALE
+		_tween_node_scale(button, target_scale, 0.1)
+	)
+
+	return button
 
 
 func _setup_menu_button_preparations(button: Button, frame: PixelFramePanel) -> void:
@@ -756,3 +752,18 @@ func _tween_button_frame(frame: PixelFramePanel, target_scale: Vector2, duration
 	tween.tween_property(frame, "scale", target_scale, duration) \
 		.set_trans(Tween.TRANS_BACK) \
 		.set_ease(Tween.EASE_OUT)
+
+
+func _tween_node_scale(node: Control, target_scale: Vector2, duration: float) -> void:
+	var tween := create_tween()
+	tween.tween_property(node, "scale", target_scale, duration) \
+		.set_trans(Tween.TRANS_BACK) \
+		.set_ease(Tween.EASE_OUT)
+
+
+func _set_chevron_disabled(button: Button, disabled: bool) -> void:
+	button.disabled = disabled
+	if button.get_child_count() > 0:
+		var icon := button.get_child(0) as TextureRect
+		if icon:
+			icon.modulate = Color(0.24, 0.24, 0.24, 0.5) if disabled else Color.WHITE
