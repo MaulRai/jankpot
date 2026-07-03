@@ -1,5 +1,6 @@
 extends Control
 
+const PlayerStorageData = preload("res://scripts/data/PlayerStorage.gd")
 const MAIN_MENU_SCENE_PATH := "res://scenes/main/MainMenu.tscn"
 const INTRO_DURATION := 0.62
 const BOARD_FADE_DURATION := 0.44
@@ -32,6 +33,8 @@ func _ready() -> void:
 	_pause_overlay.resume_requested.connect(_resume_game)
 	_pause_overlay.main_menu_requested.connect(_go_to_main_menu)
 	_pause_overlay.try_again_requested.connect(_try_again)
+	_pause_overlay.save_requested.connect(_on_save_requested)
+	_pause_overlay.abandon_requested.connect(_on_abandon_requested)
 	_transition_cover.visible = true
 	_transition_cover.modulate.a = 1.0
 	_play_intro()
@@ -75,13 +78,30 @@ func _on_battle_ended(winner: String) -> void:
 		return
 	_defeat_active = true
 	get_tree().paused = true
-	await _pause_overlay.open_defeat()
+	var money_earned := _game_controller.cash_out_run_money()
+	await _pause_overlay.open_defeat_with_money(money_earned)
 
 
 func _on_boss_victory(money_earned: int) -> void:
 	_defeat_active = true
 	get_tree().paused = true
+	_game_controller.cash_out_run_money()
 	await _pause_overlay.open_victory(money_earned)
+
+
+func _on_save_requested() -> void:
+	var state := _game_controller.get_run_state()
+	PlayerStorageData.save_run(state)
+	get_tree().paused = false
+	get_tree().change_scene_to_file(MAIN_MENU_SCENE_PATH)
+
+
+func _on_abandon_requested() -> void:
+	PlayerStorageData.clear_saved_run()
+	_defeat_active = true
+	var money_earned := _game_controller.cash_out_run_money()
+	await _pause_overlay.close_pause()
+	await _pause_overlay.open_defeat_with_money(money_earned)
 
 
 func _play_intro() -> void:

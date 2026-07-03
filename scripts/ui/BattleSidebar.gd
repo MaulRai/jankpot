@@ -37,7 +37,7 @@ var _heart_fill_tweens: Dictionary = {}
 func _ready() -> void:
 	_build_heart_row(enemy_hearts)
 	_build_heart_row(player_hearts)
-	set_health(MAX_HEALTH, MAX_HEALTH)
+	set_health(0, 0)
 	pause_button.pivot_offset = pause_button.size * 0.5
 	pause_button.resized.connect(func() -> void: pause_button.pivot_offset = pause_button.size * 0.5)
 	pause_button.mouse_entered.connect(_tween_pause_button.bind(BUTTON_HOVER_SCALE, 0.12))
@@ -50,6 +50,10 @@ func _ready() -> void:
 	)
 
 func set_health(player_health: int, enemy_health: int) -> void:
+	if not player_hearts:
+		player_hearts = %PlayerHearts
+	if not enemy_hearts:
+		enemy_hearts = %EnemyHearts
 	_update_heart_row(player_hearts, player_health, _player_health_displayed)
 	_update_heart_row(enemy_hearts, enemy_health, _enemy_health_displayed)
 	_player_health_displayed = clampi(player_health, 0, MAX_HEALTH)
@@ -72,10 +76,13 @@ func _tween_pause_button(target_scale: Vector2, duration: float) -> void:
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func set_progress(trial_current: int, trial_total: int, clash: int) -> void:
+	if not trial_value: trial_value = %TrialValue
+	if not clash_value: clash_value = %ClashValue
 	trial_value.text = "%d / %d" % [trial_current, trial_total]
 	clash_value.text = str(clash)
 
 func set_money(amount: int) -> void:
+	if not money_label: money_label = %MoneyLabel
 	money_label.text = str(maxi(0, amount))
 
 func animate_money_gain(amount: int) -> void:
@@ -120,6 +127,10 @@ func animate_money_gain(amount: int) -> void:
 	)
 
 func set_enemy_info(enemy_data: Dictionary) -> void:
+	if not enemy_name: enemy_name = %EnemyName
+	if not behavior: behavior = %Behavior
+	if not reward: reward = %Reward
+	if not enemy_icon: enemy_icon = %EnemyIcon
 	enemy_name.text = str(enemy_data.get("name", "Unknown Rival"))
 	behavior.text = str(enemy_data.get("description", "No known pattern."))
 	var default_reward := "$$$" if bool(enemy_data.get("is_boss", false)) else "$"
@@ -134,8 +145,35 @@ func clear_history() -> void:
 	_player_history_cards.clear()
 	_history_turns.clear()
 	_history_turn = 0
+	if not enemy_history:
+		enemy_history = %EnemyHistory
+	if not player_history:
+		player_history = %PlayerHistory
+	if not turn_history:
+		turn_history = %TurnHistory
 	_render_history_row(enemy_history, _enemy_history_cards, false)
 	_render_history_row(player_history, _player_history_cards, false)
+	_render_turn_row(false)
+
+
+func restore_history(
+	p_cards: Array[CardDef],
+	e_cards: Array[CardDef],
+	turns: Array[int],
+	turn_num: int
+) -> void:
+	_player_history_cards = p_cards.duplicate()
+	_enemy_history_cards = e_cards.duplicate()
+	_history_turns = turns.duplicate()
+	_history_turn = turn_num
+	if not enemy_history:
+		enemy_history = %EnemyHistory
+	if not player_history:
+		player_history = %PlayerHistory
+	if not turn_history:
+		turn_history = %TurnHistory
+	_render_history_row(player_history, _player_history_cards, false)
+	_render_history_row(enemy_history, _enemy_history_cards, false)
 	_render_turn_row(false)
 
 func add_history(player_card: CardDef, enemy_card: CardDef) -> void:

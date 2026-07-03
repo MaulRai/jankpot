@@ -39,6 +39,10 @@ const STAGES := [
 	},
 ]
 
+const HOVER_SCALE := Vector2(1.08, 1.08)
+const PRESSED_SCALE := Vector2(0.94, 0.94)
+const NORMAL_SCALE := Vector2.ONE
+
 var _selected_stage_index := 0
 var _stage_panel: PixelFramePanel
 var _stage_prefix_label: Label
@@ -49,7 +53,7 @@ var _stage_next_button: Button
 var _collection_sections: VBoxContainer
 var _selected_count_label: Label
 var _selected_count_feedback_tween: Tween
-var _money_label: Label
+var _consumable_grid: GridContainer
 
 
 func _ready() -> void:
@@ -62,14 +66,28 @@ func _build_ui() -> void:
 	var root_margin := MarginContainer.new()
 	root_margin.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root_margin.add_theme_constant_override("margin_left", 34)
-	root_margin.add_theme_constant_override("margin_top", 28)
+	root_margin.add_theme_constant_override("margin_top", 20)
 	root_margin.add_theme_constant_override("margin_right", 34)
-	root_margin.add_theme_constant_override("margin_bottom", 28)
+	root_margin.add_theme_constant_override("margin_bottom", 20)
 	add_child(root_margin)
+
+	var main_layout := VBoxContainer.new()
+	main_layout.add_theme_constant_override("separation", 14)
+	root_margin.add_child(main_layout)
+
+	var back_btn_bundle := _make_back_button()
+	var back_frame := back_btn_bundle["frame"] as PixelFramePanel
+	var back_button := back_btn_bundle["button"] as Button
+	back_button.pressed.connect(func() -> void:
+		_play_sfx("click")
+		get_tree().change_scene_to_file("res://scenes/main/MainMenu.tscn")
+	)
+	main_layout.add_child(back_frame)
 
 	var columns := HBoxContainer.new()
 	columns.add_theme_constant_override("separation", 22)
-	root_margin.add_child(columns)
+	columns.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	main_layout.add_child(columns)
 
 	var collection_panel := _make_panel()
 	collection_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -126,10 +144,6 @@ func _build_side_panel(parent: Control) -> void:
 	content.add_theme_constant_override("separation", 12)
 	margin.add_child(content)
 
-	_money_label = _make_label("$%d" % PlayerStorageData.money(), 24, Color(1.0, 0.9, 0.55, 1.0))
-	_money_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	content.add_child(_money_label)
-
 	content.add_child(_make_label("CONSUMABLES", 22, Color(1.0, 0.88, 0.48, 1.0)))
 
 	var consumable_scroll := ScrollContainer.new()
@@ -139,6 +153,7 @@ func _build_side_panel(parent: Control) -> void:
 	content.add_child(consumable_scroll)
 
 	var consumable_grid := GridContainer.new()
+	_consumable_grid = consumable_grid
 	consumable_grid.columns = 2
 	consumable_grid.add_theme_constant_override("h_separation", 10)
 	consumable_grid.add_theme_constant_override("v_separation", 10)
@@ -276,7 +291,7 @@ func _add_owned_consumables(parent: GridContainer) -> void:
 		if count <= 0:
 			continue
 		has_any = true
-		_add_consumable(parent, str(definition["name"]), definition["texture"] as Texture2D, count)
+		_add_consumable(parent, str(definition["id"]), str(definition["name"]), definition["texture"] as Texture2D, count)
 	if has_any:
 		return
 
@@ -285,10 +300,27 @@ func _add_owned_consumables(parent: GridContainer) -> void:
 	parent.add_child(empty)
 
 
-func _add_consumable(parent: GridContainer, name: String, texture: Texture2D, count: int) -> void:
+func _add_consumable(parent: GridContainer, consumable_id: String, name: String, texture: Texture2D, count: int) -> void:
 	var item := Control.new()
 	item.custom_minimum_size = Vector2(92, 112)
+	item.mouse_filter = Control.MOUSE_FILTER_STOP
+	item.gui_input.connect(_on_consumable_gui_input.bind(consumable_id))
 	parent.add_child(item)
+
+	var selected := PlayerStorageData.is_consumable_selected(consumable_id)
+	if selected:
+		var selected_back := TextureRect.new()
+		selected_back.texture = SELECTED_CARD_BASE_TEXTURE
+		selected_back.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		selected_back.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		selected_back.stretch_mode = TextureRect.STRETCH_SCALE
+		selected_back.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		selected_back.size = Vector2(92, 112)
+		selected_back.position = Vector2.ZERO
+		selected_back.pivot_offset = selected_back.size * 0.5
+		selected_back.modulate = Color(0.35, 0.72, 1.0, 0.42)
+		item.add_child(selected_back)
+		_start_selected_card_pulse(selected_back)
 
 	var icon := TextureRect.new()
 	icon.custom_minimum_size = Vector2(74, 74)
@@ -298,6 +330,7 @@ func _add_consumable(parent: GridContainer, name: String, texture: Texture2D, co
 	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	item.add_child(icon)
 
 	var label := _make_label(name, 12, Color(0.84, 0.9, 0.84, 1.0))
@@ -319,13 +352,35 @@ func _add_consumable(parent: GridContainer, name: String, texture: Texture2D, co
 	item.add_child(badge)
 
 
+func _on_consumable_gui_input(event: InputEvent, consumable_id: String) -> void:
+	var clicked: bool = event is InputEventMouseButton \
+		and event.button_index == MOUSE_BUTTON_LEFT \
+		and event.pressed
+	if not clicked:
+		return
+	if PlayerStorageData.toggle_consumable_selected(consumable_id):
+		_play_sfx("click")
+		_rebuild_consumable_grid()
+	else:
+		_play_sfx("buzzer")
+	accept_event()
+
+
+func _rebuild_consumable_grid() -> void:
+	if not is_instance_valid(_consumable_grid):
+		return
+	for child in _consumable_grid.get_children():
+		child.queue_free()
+	_add_owned_consumables(_consumable_grid)
+
+
 func _build_stage_selector(parent: VBoxContainer) -> void:
 	var row := HBoxContainer.new()
 	row.custom_minimum_size = Vector2(0, 86)
 	row.add_theme_constant_override("separation", 8)
 	parent.add_child(row)
 
-	var prev_bundle := _make_framed_button("<", Vector2(36, 78), 22, 1.0)
+	var prev_bundle := _make_chevron_icon_button(true, Vector2(36, 78), 1.0)
 	var prev_frame := prev_bundle["frame"] as PixelFramePanel
 	_stage_prev_button = prev_bundle["button"] as Button
 	_stage_prev_button.pressed.connect(func() -> void:
@@ -386,7 +441,7 @@ func _build_stage_selector(parent: VBoxContainer) -> void:
 	_stage_title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	text_stack.add_child(_stage_title_label)
 
-	var next_bundle := _make_framed_button(">", Vector2(36, 78), 22, 1.0)
+	var next_bundle := _make_chevron_icon_button(false, Vector2(36, 78), 1.0)
 	var next_frame := next_bundle["frame"] as PixelFramePanel
 	_stage_next_button = next_bundle["button"] as Button
 	_stage_next_button.pressed.connect(func() -> void:
@@ -598,3 +653,106 @@ func _reset_selected_count_visual() -> void:
 		return
 	_selected_count_label.rotation_degrees = 0.0
 	_selected_count_label.scale = Vector2.ONE
+
+
+func _make_back_button() -> Dictionary:
+	var frame := PixelFramePanel.new()
+	frame.custom_minimum_size = Vector2(250, 48)
+	_configure_pixel_frame(
+		frame,
+		Color(0.12, 0.07, 0.12, 1.0),
+		Color(1.0, 0.86, 0.42, 1.0),
+		Color(0.26, 0.12, 0.2, 1.0),
+		1.2
+	)
+
+	var button := Button.new()
+	button.flat = true
+	for style in ["normal", "hover", "pressed", "focus", "disabled"]:
+		button.add_theme_stylebox_override(style, StyleBoxEmpty.new())
+	frame.add_child(button)
+	_setup_menu_button_preparations(button, frame)
+
+	var content := HBoxContainer.new()
+	content.alignment = BoxContainer.ALIGNMENT_CENTER
+	content.add_theme_constant_override("separation", 8)
+	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	button.add_child(content)
+	content.set_anchors_preset(Control.PRESET_FULL_RECT)
+
+	var icon := TextureRect.new()
+	icon.texture = preload("res://assets/ui/chevron-left.png")
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.custom_minimum_size = Vector2(16, 16)
+	content.add_child(icon)
+
+	var label := Label.new()
+	label.text = "Back to Main Menu"
+	label.add_theme_font_size_override("font_size", 16)
+	label.add_theme_color_override("font_color", Color(1.0, 0.93, 0.62, 1.0))
+	label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.65))
+	label.add_theme_constant_override("shadow_offset_y", 2)
+	content.add_child(label)
+
+	return { "frame": frame, "button": button }
+
+
+func _make_chevron_icon_button(is_left: bool, minimum_size: Vector2, frame_scale := 1.0) -> Dictionary:
+	var frame := PixelFramePanel.new()
+	frame.custom_minimum_size = minimum_size
+	_configure_pixel_frame(
+		frame,
+		Color(0.12, 0.07, 0.12, 1.0),
+		Color(1.0, 0.86, 0.42, 1.0),
+		Color(0.26, 0.12, 0.2, 1.0),
+		frame_scale
+	)
+
+	var button := Button.new()
+	button.flat = true
+	for style in ["normal", "hover", "pressed", "focus", "disabled"]:
+		button.add_theme_stylebox_override(style, StyleBoxEmpty.new())
+	frame.add_child(button)
+	_setup_menu_button_preparations(button, frame)
+
+	var icon := TextureRect.new()
+	icon.texture = preload("res://assets/ui/chevron-left.png")
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon.flip_h = not is_left
+	icon.size = Vector2(16, 16)
+	
+	icon.set_anchors_preset(Control.PRESET_CENTER)
+	icon.offset_left = -8
+	icon.offset_top = -8
+	icon.offset_right = 8
+	icon.offset_bottom = 8
+	button.add_child(icon)
+
+	return { "frame": frame, "button": button }
+
+
+func _setup_menu_button_preparations(button: Button, frame: PixelFramePanel) -> void:
+	frame.pivot_offset = frame.size * 0.5
+	frame.resized.connect(func() -> void: frame.pivot_offset = frame.size * 0.5)
+	button.mouse_entered.connect(func() -> void: _tween_button_frame(frame, HOVER_SCALE, 0.12))
+	button.mouse_exited.connect(func() -> void:
+		if not button.button_pressed:
+			_tween_button_frame(frame, NORMAL_SCALE, 0.12)
+	)
+	button.button_down.connect(func() -> void: _tween_button_frame(frame, PRESSED_SCALE, 0.06))
+	button.button_up.connect(func() -> void:
+		var target_scale := HOVER_SCALE if button.is_hovered() else NORMAL_SCALE
+		_tween_button_frame(frame, target_scale, 0.1)
+	)
+
+
+func _tween_button_frame(frame: PixelFramePanel, target_scale: Vector2, duration: float) -> void:
+	var tween := create_tween()
+	tween.tween_property(frame, "scale", target_scale, duration) \
+		.set_trans(Tween.TRANS_BACK) \
+		.set_ease(Tween.EASE_OUT)

@@ -106,7 +106,12 @@ func _ready() -> void:
 func _initialize_first_battle() -> void:
 	_is_animating = true
 	hand_view.set_dragging_enabled(false)
-	var selected_enemy := _select_stage_enemy(0)
+	if PlayerStorageData.has_saved_run():
+		restore_run_state(PlayerStorageData.load_saved_run())
+		PlayerStorageData.clear_saved_run()
+	_update_labels()
+	var upgrade_count := clampi(stage_number - 1, 0, 9)
+	var selected_enemy := _select_stage_enemy(upgrade_count)
 	deck_manager.assigned_deck = PlayerStorageData.selected_weapon_cards()
 	deck_manager.deck_blueprint.clear()
 	deck_manager.setup_starting_deck()
@@ -284,7 +289,10 @@ func _update_labels() -> void:
 		_state.enemy_shield
 	)
 	battle_board.set_cup_a_joe_status(_state.player_cup_a_joe_pending)
-	battle_sidebar.set_progress(2, 8, turn_count + 1)
+	var total_trials := RunConfigData.encounter_ids.size()
+	if total_trials == 0:
+		total_trials = 3
+	battle_sidebar.set_progress(stage_number, total_trials, turn_count + 1)
 
 
 func _end_battle() -> void:
@@ -442,15 +450,19 @@ func _select_stage_enemy(upgrade_count: int) -> Dictionary:
 
 
 func _stock_consumables_from_storage() -> void:
+	var selected := PlayerStorageData.selected_consumables()
 	var counts := PlayerStorageData.consumable_counts()
-	if int(counts.get(PlayerStorageData.CONSUMABLE_MAGIC_BALL, 0)) > 0:
-		consumable_shelf.add_magic_ball()
-	if int(counts.get(PlayerStorageData.CONSUMABLE_SHIELD, 0)) > 0:
-		consumable_shelf.add_shield()
-	if int(counts.get(PlayerStorageData.CONSUMABLE_REMEDY_KIT, 0)) > 0:
-		consumable_shelf.add_remedy_kit()
-	if int(counts.get(PlayerStorageData.CONSUMABLE_CUP_A_JOE, 0)) > 0:
-		consumable_shelf.add_cup_a_joe()
+	for id in selected:
+		if int(counts.get(id, 0)) > 0:
+			match id:
+				PlayerStorageData.CONSUMABLE_MAGIC_BALL:
+					consumable_shelf.add_magic_ball()
+				PlayerStorageData.CONSUMABLE_SHIELD:
+					consumable_shelf.add_shield()
+				PlayerStorageData.CONSUMABLE_REMEDY_KIT:
+					consumable_shelf.add_remedy_kit()
+				PlayerStorageData.CONSUMABLE_CUP_A_JOE:
+					consumable_shelf.add_cup_a_joe()
 
 
 func _on_storage_consumable_used(consumable_id: String) -> void:
@@ -471,7 +483,116 @@ func _on_storage_consumable_used(consumable_id: String) -> void:
 func _award_battle_money() -> void:
 	var is_boss := bool(enemy_controller.current_enemy.get("is_boss", false))
 	var amount := 3 if is_boss else 1
-	PlayerStorageData.add_money(amount)
 	_run_money_earned += amount
 	battle_sidebar.set_money(_run_money_earned)
 	battle_sidebar.animate_money_gain(amount)
+	if sfx_manager:
+		sfx_manager.play_sfx("coins_falling")
+
+
+func cash_out_run_money() -> int:
+	var amount := _run_money_earned
+	if amount > 0:
+		PlayerStorageData.add_money(amount)
+	_run_money_earned = 0
+	return amount
+
+
+func run_money_earned() -> int:
+	return _run_money_earned
+
+
+func get_run_state() -> Dictionary:
+	return {
+		"stage_number": stage_number,
+		"player_hp": player_hp,
+		"enemy_hp": enemy_hp,
+		"run_money_earned": _run_money_earned,
+		"selected_stage_id": RunConfigData.selected_stage_id,
+		"selected_boss_id": RunConfigData.selected_boss_id,
+		"encounter_ids": RunConfigData.encounter_ids,
+		"player_history": _serialize_card_history(battle_sidebar._player_history_cards),
+		"enemy_history": _serialize_card_history(battle_sidebar._enemy_history_cards),
+		"history_turns": battle_sidebar._history_turns,
+		"history_turn": battle_sidebar._history_turn,
+		"active_consumables": consumable_shelf.get_active_items(),
+	}
+
+
+func restore_run_state(state: Dictionary) -> void:
+	if state.is_empty():
+		return
+	stage_number = maxi(1, int(state.get("stage_number", 1)))
+	_run_money_earned = maxi(0, int(state.get("run_money_earned", 0)))
+	var restored_hp := int(state.get("player_hp", _state.player_hp))
+	if restored_hp > 0:
+		player_hp = restored_hp
+	var restored_enemy_hp := int(state.get("enemy_hp", _state.enemy_hp))
+	if restored_enemy_hp > 0:
+		enemy_hp = restored_enemy_hp
+
+	if state.has("selected_stage_id"):
+		RunConfigData.selected_stage_id = str(state.get("selected_stage_id"))
+	if state.has("selected_boss_id"):
+		RunConfigData.selected_boss_id = str(state.get("selected_boss_id"))
+	if state.has("encounter_ids"):
+		var raw_ids = state.get("encounter_ids", [])
+		if typeof(raw_ids) == TYPE_ARRAY:
+			RunConfigData.encounter_ids.clear()
+			for id in raw_ids:
+				RunConfigData.encounter_ids.append(str(id))
+
+	if state.has("player_history") and state.has("enemy_history") and state.has("history_turns") and state.has("history_turn"):
+		var p_history = _deserialize_card_history(state.get("player_history", []))
+		var e_history = _deserialize_card_history(state.get("enemy_history", []))
+		var turns: Array[int] = []
+		for t in state.get("history_turns", []):
+			turns.append(int(t))
+		var turn_num = int(state.get("history_turn", 0))
+		battle_sidebar.restore_history(p_history, e_history, turns, turn_num)
+
+	if state.has("active_consumables"):
+		var items = state.get("active_consumables", [])
+		if typeof(items) == TYPE_ARRAY:
+			consumable_shelf.restore_shelf(items)
+
+
+func _serialize_card_history(cards: Array[CardDef]) -> Array[String]:
+	var result: Array[String] = []
+	for card in cards:
+		if not card:
+			result.append("")
+		elif card.is_skip:
+			result.append("skip")
+		elif card.is_basic:
+			match card.card_type:
+				CardDef.CardType.ROCK:
+					result.append("basic_rock")
+				CardDef.CardType.PAPER:
+					result.append("basic_paper")
+				CardDef.CardType.SCISSORS:
+					result.append("basic_scissors")
+				_:
+					result.append("")
+		else:
+			result.append(card.id.split("_storage_")[0].split("_selected_")[0])
+	return result
+
+
+func _deserialize_card_history(ids: Array) -> Array[CardDef]:
+	var result: Array[CardDef] = []
+	for raw_id in ids:
+		var id := str(raw_id)
+		if id.is_empty():
+			result.append(null)
+		elif id == "skip":
+			result.append(WeaponCatalogData.create_skip())
+		elif id == "basic_rock":
+			result.append(WeaponCatalogData.create_basic(CardDef.CardType.ROCK))
+		elif id == "basic_paper":
+			result.append(WeaponCatalogData.create_basic(CardDef.CardType.PAPER))
+		elif id == "basic_scissors":
+			result.append(WeaponCatalogData.create_basic(CardDef.CardType.SCISSORS))
+		else:
+			result.append(WeaponCatalogData.create_weapon(id))
+	return result

@@ -31,7 +31,7 @@ var _heart_fill_tweens: Dictionary = {}
 func _ready() -> void:
 	_build_heart_row(player_hearts)
 	_build_heart_row(enemy_hearts)
-	set_health(MAX_HEALTH, MAX_HEALTH)
+	set_health(0, 0)
 	set_bleed_status(false, false)
 	set_shield_status(0, 0)
 	set_cup_a_joe_status(false)
@@ -47,6 +47,8 @@ func set_tooltip_manager(manager: TooltipManager) -> void:
 
 
 func set_health(player_health: int, enemy_health: int) -> void:
+	if not player_hearts: player_hearts = %PlayerHearts
+	if not enemy_hearts: enemy_hearts = %EnemyHearts
 	_update_heart_row(player_hearts, player_health, _player_health_displayed)
 	_update_heart_row(enemy_hearts, enemy_health, _enemy_health_displayed)
 	_player_health_displayed = clampi(player_health, 0, MAX_HEALTH)
@@ -54,6 +56,10 @@ func set_health(player_health: int, enemy_health: int) -> void:
 
 
 func set_bleed_status(player_bleeding: bool, enemy_bleeding: bool) -> void:
+	if not player_bleed_status: player_bleed_status = %PlayerBleedStatus
+	if not enemy_bleed_status: enemy_bleed_status = %EnemyBleedStatus
+	if not player_bleed_pulse: player_bleed_pulse = %PlayerBleedPulse
+	if not enemy_bleed_pulse: enemy_bleed_pulse = %EnemyBleedPulse
 	var player_was_visible := player_bleed_status.visible
 	var enemy_was_visible := enemy_bleed_status.visible
 	player_bleed_status.visible = player_bleeding
@@ -65,6 +71,10 @@ func set_bleed_status(player_bleeding: bool, enemy_bleeding: bool) -> void:
 
 
 func set_shield_status(player_shields: int, enemy_shields: int) -> void:
+	if not player_shield_status: player_shield_status = %PlayerShieldStatus
+	if not enemy_shield_status: enemy_shield_status = %EnemyShieldStatus
+	if not player_shield_pulse: player_shield_pulse = %PlayerShieldPulse
+	if not enemy_shield_pulse: enemy_shield_pulse = %EnemyShieldPulse
 	var player_was_visible := player_shield_status.visible
 	var enemy_was_visible := enemy_shield_status.visible
 	player_shield_status.visible = player_shields > 0
@@ -76,6 +86,8 @@ func set_shield_status(player_shields: int, enemy_shields: int) -> void:
 
 
 func set_cup_a_joe_status(is_active: bool) -> void:
+	if not player_cup_status: player_cup_status = %PlayerCupStatus
+	if not player_cup_pulse: player_cup_pulse = %PlayerCupPulse
 	var was_visible := player_cup_status.visible
 	if is_active:
 		player_cup_status.visible = true

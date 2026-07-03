@@ -15,6 +15,8 @@ static var _money := 0
 static var _weapon_ids: Array[String] = []
 static var _selected_weapon_indices: Array[int] = []
 static var _consumable_counts: Dictionary = {}
+static var _selected_consumable_ids: Array[String] = []
+static var _saved_run: Dictionary = {}
 
 
 static func ensure_loaded() -> void:
@@ -52,6 +54,16 @@ static func ensure_loaded() -> void:
 	for key in raw_consumables.keys():
 		_consumable_counts[str(key)] = maxi(0, int(raw_consumables[key]))
 
+	_selected_consumable_ids.clear()
+	var raw_selected_consumables: Array = data.get("selected_consumables", [])
+	for raw_id in raw_selected_consumables:
+		_selected_consumable_ids.append(str(raw_id))
+
+	_saved_run.clear()
+	var raw_saved_run = data.get("saved_run", null)
+	if typeof(raw_saved_run) == TYPE_DICTIONARY:
+		_saved_run = (raw_saved_run as Dictionary).duplicate(true)
+
 	if _weapon_ids.is_empty():
 		_set_default_inventory()
 	_normalize_selected_weapon_indices()
@@ -66,6 +78,8 @@ static func save() -> void:
 		"weapons": _weapon_ids,
 		"selected_weapon_indices": _selected_weapon_indices,
 		"consumables": _consumable_counts,
+		"selected_consumables": _selected_consumable_ids,
+		"saved_run": _saved_run,
 	}))
 
 
@@ -160,6 +174,8 @@ static func add_weapon(card: CardDef) -> void:
 static func add_consumable(consumable_id: String, amount := 1) -> void:
 	ensure_loaded()
 	_consumable_counts[consumable_id] = maxi(0, int(_consumable_counts.get(consumable_id, 0)) + amount)
+	if consumable_id not in _selected_consumable_ids and _selected_consumable_ids.size() < 5:
+		_selected_consumable_ids.append(consumable_id)
 	save()
 
 
@@ -168,10 +184,62 @@ static func consume_consumable(consumable_id: String, amount := 1) -> int:
 	var remaining := maxi(0, int(_consumable_counts.get(consumable_id, 0)) - amount)
 	if remaining <= 0:
 		_consumable_counts.erase(consumable_id)
+		_selected_consumable_ids.erase(consumable_id)
 	else:
 		_consumable_counts[consumable_id] = remaining
 	save()
 	return remaining
+
+
+static func selected_consumables() -> Array[String]:
+	ensure_loaded()
+	var valid: Array[String] = []
+	for id in _selected_consumable_ids:
+		if int(_consumable_counts.get(id, 0)) > 0:
+			valid.append(id)
+	return valid
+
+
+static func is_consumable_selected(consumable_id: String) -> bool:
+	ensure_loaded()
+	return consumable_id in _selected_consumable_ids
+
+
+static func toggle_consumable_selected(consumable_id: String) -> bool:
+	ensure_loaded()
+	if consumable_id in _selected_consumable_ids:
+		_selected_consumable_ids.erase(consumable_id)
+		save()
+		return true
+	if _selected_consumable_ids.size() >= 5:
+		return false
+	_selected_consumable_ids.append(consumable_id)
+	save()
+	return true
+
+
+static func has_saved_run() -> bool:
+	ensure_loaded()
+	return not _saved_run.is_empty()
+
+
+static func load_saved_run() -> Dictionary:
+	ensure_loaded()
+	return _saved_run.duplicate(true)
+
+
+static func save_run(state: Dictionary) -> void:
+	ensure_loaded()
+	_saved_run = state.duplicate(true)
+	save()
+
+
+static func clear_saved_run() -> void:
+	ensure_loaded()
+	if _saved_run.is_empty():
+		return
+	_saved_run.clear()
+	save()
 
 
 static func _set_default_inventory() -> void:

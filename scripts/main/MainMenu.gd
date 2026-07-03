@@ -1,5 +1,7 @@
 extends Control
 
+const PlayerStorageData = preload("res://scripts/data/PlayerStorage.gd")
+const MAIN_SCENE_PATH := "res://scenes/main/Main.tscn"
 const PREPARATION_SCENE_PATH := "res://scenes/main/Preparation.tscn"
 const SHOP_SCENE_PATH := "res://scenes/main/Shop.tscn"
 const HOVER_SCALE := Vector2(1.08, 1.08)
@@ -30,6 +32,8 @@ var _loading_spinner: Control
 
 func _ready() -> void:
 	_create_loading_overlay()
+	if PlayerStorageData.has_saved_run():
+		_play_button.text = "CONTINUE"
 	_play_button.grab_focus()
 	_setup_menu_button(_play_button, _play_frame)
 	_setup_menu_button(_shop_button, _shop_frame)
@@ -43,6 +47,9 @@ func _on_play_button_pressed() -> void:
 	_shop_button.disabled = true
 	_tween_button_frame(_play_frame, Vector2(1.12, 1.12), 0.09)
 	await _show_loading_screen()
+	if PlayerStorageData.has_saved_run():
+		get_tree().change_scene_to_file(MAIN_SCENE_PATH)
+		return
 	await _switch_to_preparation()
 
 
@@ -172,9 +179,27 @@ func _switch_to_preparation() -> void:
 		return
 
 	var preparation_scene := packed_scene.instantiate()
+
+	var prep_bgm := preparation_scene.get_node_or_null("BGM")
+	if prep_bgm:
+		preparation_scene.remove_child(prep_bgm)
+		prep_bgm.queue_free()
+
+	var bgm := get_node_or_null("BGM") as AudioStreamPlayer
+	var bgm_position := 0.0
+	var bgm_volume_db := 0.0
+	if bgm:
+		bgm_position = bgm.get_playback_position()
+		bgm_volume_db = bgm.volume_db
+		remove_child(bgm)
+		preparation_scene.add_child(bgm)
+
 	var tree := get_tree()
 	tree.root.add_child(preparation_scene)
 	tree.current_scene = preparation_scene
+	if bgm:
+		bgm.volume_db = bgm_volume_db
+		bgm.play(bgm_position)
 	await tree.process_frame
 	await tree.process_frame
 	_loading_layer.queue_free()

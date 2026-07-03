@@ -12,6 +12,7 @@ const STREAMS := {
 	"card_shuffle": preload("res://audio/sfx/card-shuffle.mp3"),
 	"chaching": preload("res://audio/sfx/chaching.mp3"),
 	"click": preload("res://audio/sfx/click.mp3"),
+	"coins_falling": preload("res://audio/sfx/coins-falling.mp3"),
 	"downgrade": preload("res://audio/sfx/downgrade.mp3"),
 	"fragile": preload("res://audio/sfx/fragile.mp3"),
 	"fatal_hit": preload("res://audio/sfx/fatal-hit.mp3"),

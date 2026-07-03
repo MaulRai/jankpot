@@ -216,3 +216,34 @@ func _start_shelf_sway() -> void:
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	tween.tween_property(shelf_body, "position:x", base_position.x + SHELF_SWAY_PIXELS, CHAIN_SWAY_DURATION) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+
+func get_active_items() -> Array[String]:
+	var items: Array[String] = []
+	for key in _buttons.keys():
+		if is_instance_valid(_buttons[key]):
+			items.append(str(key))
+	return items
+
+
+func clear_shelf() -> void:
+	for key in _buttons.keys():
+		var button = _buttons[key]
+		if is_instance_valid(button):
+			button.queue_free()
+	_buttons.clear()
+
+
+func restore_shelf(items: Array) -> void:
+	clear_shelf()
+	for item in items:
+		var name_str := str(item)
+		match name_str:
+			"magic_ball":
+				add_magic_ball()
+			"shield":
+				add_shield()
+			"remedy_kit":
+				add_remedy_kit()
+			"cup_a_joe":
+				add_cup_a_joe()
