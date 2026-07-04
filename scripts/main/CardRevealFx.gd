@@ -13,14 +13,21 @@ extends Node2D
 const WeaponCatalogData = preload("res://scripts/data/WeaponCatalog.gd")
 
 ## Must match _build_reveal_card() in PackOpening.
-const CARD_SIZE := Vector2(200.0, 300.0)
+const CARD_SIZE := Vector2(160.0, 240.0)
 
 var _tweens: Array[Tween] = []
 
+## The card's actual on-screen footprint after REVEAL_SCALE is applied.
+## Used only for positioning the stage sparkles (which are NOT children of
+## this scaling Node2D, so they don't get magnified automatically).
+var _display_size: Vector2 = CARD_SIZE
+
 ## `stage` is the Control that owns the full overlay (PRESET_FULL_RECT).
 ## Sparkles are added there so they float freely above everything.
-func setup(card_data: CardDef, stage: Control) -> void:
+## `display_size` is the card's final rendered size on screen (after scaling).
+func setup(card_data: CardDef, stage: Control, display_size: Vector2 = CARD_SIZE) -> void:
 	z_index = 5
+	_display_size = display_size
 	match card_data.rarity:
 		WeaponCatalogData.RARITY_UNCOMMON:
 			_add_radial_glow(_uncommon_glow_color())
@@ -46,8 +53,9 @@ func _add_radial_glow(color: Color) -> void:
 	var glow_h := CARD_SIZE.y + pad_y * 2.0
 
 	var mesh_inst := MeshInstance2D.new()
-	# Centre glow on the card rectangle (origin of this node = card top-left).
-	mesh_inst.position = CARD_SIZE * 0.5
+	# This node's origin IS the card's fixed visual centre (set by PackOpening),
+	# so the glow needs no extra offset.
+	mesh_inst.position = Vector2.ZERO
 
 	var im := ImmediateMesh.new()
 	_fill_radial_mesh(im, glow_w * 0.5, glow_h * 0.5, color, 64)
@@ -94,12 +102,14 @@ func _fill_radial_mesh(
 # ---------------------------------------------------------------------------
 
 func _add_sparkle_field(stage: Control) -> void:
-	# Fixed anchor positions just outside the card boundary — always visible.
-	var card_origin: Vector2 = global_position  # set by PackOpening before setup()
-	var cx := card_origin.x
-	var cy := card_origin.y
-	var cw := CARD_SIZE.x
-	var ch := CARD_SIZE.y
+	# This node's origin is the card's fixed visual centre; derive the
+	# final on-screen top-left from the centre + the post-scale display size,
+	# so sparkles wrap around the card at the size it's actually shown at.
+	var card_center: Vector2 = global_position
+	var cx := card_center.x - _display_size.x * 0.5
+	var cy := card_center.y - _display_size.y * 0.5
+	var cw := _display_size.x
+	var ch := _display_size.y
 
 	var fixed_positions: Array[Vector2] = [
 		Vector2(cx - 26.0,       cy + ch * 0.16),
@@ -147,7 +157,7 @@ func _create_plus_sparkle(length: float, color: Color, stage: Control) -> Contro
 	sparkle.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	sparkle.size = Vector2(length, length)
 	sparkle.pivot_offset = sparkle.size * 0.5
-	sparkle.z_index = 50
+	sparkle.z_index = 8   # behind the revealed card (z_index=10), above the glow (z_index=5)
 	sparkle.modulate.a = 1.0
 
 	var thickness := clampf(length * 0.12, 2.0, 4.0)
@@ -234,12 +244,14 @@ func _reset_sparkle(
 
 
 func _random_stage_sparkle_position() -> Vector2:
-	var card_origin: Vector2 = global_position
+	var card_center: Vector2 = global_position
+	var cx := card_center.x - _display_size.x * 0.5
+	var cy := card_center.y - _display_size.y * 0.5
 	return _random_perimeter_pos(
-		card_origin.x,
-		card_origin.y,
-		CARD_SIZE.x,
-		CARD_SIZE.y,
+		cx,
+		cy,
+		_display_size.x,
+		_display_size.y,
 		randi() % 4
 	)
 

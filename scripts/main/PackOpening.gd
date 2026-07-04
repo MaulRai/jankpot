@@ -17,7 +17,8 @@ const HIT_SFX := preload("res://audio/sfx/hit.mp3")
 const PACK_STATE_CLOSED   := "closed"
 const PACK_STATE_REVEALED := "revealed"
 
-const CARD_SIZE := Vector2(200.0, 300.0)
+const CARD_SIZE := Vector2(160.0, 240.0)   # must match CardView.tscn's native size (root Control offset_right/offset_bottom)
+const REVEAL_SCALE := 1.6   # visual enlargement of the revealed card (scale-based — CardView's children use fixed pixel offsets, not anchors, so resizing the root does nothing; scale is the only way to enlarge it)
 const CARD_VIEW_SCENE := preload("res://scenes/ui/CardView.tscn")
 
 
@@ -253,13 +254,18 @@ func _reveal_card(card_data: CardDef) -> void:
 	_clear_revealed_card()
 
 	var viewport_size   := _pack_layer.get_viewport().get_visible_rect().size
-	var reveal_position := viewport_size * 0.5 - CARD_SIZE * 0.5 + Vector2(0.0, 42.0)
+	var card_center     := viewport_size * 0.5
+	var reveal_position := card_center - CARD_SIZE * 0.5
 
-	# Build FX node
+	# Build FX node. Node2D has no pivot_offset, so its origin is anchored at
+	# the fixed visual centre (not the top-left) — this keeps the glow and
+	# sparkles centred on the card as it scales, instead of drifting toward
+	# the bottom-right as REVEAL_SCALE grows. display_size is the card's
+	# final on-screen footprint (post-scale), used to place the stage sparkles.
 	_reveal_fx = CardRevealFxScript.new()
 	_pack_stage.add_child(_reveal_fx)
-	_reveal_fx.global_position = reveal_position
-	_reveal_fx.setup(card_data, _pack_stage)
+	_reveal_fx.global_position = card_center
+	_reveal_fx.setup(card_data, _pack_stage, CARD_SIZE * REVEAL_SCALE)
 
 	# Build the card visual (instantiated CardView)
 	_revealed_card          = _build_reveal_card(card_data)
@@ -292,7 +298,7 @@ func _reveal_card(card_data: CardDef) -> void:
 func _tween_reveal_node(tween: Tween, node: CanvasItem) -> void:
 	tween.tween_property(node, "modulate:a", 1.0, 0.22) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	tween.tween_property(node, "scale", Vector2(1.0, 1.0), 0.42) \
+	tween.tween_property(node, "scale", Vector2(REVEAL_SCALE, REVEAL_SCALE), 0.42) \
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(node, "rotation_degrees", 0.0, 0.36) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)

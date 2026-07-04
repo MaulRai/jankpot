@@ -287,7 +287,7 @@ Implemented status lifecycle:
 * **Downgrade**
 
   * When its trigger resolves, the played upgraded weapon becomes the matching
-    basic Rock, Paper, or Scissors for the remainder of the current battle.
+    basic Rock, Paper, or Scissors for the remainder of the current trial.
   * The permanent deck entry is not destroyed.
   * The upgraded form returns when the next battle starts.
 
@@ -301,7 +301,7 @@ Implemented status lifecycle:
 
   * A Fragile weapon disappears from draw pile, hand, and discard pile after
     its break trigger resolves.
-  * This removal lasts only for the current battle.
+  * This removal lasts only for the current trial.
   * The weapon returns from the persistent deck blueprint next battle.
 
 * **Luck**
