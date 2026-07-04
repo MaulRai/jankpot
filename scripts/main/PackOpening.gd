@@ -1,6 +1,3 @@
-## PackOpening.gd
-## Manages the full pack-opening overlay: slide-in animation, floating idle,
-## shake + burst open, card reveal with rarity effects, and close/cleanup.
 class_name PackOpening
 extends Control
 
@@ -9,7 +6,7 @@ signal card_awarded(card: CardDef)
 const WeaponCatalogData  = preload("res://scripts/data/WeaponCatalog.gd")
 const CardRevealFxScript := preload("res://scripts/main/CardRevealFx.gd")
 
-const STAR_CRUSH_FONT := preload("res://fonts/Star Crush.ttf")
+const STAR_CRUSH_FONT := preload("res://fonts/Star Crush.otf")
 const ITEM_REVEALING_SFX := preload("res://audio/sfx/item-revealing.mp3")
 const ITEM_REVEALED_SFX := preload("res://audio/sfx/item-revealed.mp3")
 const HIT_SFX := preload("res://audio/sfx/hit.mp3")
@@ -290,28 +287,6 @@ func _reveal_card(card_data: CardDef) -> void:
 	_tween_reveal_node(tween, _revealed_card)
 	await tween.finished
 
-	# Apply Star Crush font at full 1.0 scale — after tween so it's not upscaled
-	if _revealed_card.name_label:
-		_revealed_card.name_label.add_theme_font_override("font", STAR_CRUSH_FONT)
-		_revealed_card.name_label.add_theme_font_size_override("font_size", 24)
-	if _revealed_card.description_label:
-		_revealed_card.description_label.add_theme_font_override("normal_font", STAR_CRUSH_FONT)
-		_revealed_card.description_label.add_theme_font_size_override("normal_font_size", 18)
-	var initial_rotation := randf_range(-7.0, 7.0)
-	_revealed_card.pivot_offset = pivot
-	_revealed_card.scale = Vector2(0.25, 0.25)
-	_revealed_card.rotation_degrees = initial_rotation
-	_revealed_card.modulate.a = 0.0
-	_reveal_fx.scale = Vector2(0.25, 0.25)
-	_reveal_fx.rotation_degrees = initial_rotation
-	_reveal_fx.modulate.a = 0.0
-
-	var tween := _pack_stage.create_tween()
-	tween.set_parallel(true)
-	_tween_reveal_node(tween, _reveal_fx)
-	_tween_reveal_node(tween, _revealed_card)
-	await tween.finished
-
 
 func _tween_reveal_node(tween: Tween, node: CanvasItem) -> void:
 	tween.tween_property(node, "modulate:a", 1.0, 0.22) \
@@ -323,10 +298,20 @@ func _tween_reveal_node(tween: Tween, node: CanvasItem) -> void:
 
 
 func _build_reveal_card(card_data: CardDef) -> Control:
-	var card_view := CARD_VIEW_SCENE.instantiate() as CardView
-	card_view.card_data = card_data
-	card_view.interaction_enabled = false
+	var card_view := CARD_VIEW_SCENE.instantiate() as Control
+	card_view.set("card_data", card_data)
+	card_view.set("interaction_enabled", false)
 	card_view.custom_minimum_size = CARD_SIZE
+
+	var name_lbl = card_view.get_node_or_null("%NameLabel")
+	if name_lbl:
+		name_lbl.add_theme_font_override("font", STAR_CRUSH_FONT)
+		name_lbl.add_theme_font_size_override("font_size", 16)
+	var desc_lbl = card_view.get_node_or_null("%DescriptionLabel")
+	if desc_lbl:
+		desc_lbl.add_theme_font_override("normal_font", STAR_CRUSH_FONT)
+		desc_lbl.add_theme_font_size_override("normal_font_size", 12)
+
 	return card_view
 
 

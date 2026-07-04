@@ -13,7 +13,7 @@ const SHOPKEEPER_THANKS_HOLD_RANGE := Vector2(6.0, 8.0)
 const SHOPKEEPER_BLIP_MIN_INTERVAL := 0.095
 const SHOPKEEPER_BLIP_STREAM := preload("res://audio/blip/shopkeeper-neutral.mp3")
 
-const STAR_CRUSH_FONT    := preload("res://fonts/Star Crush.ttf")
+const STAR_CRUSH_FONT    := preload("res://fonts/Star Crush.otf")
 const BASIC_PACK_TEXTURE := preload("res://assets/item/pack/basic-weapon-card-pack.png")
 const PREMIUM_PACK_TEXTURE := preload("res://assets/item/pack/premium-weapon-card-pack.png")
 const SHOP_DISPLAY_TEXTURE := preload("res://assets/ui/shop-display.png")
