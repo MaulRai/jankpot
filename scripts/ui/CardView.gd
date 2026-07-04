@@ -76,6 +76,8 @@ func _on_mouse_entered() -> void:
 	if is_dragging or not interaction_enabled or disabled_visual:
 		return
 	emit_signal("card_hovered", self)
+	if not drag_enabled:
+		return
 	z_index = 100
 	cancel_transform_tween()
 	transform_tween = create_tween()
@@ -86,6 +88,8 @@ func _on_mouse_exited() -> void:
 	if is_dragging or not interaction_enabled or disabled_visual:
 		return
 	emit_signal("card_unhovered", self)
+	if not drag_enabled:
+		return
 	z_index = base_z_index
 	cancel_transform_tween()
 	transform_tween = create_tween()
