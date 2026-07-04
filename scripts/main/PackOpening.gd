@@ -299,6 +299,8 @@ func _build_reveal_card(card_data: CardDef) -> Control:
 	var card_view := CARD_VIEW_SCENE.instantiate() as CardView
 	card_view.card_data = card_data
 	card_view.interaction_enabled = false
+	if card_view.name_label:
+		card_view.name_label.add_theme_font_override("font", STAR_CRUSH_FONT)
 	return card_view
 
 
