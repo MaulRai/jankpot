@@ -17,8 +17,9 @@ const HIT_SFX := preload("res://audio/sfx/hit.mp3")
 const PACK_STATE_CLOSED   := "closed"
 const PACK_STATE_REVEALED := "revealed"
 
-## Must match CardRevealFx.CARD_SIZE — single source of truth kept in CardRevealFx.
 const CARD_SIZE := Vector2(230.0, 318.0)
+const CARD_VIEW_SCENE := preload("res://scenes/ui/CardView.tscn")
+
 
 var _pack_layer:   CanvasLayer
 var _pack_overlay: ColorRect
@@ -251,31 +252,30 @@ func _open_floating_pack() -> void:
 func _reveal_card(card_data: CardDef) -> void:
 	_clear_revealed_card()
 
-	# Compute reveal position using hardcoded CARD_SIZE — no layout pass needed.
+	var base_card_size := Vector2(160.0, 240.0)
 	var viewport_size   := _pack_layer.get_viewport().get_visible_rect().size
-	var reveal_position := viewport_size * 0.5 - CARD_SIZE * 0.5 + Vector2(0.0, 42.0)
+	var reveal_position := viewport_size * 0.5 - base_card_size * 0.5 + Vector2(0.0, 42.0)
 
-	# Build FX node first (Node2D) and place it — setup() reads global_position
-	# to know where to spawn sparkles on _pack_stage.
+	# Build FX node
 	_reveal_fx = CardRevealFxScript.new()
 	_pack_stage.add_child(_reveal_fx)
 	_reveal_fx.global_position = reveal_position
-	_reveal_fx.setup(card_data, _pack_stage)   # ← passes stage so sparkles parent there
+	_reveal_fx.setup(card_data, _pack_stage)
 
-	# Build the card visual.
+	# Build the card visual (instantiated CardView)
 	_revealed_card          = _build_reveal_card(card_data)
 	_revealed_card.z_index  = 10
 	_pack_stage.add_child(_revealed_card)
 	_revealed_card.global_position = reveal_position
 
-	# Set pivot for scale/rotate animations.
-	var pivot := CARD_SIZE * 0.5
+	# Set pivot and initial state for scale animations
+	var pivot := base_card_size * 0.5
 	var initial_rotation := randf_range(-7.0, 7.0)
 	_revealed_card.pivot_offset = pivot
-	_revealed_card.scale = Vector2(0.18, 0.18)
+	_revealed_card.scale = Vector2(0.25, 0.25)
 	_revealed_card.rotation_degrees = initial_rotation
 	_revealed_card.modulate.a = 0.0
-	_reveal_fx.scale = Vector2(0.18, 0.18)
+	_reveal_fx.scale = Vector2(0.25, 0.25)
 	_reveal_fx.rotation_degrees = initial_rotation
 	_reveal_fx.modulate.a = 0.0
 
@@ -289,85 +289,17 @@ func _reveal_card(card_data: CardDef) -> void:
 func _tween_reveal_node(tween: Tween, node: CanvasItem) -> void:
 	tween.tween_property(node, "modulate:a", 1.0, 0.22) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	tween.tween_property(node, "scale", Vector2.ONE, 0.42) \
+	tween.tween_property(node, "scale", Vector2(1.4375, 1.4375), 0.42) \
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(node, "rotation_degrees", 0.0, 0.36) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 
 func _build_reveal_card(card_data: CardDef) -> Control:
-	var card                  := Control.new()
-	card.size                  = CARD_SIZE
-	card.custom_minimum_size   = CARD_SIZE
-	card.mouse_filter          = Control.MOUSE_FILTER_IGNORE
-
-	var frame := PixelFramePanel.new()
-	frame.mouse_filter             = Control.MOUSE_FILTER_IGNORE
-	frame.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
-	frame.base_tint                = card_data.background_color.darkened(0.52)
-	frame.frame_outline_tint       = _type_outline_color(card_data.card_type)
-	frame.base_outline_tint        = card_data.background_color.darkened(0.68)
-	frame.base_fill_tint           = card_data.background_color.darkened(0.56)
-	frame.component_scale          = 2.0
-	frame.top_right_corner_variant = PixelFramePanel.TopRightCornerVariant.SHINING
-	card.add_child(frame)
-	frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-
-	var margin := MarginContainer.new()
-	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	margin.add_theme_constant_override("margin_left",   18)
-	margin.add_theme_constant_override("margin_top",    18)
-	margin.add_theme_constant_override("margin_right",  18)
-	margin.add_theme_constant_override("margin_bottom", 16)
-	frame.add_child(margin)
-	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-
-	var content := VBoxContainer.new()
-	content.mouse_filter        = Control.MOUSE_FILTER_IGNORE
-	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	content.add_theme_constant_override("separation", 8)
-	margin.add_child(content)
-
-	var title := Label.new()
-	title.mouse_filter         = Control.MOUSE_FILTER_IGNORE
-	title.custom_minimum_size  = Vector2(0.0, 32.0)
-	title.text                 = card_data.card_name
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 22)
-	title.add_theme_font_override("font", STAR_CRUSH_FONT)
-	title.add_theme_color_override("font_color", Color(1.0, 0.94, 0.76, 1.0))
-	content.add_child(title)
-
-	var art := TextureRect.new()
-	art.mouse_filter        = Control.MOUSE_FILTER_IGNORE
-	art.texture             = load(card_data.art_path) if ResourceLoader.exists(card_data.art_path) else null
-	art.custom_minimum_size = Vector2(0.0, 118.0)
-	art.texture_filter      = CanvasItem.TEXTURE_FILTER_NEAREST
-	art.expand_mode         = TextureRect.EXPAND_IGNORE_SIZE
-	art.stretch_mode        = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	content.add_child(art)
-
-	var rarity_lbl := Label.new()
-	rarity_lbl.mouse_filter         = Control.MOUSE_FILTER_IGNORE
-	rarity_lbl.text                 = card_data.rarity.to_upper()
-	rarity_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	rarity_lbl.add_theme_font_size_override("font_size", 16)
-	rarity_lbl.add_theme_font_override("font", STAR_CRUSH_FONT)
-	rarity_lbl.add_theme_color_override("font_color", _rarity_color(card_data.rarity))
-	content.add_child(rarity_lbl)
-
-	var desc := Label.new()
-	desc.mouse_filter         = Control.MOUSE_FILTER_IGNORE
-	desc.custom_minimum_size  = Vector2(0.0, 78.0)
-	desc.text                 = card_data.brief_description
-	desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	desc.autowrap_mode        = TextServer.AUTOWRAP_WORD_SMART
-	desc.add_theme_font_size_override("font_size", 13)
-	desc.add_theme_font_override("font", STAR_CRUSH_FONT)
-	desc.add_theme_color_override("font_color", Color(0.94, 0.92, 0.82, 1.0))
-	content.add_child(desc)
-
-	return card
+	var card_view := CARD_VIEW_SCENE.instantiate() as CardView
+	card_view.card_data = card_data
+	card_view.interaction_enabled = false
+	return card_view
 
 
 # ---------------------------------------------------------------------------
