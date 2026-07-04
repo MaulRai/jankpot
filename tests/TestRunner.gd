@@ -21,6 +21,7 @@ func _initialize() -> void:
 	_test_poison_ticks()
 	_test_pocketwatch_and_aegis()
 	_test_velvet_gloves()
+	_test_rare_card_add_consumables()
 	await _test_scene_smoke()
 	if failures.is_empty():
 		print("TESTS PASSED")
@@ -215,12 +216,35 @@ func _test_pocketwatch_and_aegis() -> void:
 
 func _test_velvet_gloves() -> void:
 	var state: Resource = BattleStateData.new()
-	
-	# 1. Initially skip_draw is false
 	_expect(not state.velvet_gloves_skip_draw, "Velvet Gloves skip draw flag should start false")
-	
-	# 2. Set velvet_gloves_skip_draw
 	state.velvet_gloves_skip_draw = true
 	_expect(state.velvet_gloves_skip_draw, "Velvet Gloves skip draw flag should be true after use")
+
+
+func _test_rare_card_add_consumables() -> void:
+	# Verify that the Rare resolution logic functions correctly for each weapon type
+	# 1. SCISSORS -> Guillotine Blades
+	var scissors_rares: Array[String] = []
+	for weapon_id in WeaponCatalogData._all_upgrade_ids():
+		var card := WeaponCatalogData.create_weapon(weapon_id)
+		if card.card_type == CardDef.CardType.SCISSORS and card.rarity == WeaponCatalogData.RARITY_RARE:
+			scissors_rares.append(weapon_id)
+	_expect(scissors_rares.has("guillotine_blades"), "Guillotine Blades should be registered as a Rare Scissors")
+
+	# 2. PAPER -> Hatter Slip
+	var paper_rares: Array[String] = []
+	for weapon_id in WeaponCatalogData._all_upgrade_ids():
+		var card := WeaponCatalogData.create_weapon(weapon_id)
+		if card.card_type == CardDef.CardType.PAPER and card.rarity == WeaponCatalogData.RARITY_RARE:
+			paper_rares.append(weapon_id)
+	_expect(paper_rares.has("hatter_slip"), "Hatter Slip should be registered as a Rare Paper")
+
+	# 3. ROCK -> Ruby
+	var rock_rares: Array[String] = []
+	for weapon_id in WeaponCatalogData._all_upgrade_ids():
+		var card := WeaponCatalogData.create_weapon(weapon_id)
+		if card.card_type == CardDef.CardType.ROCK and card.rarity == WeaponCatalogData.RARITY_RARE:
+			rock_rares.append(weapon_id)
+	_expect(rock_rares.has("ruby"), "Ruby should be registered as a Rare Rock")
 
 

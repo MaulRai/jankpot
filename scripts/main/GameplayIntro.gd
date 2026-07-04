@@ -78,6 +78,7 @@ func _on_battle_ended(winner: String) -> void:
 		return
 	_defeat_active = true
 	get_tree().paused = true
+	PlayerStorageData.remove_run_weapons()
 	var money_earned := _game_controller.cash_out_run_money()
 	await _pause_overlay.open_defeat_with_money(money_earned)
 
@@ -85,6 +86,7 @@ func _on_battle_ended(winner: String) -> void:
 func _on_boss_victory(money_earned: int) -> void:
 	_defeat_active = true
 	get_tree().paused = true
+	PlayerStorageData.remove_run_weapons()
 	_game_controller.cash_out_run_money()
 	await _pause_overlay.open_victory(money_earned)
 
@@ -98,6 +100,7 @@ func _on_save_requested() -> void:
 
 func _on_abandon_requested() -> void:
 	PlayerStorageData.clear_saved_run()
+	PlayerStorageData.remove_run_weapons()
 	_defeat_active = true
 	var money_earned := _game_controller.cash_out_run_money()
 	await _pause_overlay.close_pause()

@@ -9,6 +9,9 @@ const MOONLIGHT_TEXTURE := preload("res://assets/item/moonlight.png")
 const SNAKE_OIL_TEXTURE := preload("res://assets/item/snake-oil.png")
 const POCKETWATCH_TEXTURE := preload("res://assets/item/pocketwatch.png")
 const VELVET_GLOVES_TEXTURE := preload("res://assets/item/velvet-gloves.png")
+const L_IVOIRE_TEXTURE := preload("res://assets/item/l-ivoire.png")
+const SEALED_MISSIVE_TEXTURE := preload("res://assets/item/sealed-missive.png")
+const CURIO_TEXTURE := preload("res://assets/item/curio.png")
 
 signal moonlight_requested
 signal magic_ball_requested
@@ -18,6 +21,9 @@ signal cup_a_joe_requested
 signal snake_oil_requested
 signal pocketwatch_requested
 signal velvet_gloves_requested
+signal l_ivoire_requested
+signal sealed_missive_requested
+signal curio_requested
 
 const MAX_ITEMS := 5
 const CHAIN_SWAY_DEGREES := 2.2
@@ -116,6 +122,30 @@ func add_velvet_gloves() -> bool:
 		func() -> void: velvet_gloves_requested.emit()
 	)
 
+func add_l_ivoire() -> bool:
+	return _add_unique_consumable(
+		&"l_ivoire",
+		L_IVOIRE_TEXTURE,
+		"L'Ivoire\nAdd random Rare Scissors to deck permanently.",
+		func() -> void: l_ivoire_requested.emit()
+	)
+
+func add_sealed_missive() -> bool:
+	return _add_unique_consumable(
+		&"sealed_missive",
+		SEALED_MISSIVE_TEXTURE,
+		"Sealed Missive\nAdd random Rare Paper to deck permanently.",
+		func() -> void: sealed_missive_requested.emit()
+	)
+
+func add_curio() -> bool:
+	return _add_unique_consumable(
+		&"curio",
+		CURIO_TEXTURE,
+		"Curio\nAdd random Rare Rock to deck permanently.",
+		func() -> void: curio_requested.emit()
+	)
+
 func consume_magic_ball() -> void:
 	_consume(&"magic_ball")
 
@@ -139,6 +169,15 @@ func consume_pocketwatch() -> void:
 
 func consume_velvet_gloves() -> void:
 	_consume(&"velvet_gloves")
+
+func consume_l_ivoire() -> void:
+	_consume(&"l_ivoire")
+
+func consume_sealed_missive() -> void:
+	_consume(&"sealed_missive")
+
+func consume_curio() -> void:
+	_consume(&"curio")
 
 func show_level_complete(bonus_text := "") -> void:
 	if _complete_tween and _complete_tween.is_valid():
@@ -360,3 +399,9 @@ func restore_shelf(items: Array) -> void:
 				add_pocketwatch()
 			"velvet_gloves":
 				add_velvet_gloves()
+			"l_ivoire":
+				add_l_ivoire()
+			"sealed_missive":
+				add_sealed_missive()
+			"curio":
+				add_curio()

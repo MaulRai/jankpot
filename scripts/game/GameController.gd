@@ -109,6 +109,9 @@ func _ready() -> void:
 	consumable_shelf.snake_oil_requested.connect(_on_snake_oil_requested)
 	consumable_shelf.pocketwatch_requested.connect(_on_pocketwatch_requested)
 	consumable_shelf.velvet_gloves_requested.connect(_on_velvet_gloves_requested)
+	consumable_shelf.l_ivoire_requested.connect(_on_l_ivoire_requested)
+	consumable_shelf.sealed_missive_requested.connect(_on_sealed_missive_requested)
+	consumable_shelf.curio_requested.connect(_on_curio_requested)
 	_stock_consumables_from_storage()
 	
 	await _initialize_first_battle()
@@ -117,20 +120,33 @@ func _ready() -> void:
 func _initialize_first_battle() -> void:
 	_is_animating = true
 	hand_view.set_dragging_enabled(false)
+	var saved_state: Dictionary = {}
 	if PlayerStorageData.has_saved_run():
-		restore_run_state(PlayerStorageData.load_saved_run())
+		saved_state = PlayerStorageData.load_saved_run()
+		restore_run_state(saved_state)
 		PlayerStorageData.clear_saved_run()
+	else:
+		# No saved run — clean up any run-only weapons that were never removed
+		# (e.g. if the player force-quit before the run-end cleanup could run)
+		PlayerStorageData.remove_run_weapons()
 	_update_labels()
 	var upgrade_count := clampi(stage_number - 1, 0, 9)
 	var selected_enemy := _select_stage_enemy(upgrade_count)
 	deck_manager.assigned_deck = PlayerStorageData.selected_weapon_cards()
 	deck_manager.deck_blueprint.clear()
 	deck_manager.setup_starting_deck()
+	# Restore exact pile distribution if we have a saved run
+	if not saved_state.is_empty():
+		_restore_deck_pile_state(saved_state)
+		# _is_animating is true so _on_hand_changed won't auto-refresh the view
+		hand_view.set_cards(deck_manager.hand)
 	_animator.update_pile_visuals()
 	await get_tree().process_frame
 	battle_sidebar.set_money(_run_money_earned)
 	battle_sidebar.set_enemy_info(selected_enemy)
-	await _refill_hand_or_give_skip()
+	if saved_state.is_empty():
+		await _refill_hand_or_give_skip()
+	_animator.update_pile_visuals()
 	await _prepare_enemy_card()
 	_is_animating = false
 	hand_view.set_dragging_enabled(true)
@@ -598,6 +614,149 @@ func _on_velvet_gloves_requested() -> void:
 	)
 
 
+func _on_l_ivoire_requested() -> void:
+	if round_status != "ongoing" or _is_animating:
+		return
+	var rare_card := _get_random_rare_card_for_type(CardDef.CardType.SCISSORS)
+	consumable_shelf.consume_l_ivoire()
+	_on_storage_consumable_used(PlayerStorageData.CONSUMABLE_L_IVOIRE)
+	await _animate_add_rare_card(rare_card, "arcane_general_1")
+
+
+func _on_sealed_missive_requested() -> void:
+	if round_status != "ongoing" or _is_animating:
+		return
+	var rare_card := _get_random_rare_card_for_type(CardDef.CardType.PAPER)
+	consumable_shelf.consume_sealed_missive()
+	_on_storage_consumable_used(PlayerStorageData.CONSUMABLE_SEALED_MISSIVE)
+	await _animate_add_rare_card(rare_card, "paper_general")
+
+
+func _on_curio_requested() -> void:
+	if round_status != "ongoing" or _is_animating:
+		return
+	var rare_card := _get_random_rare_card_for_type(CardDef.CardType.ROCK)
+	consumable_shelf.consume_curio()
+	_on_storage_consumable_used(PlayerStorageData.CONSUMABLE_CURIO)
+	await _animate_add_rare_card(rare_card, "arcane_general_2")
+
+
+func _get_random_rare_card_for_type(type: CardDef.CardType) -> CardDef:
+	var rares: Array[String] = []
+	for weapon_id in WeaponCatalogData._all_upgrade_ids():
+		var card := WeaponCatalogData.create_weapon(weapon_id)
+		if card.card_type == type and card.rarity == WeaponCatalogData.RARITY_RARE:
+			rares.append(weapon_id)
+	if rares.is_empty():
+		match type:
+			CardDef.CardType.ROCK: rares.append("ruby")
+			CardDef.CardType.PAPER: rares.append("hatter_slip")
+			CardDef.CardType.SCISSORS: rares.append("guillotine_blades")
+	var chosen_id: String = rares.pick_random()
+	# Keep the clean catalog ID — the runtime _assigned_ suffix added by
+	# _initialize_blueprint is enough for uniqueness in the draw pile.
+	return WeaponCatalogData.create_weapon(chosen_id)
+
+
+func _animate_add_rare_card(rare_card: CardDef, initial_sfx: String) -> void:
+	_is_animating = true
+	hand_view.set_dragging_enabled(false)
+	sfx_manager.play_sfx(initial_sfx)
+
+	var main_root := get_parent()
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+
+	var dim := ColorRect.new()
+	dim.color = Color(0.004, 0.007, 0.008, 0.6)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.z_index = 1200
+	dim.z_as_relative = false
+	dim.modulate.a = 0.0
+	main_root.add_child(dim)
+
+	var card_view := CARD_SCENE.instantiate() as Control
+	card_view.set("card_data", rare_card)
+	card_view.set("interaction_enabled", false)
+	card_view.scale = Vector2.ZERO
+	card_view.modulate.a = 0.0
+	card_view.z_index = 1201
+	card_view.z_as_relative = false
+	main_root.add_child(card_view)
+
+	var card_width: float = 160.0
+	var card_height: float = 240.0
+	card_view.position = (viewport_size - Vector2(card_width, card_height)) * 0.5
+
+	var name_lbl = card_view.get_node_or_null("%NameLabel")
+	if name_lbl:
+		name_lbl.add_theme_font_override("font", STAR_CRUSH_FONT)
+		name_lbl.add_theme_font_size_override("font_size", 16)
+	var desc_lbl = card_view.get_node_or_null("%DescriptionLabel")
+	if desc_lbl:
+		desc_lbl.add_theme_font_override("normal_font", STAR_CRUSH_FONT)
+		desc_lbl.add_theme_font_size_override("normal_font_size", 12)
+
+	var tween_in := create_tween().set_parallel(true)
+	tween_in.tween_property(dim, "modulate:a", 1.0, 0.3)
+	tween_in.tween_property(card_view, "scale", Vector2.ONE, 0.45)\
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween_in.tween_property(card_view, "modulate:a", 1.0, 0.3)
+	await tween_in.finished
+
+	await get_tree().create_timer(1.4).timeout
+
+	var flip_half := create_tween()
+	flip_half.tween_property(card_view, "scale:x", 0.06, 0.18)\
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	await flip_half.finished
+	
+	if card_view.has_method("set_face_down"):
+		card_view.call("set_face_down", true)
+	
+	var flip_done := create_tween()
+	flip_done.tween_property(card_view, "scale:x", 1.0, 0.18)\
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	await flip_done.finished
+
+	var dest_pos: Vector2 = _animator.pile_card_top.global_position - Vector2(card_width * 0.25, card_height * 0.25)
+
+	# Drop below the DrawPileVisual (z_index=20) so the card slides *behind* the pile
+	card_view.z_index = 19
+	card_view.z_as_relative = false
+
+	var fly_tween := create_tween().set_parallel(true)
+	fly_tween.tween_property(card_view, "global_position", dest_pos, 0.55)\
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	fly_tween.tween_property(card_view, "scale", Vector2(0.5, 0.5), 0.55)\
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	fly_tween.tween_property(card_view, "rotation_degrees", randf_range(-12.0, 12.0), 0.55)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	fly_tween.tween_property(dim, "modulate:a", 0.0, 0.55)
+	# Fade card out over the last 0.2s of the flight (starts at t=0.35s)
+	var fade_tween := create_tween()
+	fade_tween.tween_interval(0.35)
+	fade_tween.tween_property(card_view, "modulate:a", 0.0, 0.2)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	await fly_tween.finished
+
+	sfx_manager.play_sfx("card_placed")
+	
+	var rand_idx := randi_range(0, deck_manager.draw_pile.size())
+	deck_manager.draw_pile.insert(rand_idx, rare_card)
+	deck_manager.draw_pile_changed.emit()
+	_animator.update_pile_visuals()
+
+	PlayerStorageData.add_weapon_and_select(rare_card)
+
+	dim.queue_free()
+	card_view.queue_free()
+	
+	hand_view.set_dragging_enabled(true)
+	_is_animating = false
+	_update_labels()
+
+
 func _make_gloves_button(label: String) -> PanelContainer:
 	var frame := PanelContainer.new()
 	frame.custom_minimum_size = Vector2(160, 52)
@@ -658,6 +817,19 @@ func _play_card(card_data: CardDef, card_view: CardView) -> void:
 	hand_view.set_dragging_enabled(false, card_view)
 	card_view.set_interaction_enabled(false)
 	await _animator.move_player_card_to_slot(card_view)
+	
+	# Smoothly slide and re-balance remaining cards in hand
+	var rem_count := hand_view.card_views.size()
+	if rem_count > 0:
+		hand_view.prepare_layout(rem_count)
+		var slide_tween := create_tween().set_parallel(true)
+		for i in range(rem_count):
+			var cv := hand_view.card_views[i]
+			slide_tween.tween_property(cv, "position", cv.get_rest_position(), 0.3) \
+				.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			slide_tween.tween_property(cv, "rotation_degrees", cv.base_rotation_degrees, 0.3) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
 	_state.has_disabled_player_type = false
 	hand_view.set_disabled_type(false, _state.disabled_player_type)
 	if not _pending_enemy_card or not is_instance_valid(_enemy_preview_view):
@@ -935,9 +1107,18 @@ func _stock_consumables_from_storage() -> void:
 					consumable_shelf.add_pocketwatch()
 				PlayerStorageData.CONSUMABLE_VELVET_GLOVES:
 					consumable_shelf.add_velvet_gloves()
+				PlayerStorageData.CONSUMABLE_L_IVOIRE:
+					consumable_shelf.add_l_ivoire()
+				PlayerStorageData.CONSUMABLE_SEALED_MISSIVE:
+					consumable_shelf.add_sealed_missive()
+				PlayerStorageData.CONSUMABLE_CURIO:
+					consumable_shelf.add_curio()
 
 	if OS.is_debug_build():
 		consumable_shelf.add_velvet_gloves()
+		consumable_shelf.add_l_ivoire()
+		consumable_shelf.add_sealed_missive()
+		consumable_shelf.add_curio()
 
 
 func _on_storage_consumable_used(consumable_id: String) -> void:
@@ -990,6 +1171,9 @@ func get_run_state() -> Dictionary:
 		"history_turns": battle_sidebar._history_turns,
 		"history_turn": battle_sidebar._history_turn,
 		"active_consumables": consumable_shelf.get_active_items(),
+		"draw_pile": _serialize_card_history(deck_manager.draw_pile),
+		"discard_pile": _serialize_card_history(deck_manager.discard_pile),
+		"hand_pile": _serialize_card_history(deck_manager.hand),
 	}
 
 
@@ -1031,25 +1215,91 @@ func restore_run_state(state: Dictionary) -> void:
 			consumable_shelf.restore_shelf(items)
 
 
+# Returns the clean catalog ID for a card, stripping all runtime suffixes.
+# This MUST match the logic in _serialize_card_history for pile keys to align.
+func _get_card_base_id(card: CardDef) -> String:
+	if not card:
+		return ""
+	if card.is_skip:
+		return "skip"
+	if card.is_basic:
+		match card.card_type:
+			CardDef.CardType.ROCK: return "basic_rock"
+			CardDef.CardType.PAPER: return "basic_paper"
+			CardDef.CardType.SCISSORS: return "basic_scissors"
+		return ""
+	var clean := card.id
+	for suffix in ["_storage_", "_selected_", "_assigned_", "_player_"]:
+		var parts := clean.split(suffix)
+		if parts.size() > 1:
+			clean = parts[0]
+			break
+	return clean
+
+
+func _restore_deck_pile_state(state: Dictionary) -> void:
+	if not (state.has("draw_pile") or state.has("discard_pile") or state.has("hand_pile")):
+		return
+	var raw_draw = state.get("draw_pile", [])
+	var raw_discard = state.get("discard_pile", [])
+	var raw_hand = state.get("hand_pile", [])
+	if typeof(raw_draw) != TYPE_ARRAY and typeof(raw_discard) != TYPE_ARRAY and typeof(raw_hand) != TYPE_ARRAY:
+		return
+	# Build a pool keyed by clean catalog ID from the cards setup_starting_deck created.
+	# Using _get_card_base_id() guarantees the key matches what _serialize_card_history wrote.
+	var all_cards := deck_manager.get_all_battle_cards()
+	var card_pool: Dictionary = {}
+	for card in all_cards:
+		var key := _get_card_base_id(card)
+		if key.is_empty():
+			continue
+		if key not in card_pool:
+			card_pool[key] = []
+		card_pool[key].append(card)
+
+	var new_draw: Array[CardDef] = []
+	var new_discard: Array[CardDef] = []
+	var new_hand: Array[CardDef] = []
+
+	for raw_id in raw_draw:
+		var card := _pop_from_pool(card_pool, str(raw_id))
+		if card:
+			new_draw.append(card)
+	for raw_id in raw_discard:
+		var card := _pop_from_pool(card_pool, str(raw_id))
+		if card:
+			new_discard.append(card)
+	for raw_id in raw_hand:
+		var card := _pop_from_pool(card_pool, str(raw_id))
+		if card:
+			new_hand.append(card)
+
+	# Leftover cards (shouldn't happen on a clean save) go into draw pile
+	for pool_list in card_pool.values():
+		for leftover in pool_list:
+			new_draw.append(leftover)
+
+	deck_manager.draw_pile.clear()
+	deck_manager.hand.clear()
+	deck_manager.discard_pile.clear()
+	deck_manager.draw_pile.assign(new_draw)
+	deck_manager.hand.assign(new_hand)
+	deck_manager.discard_pile.assign(new_discard)
+	deck_manager.draw_pile_changed.emit()
+	deck_manager.hand_changed.emit()
+	deck_manager.discard_pile_changed.emit()
+
+
+func _pop_from_pool(pool: Dictionary, base_id: String) -> CardDef:
+	if base_id in pool and not pool[base_id].is_empty():
+		return pool[base_id].pop_back()
+	return null
+
+
 func _serialize_card_history(cards: Array[CardDef]) -> Array[String]:
 	var result: Array[String] = []
 	for card in cards:
-		if not card:
-			result.append("")
-		elif card.is_skip:
-			result.append("skip")
-		elif card.is_basic:
-			match card.card_type:
-				CardDef.CardType.ROCK:
-					result.append("basic_rock")
-				CardDef.CardType.PAPER:
-					result.append("basic_paper")
-				CardDef.CardType.SCISSORS:
-					result.append("basic_scissors")
-				_:
-					result.append("")
-		else:
-			result.append(card.id.split("_storage_")[0].split("_selected_")[0])
+		result.append(_get_card_base_id(card))
 	return result
 
 

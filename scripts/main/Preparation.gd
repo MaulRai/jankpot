@@ -14,6 +14,9 @@ const CUP_A_JOE_TEXTURE := preload("res://assets/item/cup-a-joe.png")
 const SNAKE_OIL_TEXTURE := preload("res://assets/item/snake-oil.png")
 const POCKETWATCH_TEXTURE := preload("res://assets/item/pocketwatch.png")
 const VELVET_GLOVES_TEXTURE := preload("res://assets/item/velvet-gloves.png")
+const L_IVOIRE_TEXTURE := preload("res://assets/item/l-ivoire.png")
+const SEALED_MISSIVE_TEXTURE := preload("res://assets/item/sealed-missive.png")
+const CURIO_TEXTURE := preload("res://assets/item/curio.png")
 const TOOLTIP_BOX_SCENE := preload("res://scenes/ui/TooltipBox.tscn")
 var STAR_CRUSH_FONT := preload("res://fonts/Star Crush.otf")
 
@@ -301,6 +304,9 @@ func _add_owned_consumables(parent: GridContainer) -> void:
 		{ "id": PlayerStorageData.CONSUMABLE_SNAKE_OIL, "name": "Snake Oil", "texture": SNAKE_OIL_TEXTURE },
 		{ "id": PlayerStorageData.CONSUMABLE_POCKETWATCH, "name": "Pocketwatch", "texture": POCKETWATCH_TEXTURE },
 		{ "id": PlayerStorageData.CONSUMABLE_VELVET_GLOVES, "name": "Velvet Gloves", "texture": VELVET_GLOVES_TEXTURE },
+		{ "id": PlayerStorageData.CONSUMABLE_L_IVOIRE, "name": "L'Ivoire", "texture": L_IVOIRE_TEXTURE },
+		{ "id": PlayerStorageData.CONSUMABLE_SEALED_MISSIVE, "name": "Sealed Missive", "texture": SEALED_MISSIVE_TEXTURE },
+		{ "id": PlayerStorageData.CONSUMABLE_CURIO, "name": "Curio", "texture": CURIO_TEXTURE },
 	]
 	var has_any := false
 	for definition in definitions:

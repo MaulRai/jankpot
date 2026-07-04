@@ -13,12 +13,16 @@ const CONSUMABLE_SNAKE_OIL := "snake_oil"
 const CONSUMABLE_MOONLIGHT := "moonlight"
 const CONSUMABLE_POCKETWATCH := "pocketwatch"
 const CONSUMABLE_VELVET_GLOVES := "velvet_gloves"
+const CONSUMABLE_L_IVOIRE := "l_ivoire"
+const CONSUMABLE_SEALED_MISSIVE := "sealed_missive"
+const CONSUMABLE_CURIO := "curio"
 
 static var _loaded := false
 
 static var _money := 0
 static var _weapon_ids: Array[String] = []
 static var _selected_weapon_indices: Array[int] = []
+static var _run_weapon_indices: Array[int] = []
 static var _consumable_counts: Dictionary = {}
 static var _selected_consumable_ids: Array[String] = []
 static var _saved_run: Dictionary = {}
@@ -69,6 +73,11 @@ static func ensure_loaded() -> void:
 	if typeof(raw_saved_run) == TYPE_DICTIONARY:
 		_saved_run = (raw_saved_run as Dictionary).duplicate(true)
 
+	_run_weapon_indices.clear()
+	var raw_run_weapons: Array = data.get("run_weapon_indices", [])
+	for raw_idx in raw_run_weapons:
+		_run_weapon_indices.append(int(raw_idx))
+
 	if _weapon_ids.is_empty():
 		_set_default_inventory()
 	_normalize_selected_weapon_indices()
@@ -82,6 +91,7 @@ static func save() -> void:
 		"money": _money,
 		"weapons": _weapon_ids,
 		"selected_weapon_indices": _selected_weapon_indices,
+		"run_weapon_indices": _run_weapon_indices,
 		"consumables": _consumable_counts,
 		"selected_consumables": _selected_consumable_ids,
 		"saved_run": _saved_run,
@@ -173,6 +183,41 @@ static func add_weapon(card: CardDef) -> void:
 		return
 	ensure_loaded()
 	_weapon_ids.append(_storage_id_for_card(card))
+	save()
+
+
+static func add_weapon_and_select(card: CardDef) -> void:
+	if not card:
+		return
+	ensure_loaded()
+	var idx := _weapon_ids.size()
+	_weapon_ids.append(_storage_id_for_card(card))
+	if idx not in _selected_weapon_indices:
+		_selected_weapon_indices.append(idx)
+	# Track as run-only so it can be removed when the run ends
+	if idx not in _run_weapon_indices:
+		_run_weapon_indices.append(idx)
+	save()
+
+
+static func remove_run_weapons() -> void:
+	if _run_weapon_indices.is_empty():
+		return
+	ensure_loaded()
+	# Sort descending so removing by index doesn't shift earlier indices
+	var to_remove := _run_weapon_indices.duplicate()
+	to_remove.sort()
+	to_remove.reverse()
+	for idx in to_remove:
+		if idx >= 0 and idx < _weapon_ids.size():
+			_weapon_ids.remove_at(idx)
+			_selected_weapon_indices.erase(idx)
+			# Shift all higher selected indices down by 1
+			for i in _selected_weapon_indices.size():
+				if _selected_weapon_indices[i] > idx:
+					_selected_weapon_indices[i] -= 1
+	_run_weapon_indices.clear()
+	_normalize_selected_weapon_indices()
 	save()
 
 
@@ -303,4 +348,11 @@ static func _storage_id_for_card(card: CardDef) -> String:
 				return "basic_paper"
 			CardDef.CardType.SCISSORS:
 				return "basic_scissors"
-	return card.id.split("_storage_")[0]
+	# Strip all runtime suffixes so we store the clean catalog ID
+	var clean_id := card.id
+	for suffix in ["_storage_", "_selected_", "_assigned_", "_player_"]:
+		var parts := clean_id.split(suffix)
+		if parts.size() > 1:
+			clean_id = parts[0]
+			break
+	return clean_id
