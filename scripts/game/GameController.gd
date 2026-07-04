@@ -564,7 +564,17 @@ func _on_velvet_gloves_requested() -> void:
 		deck_manager.draw_pile_changed.emit()
 
 		hand_view.prepare_layout(deck_manager.hand.size())
+
+		var rearrange_tween := create_tween().set_parallel(true)
+		for cv in hand_view.card_views:
+			cv.set_interaction_enabled(false)
+			rearrange_tween.tween_property(cv, "position", cv.get_rest_position(), 0.38) \
+				.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			rearrange_tween.tween_property(cv, "rotation_degrees", cv.base_rotation_degrees, 0.38) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
 		var sig = _animator._animate_card_draw(target_card_data, deck_manager.hand.size() - 1, deck_manager.hand.size(), 0.0)
+		await rearrange_tween.finished
 		await sig
 
 		for cv in hand_view.card_views:
