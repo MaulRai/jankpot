@@ -13,19 +13,21 @@ extends CanvasLayer
 signal chosen(selected_views: Array[CardView])
 
 # ── tunables ──────────────────────────────────────────────────────────────────
-const OVERLAY_ALPHA      := 0.60
+const OVERLAY_ALPHA      := 0.40
 const LIFT_OFFSET_Y      := -36.0   # selected cards lift this many px
 const SELECTED_SCALE     := Vector2(1.08, 1.08)
-const UNSEL_MODULATE     := Color.WHITE  # cards stay at normal colour; overlay provides dimming
+const UNSEL_MODULATE     := Color(0.52, 0.52, 0.58, 1.0)  # un-picked cards dim to show pick contrast
+const HOVER_MODULATE     := Color.WHITE  # hovered/selected cards return to full colour
 const TWEEN_DURATION     := 0.14
 
-const STAR_CRUSH_FONT    := preload("res://fonts/Star Crush.ttf")
+const STAR_CRUSH_FONT    := preload("res://fonts/Star Crush.otf")
 
 # ── internal state ────────────────────────────────────────────────────────────
 var _hand_view:        HandView
 var _chosen_callback:  Callable
 var _max_pick:         int = 2
 var _selected_views:   Array[CardView] = []
+var _hovered_view:    CardView  # currently hovered card (for undarken preview)
 
 # ── ui nodes ─────────────────────────────────────────────────────────────────
 var _overlay:      ColorRect
@@ -64,7 +66,7 @@ func _ready() -> void:
 	# ── Choose button (right side, framed in PixelFramePanel) ────────────────
 	_choose_frame = PixelFramePanel.new()
 	_choose_frame.name = "ChooseFrame"
-	_choose_frame.custom_minimum_size = Vector2(160, 56)
+	_choose_frame.custom_minimum_size = Vector2(130, 48)
 	# Use same frame colours as main menu buttons
 	_choose_frame.base_tint = Color(0.12, 0.07, 0.12, 1.0)
 	_choose_frame.frame_outline_tint = Color(1.0, 0.86, 0.42, 1.0)
@@ -77,10 +79,10 @@ func _ready() -> void:
 	_choose_frame.anchor_right  = 1.0
 	_choose_frame.anchor_top    = 0.5
 	_choose_frame.anchor_bottom = 0.5
-	_choose_frame.offset_left   = -168.0
+	_choose_frame.offset_left   = -140.0
 	_choose_frame.offset_right  = -24.0
-	_choose_frame.offset_top    = -28.0
-	_choose_frame.offset_bottom = 28.0
+	_choose_frame.offset_top    = -24.0
+	_choose_frame.offset_bottom = 24.0
 	_choose_frame.mouse_filter = Control.MOUSE_FILTER_PASS
 	add_child(_choose_frame)
 
@@ -107,6 +109,7 @@ func _ready() -> void:
 	_choose_btn.add_theme_stylebox_override("pressed", empty_style)
 	_choose_btn.add_theme_stylebox_override("focus", empty_style)
 	_choose_btn.add_theme_stylebox_override("disabled", empty_style)
+	_choose_btn.add_theme_font_override("font", STAR_CRUSH_FONT)
 	_choose_btn.add_theme_font_size_override("font_size", 20)
 	_choose_btn.add_theme_color_override("font_color", Color(1, 0.93, 0.62, 1))
 	_choose_btn.add_theme_color_override("font_hover_color", Color(1, 1, 0.82, 1))
@@ -133,8 +136,11 @@ func start(hand_view: HandView, max_pick: int, on_chosen: Callable) -> void:
 		cv.set_interaction_enabled(true)
 		if not cv.card_clicked.is_connected(_on_card_clicked):
 			cv.card_clicked.connect(_on_card_clicked)
+		if not cv.card_hovered.is_connected(_on_card_hovered):
+			cv.card_hovered.connect(_on_card_hovered)
+		if not cv.card_unhovered.is_connected(_on_card_unhovered):
+			cv.card_unhovered.connect(_on_card_unhovered)
 
-	# Reset visuals so all cards start un-dimmed
 	_refresh_card_visuals()
 
 	show()
@@ -161,8 +167,25 @@ func _on_card_clicked(card_view: CardView) -> void:
 	_update_choose_button()
 
 
+func _on_card_hovered(card_view: CardView) -> void:
+	_hovered_view = card_view
+	_refresh_card_visuals()
+
+
+func _on_card_unhovered(_card_view: CardView) -> void:
+	_hovered_view = null
+	_refresh_card_visuals()
+
+
 func _refresh_card_visuals() -> void:
 	for cv: CardView in _hand_view.card_views:
+		if cv == _hovered_view and cv != null:
+			# Hovered card gets full-bright preview
+			cv.cancel_transform_tween()
+			cv.transform_tween = cv.create_tween().set_parallel(true)
+			cv.transform_tween.tween_property(cv, "modulate", HOVER_MODULATE, TWEEN_DURATION)
+			cv.z_index = 100
+			continue
 		cv.cancel_transform_tween()
 		var picked := _selected_views.has(cv)
 		var target_pos := cv.base_position + (Vector2(0, LIFT_OFFSET_Y) if picked else Vector2.ZERO)
@@ -207,6 +230,10 @@ func _disconnect_all() -> void:
 	for cv: CardView in _hand_view.card_views:
 		if cv.card_clicked.is_connected(_on_card_clicked):
 			cv.card_clicked.disconnect(_on_card_clicked)
+		if cv.card_hovered.is_connected(_on_card_hovered):
+			cv.card_hovered.disconnect(_on_card_hovered)
+		if cv.card_unhovered.is_connected(_on_card_unhovered):
+			cv.card_unhovered.disconnect(_on_card_unhovered)
 
 
 func _restore_card_visuals() -> void:
