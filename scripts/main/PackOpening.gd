@@ -277,7 +277,7 @@ func _reveal_card(card_data: CardDef) -> void:
 	if _revealed_card.name_label:
 		_revealed_card.name_label.add_theme_font_override("font", STAR_CRUSH_FONT)
 	if _revealed_card.description_label:
-		_revealed_card.description_label.add_theme_font_override("font", STAR_CRUSH_FONT)
+		_revealed_card.description_label.add_theme_font_override("normal_font", STAR_CRUSH_FONT)
 
 	# Set pivot and initial state for scale animations
 	var pivot := CARD_SIZE * 0.5
