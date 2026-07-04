@@ -66,6 +66,18 @@ const SHOPKEEPER_LINES := [
 	"Some weapons win clashes. Some weapons survive them.",
 	"Common cards are not weak. They are honest.",
 	"Rare cards are powerful because they make worse mistakes possible.",
+	"Pour some Snake Oil if you want them to slowly wither. It bites twice as hard if you've been losing.",
+	"This Snake Oil cures nothing, but it makes the enemy's blood turn toxic. Do not drink.",
+	"Keep this Pocketwatch close. It catches your stumbles and spins them into an Aegis.",
+	"This Pocketwatch won't tell the time, but losing a clash will trigger an Aegis. How timely.",
+	"Slip on the Velvet Gloves and pull exactly what you need. No one has to know it wasn't luck.",
+	"Velvet Gloves: for handling your deck with maximum bias. Very elegant cheating.",
+	"L'Ivoire is a delicate thing. It calls a rare set of blades to your deck.",
+	"That ivory token L'Ivoire will drop a rare pair of scissors from thin air. Watch your fingers.",
+	"Break the wax on this Sealed Missive. It binds a rare parchment to your hand for the entire run.",
+	"A Sealed Missive. Once opened, a rare piece of paper joins your deck. Deadlier than bills.",
+	"This Curio is heavy with old magic. It leaves a rare stone for your entire run.",
+	"This Curio binds a rare stone to your deck. A very expensive pet rock.",
 ]
 
 const SHOPKEEPER_THANKS_LINES := [
@@ -161,9 +173,9 @@ func _all_consumables() -> Array:
 		{ "name": "Snake Oil",   "price": 6, "description": "Inflict 1 poison. If lose twice in a row, inflict 2 instead.", "texture": SNAKE_OIL_TEXTURE,  "kind": "consumable", "item_id": PlayerStorageData.CONSUMABLE_SNAKE_OIL },
 		{ "name": "Pocketwatch", "price": 6, "description": "Raise Aegis for next turn when you lose clash.", "texture": POCKETWATCH_TEXTURE, "kind": "consumable", "item_id": PlayerStorageData.CONSUMABLE_POCKETWATCH },
 		{ "name": "Velvet Gloves", "price": 2, "description": "Cherry pick a card from draw pile.", "texture": VELVET_GLOVES_TEXTURE, "kind": "consumable", "item_id": PlayerStorageData.CONSUMABLE_VELVET_GLOVES },
-		{ "name": "L'Ivoire", "price": 3, "description": "Add random Rare Scissors to deck permanently.", "texture": L_IVOIRE_TEXTURE, "kind": "consumable", "item_id": PlayerStorageData.CONSUMABLE_L_IVOIRE },
-		{ "name": "Sealed Missive", "price": 3, "description": "Add random Rare Paper to deck permanently.", "texture": SEALED_MISSIVE_TEXTURE, "kind": "consumable", "item_id": PlayerStorageData.CONSUMABLE_SEALED_MISSIVE },
-		{ "name": "Curio", "price": 3, "description": "Add random Rare Rock to deck permanently.", "texture": CURIO_TEXTURE, "kind": "consumable", "item_id": PlayerStorageData.CONSUMABLE_CURIO },
+		{ "name": "L'Ivoire", "price": 3, "description": "Add random Rare Scissors to deck that lasts entire run.", "texture": L_IVOIRE_TEXTURE, "kind": "consumable", "item_id": PlayerStorageData.CONSUMABLE_L_IVOIRE },
+		{ "name": "Sealed Missive", "price": 3, "description": "Add random Rare Paper to deck that lasts entire run.", "texture": SEALED_MISSIVE_TEXTURE, "kind": "consumable", "item_id": PlayerStorageData.CONSUMABLE_SEALED_MISSIVE },
+		{ "name": "Curio", "price": 3, "description": "Add random Rare Rock to deck that lasts entire run.", "texture": CURIO_TEXTURE, "kind": "consumable", "item_id": PlayerStorageData.CONSUMABLE_CURIO },
 	]
 
 

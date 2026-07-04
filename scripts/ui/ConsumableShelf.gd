@@ -126,7 +126,7 @@ func add_l_ivoire() -> bool:
 	return _add_unique_consumable(
 		&"l_ivoire",
 		L_IVOIRE_TEXTURE,
-		"L'Ivoire\nAdd random Rare Scissors to deck permanently.",
+		"L'Ivoire\nAdd random Rare Scissors to deck that lasts entire run.",
 		func() -> void: l_ivoire_requested.emit()
 	)
 
@@ -134,7 +134,7 @@ func add_sealed_missive() -> bool:
 	return _add_unique_consumable(
 		&"sealed_missive",
 		SEALED_MISSIVE_TEXTURE,
-		"Sealed Missive\nAdd random Rare Paper to deck permanently.",
+		"Sealed Missive\nAdd random Rare Paper to deck that lasts entire run.",
 		func() -> void: sealed_missive_requested.emit()
 	)
 
@@ -142,7 +142,7 @@ func add_curio() -> bool:
 	return _add_unique_consumable(
 		&"curio",
 		CURIO_TEXTURE,
-		"Curio\nAdd random Rare Rock to deck permanently.",
+		"Curio\nAdd random Rare Rock to deck that lasts entire run.",
 		func() -> void: curio_requested.emit()
 	)
 
