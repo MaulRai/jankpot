@@ -167,15 +167,19 @@ func _on_card_clicked(card_view: CardView) -> void:
 	_update_choose_button()
 
 
-
 func _on_card_hovered(card_view: CardView) -> void:
 	_hovered_view = card_view
-	_refresh_card_visuals()
+	# Hover instantly brightens — no tween
+	if card_view not in _selected_views:
+		card_view.modulate = HOVER_MODULATE
 
 
 func _on_card_unhovered(card_view: CardView) -> void:
 	_hovered_view = null
-	_refresh_card_visuals()
+	# Unhover instantly darkens — no tween
+	if card_view not in _selected_views:
+		card_view.modulate = UNSEL_MODULATE
+
 
 
 func _refresh_card_visuals() -> void:
@@ -187,13 +191,18 @@ func _refresh_card_visuals() -> void:
 		var target_scale := SELECTED_SCALE if picked else Vector2.ONE
 		var target_mod   := Color.WHITE if picked or is_hovered else UNSEL_MODULATE
 
+		# Set modulate instantly — no tween for colour so it snaps on click/hover
+		cv.modulate = target_mod
+
+		# Disable CardView hover interaction on picked cards so they don't lift
+		cv.set_interaction_enabled(not picked)
+
+		# Only tween position and scale for smooth lift animation
 		cv.transform_tween = cv.create_tween().set_parallel(true)
 		cv.transform_tween.tween_property(cv, "position", target_pos, TWEEN_DURATION) \
 			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 		cv.transform_tween.tween_property(cv, "scale", target_scale, TWEEN_DURATION) \
 			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-		cv.transform_tween.tween_property(cv, "modulate", target_mod, TWEEN_DURATION) \
-			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 		cv.z_index = 60 if picked else cv.base_z_index
 
 
