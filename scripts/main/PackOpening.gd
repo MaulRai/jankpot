@@ -273,14 +273,30 @@ func _reveal_card(card_data: CardDef) -> void:
 	_pack_stage.add_child(_revealed_card)
 	_revealed_card.global_position = reveal_position
 
-	# Apply Star Crush font to both labels after _ready()
-	if _revealed_card.name_label:
-		_revealed_card.name_label.add_theme_font_override("font", STAR_CRUSH_FONT)
-	if _revealed_card.description_label:
-		_revealed_card.description_label.add_theme_font_override("normal_font", STAR_CRUSH_FONT)
-
 	# Set pivot and initial state for scale animations
 	var pivot := CARD_SIZE * 0.5
+	var initial_rotation := randf_range(-7.0, 7.0)
+	_revealed_card.pivot_offset = pivot
+	_revealed_card.scale = Vector2(0.25, 0.25)
+	_revealed_card.rotation_degrees = initial_rotation
+	_revealed_card.modulate.a = 0.0
+	_reveal_fx.scale = Vector2(0.25, 0.25)
+	_reveal_fx.rotation_degrees = initial_rotation
+	_reveal_fx.modulate.a = 0.0
+
+	var tween := _pack_stage.create_tween()
+	tween.set_parallel(true)
+	_tween_reveal_node(tween, _reveal_fx)
+	_tween_reveal_node(tween, _revealed_card)
+	await tween.finished
+
+	# Apply Star Crush font at full 1.0 scale — after tween so it's not upscaled
+	if _revealed_card.name_label:
+		_revealed_card.name_label.add_theme_font_override("font", STAR_CRUSH_FONT)
+		_revealed_card.name_label.add_theme_font_size_override("font_size", 24)
+	if _revealed_card.description_label:
+		_revealed_card.description_label.add_theme_font_override("normal_font", STAR_CRUSH_FONT)
+		_revealed_card.description_label.add_theme_font_size_override("normal_font_size", 18)
 	var initial_rotation := randf_range(-7.0, 7.0)
 	_revealed_card.pivot_offset = pivot
 	_revealed_card.scale = Vector2(0.25, 0.25)
