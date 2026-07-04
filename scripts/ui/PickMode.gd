@@ -169,9 +169,11 @@ func _on_card_clicked(card_view: CardView) -> void:
 
 func _on_card_hovered(card_view: CardView) -> void:
 	_hovered_view = card_view
-	# Hover instantly brightens — no tween
+	# Hover instantly brightens — no tween, and set z-index high so it's above
 	if card_view not in _selected_views:
 		card_view.modulate = HOVER_MODULATE
+		if _selected_views.size() < _max_pick:
+			card_view.z_index = 100
 
 
 func _on_card_unhovered(card_view: CardView) -> void:
@@ -179,6 +181,7 @@ func _on_card_unhovered(card_view: CardView) -> void:
 	# Unhover instantly darkens — no tween
 	if card_view not in _selected_views:
 		card_view.modulate = UNSEL_MODULATE
+		card_view.z_index = card_view.base_z_index
 
 
 
@@ -194,8 +197,8 @@ func _refresh_card_visuals() -> void:
 		# Set modulate instantly — no tween for colour so it snaps on click/hover
 		cv.modulate = target_mod
 
-		# Disable CardView hover interaction on picked cards so they don't lift
-		cv.set_interaction_enabled(not picked)
+		# Keep interaction enabled so picked cards can still be clicked to unpick
+		cv.set_interaction_enabled(true)
 
 		# Only tween position and scale for smooth lift animation
 		cv.transform_tween = cv.create_tween().set_parallel(true)
