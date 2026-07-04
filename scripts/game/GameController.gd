@@ -104,6 +104,12 @@ func _ready() -> void:
 	consumable_shelf.moonlight_requested.connect(_on_moonlight_requested)
 	consumable_shelf.snake_oil_requested.connect(_on_snake_oil_requested)
 	_stock_consumables_from_storage()
+	# Debug: always stock Moonlight on the shelf for testing
+	if OS.is_debug_build():
+		PlayerStorageData.add_consumable("moonlight")
+		consumable_shelf.add_moonlight()
+		_run_money_earned = 10  # Seed run money for testing
+		battle_sidebar.set_money(_run_money_earned)
 	await _initialize_first_battle()
 
 
@@ -212,50 +218,80 @@ func _on_cup_a_joe_requested() -> void:
 
 
 func _on_moonlight_requested() -> void:
-	if round_status != "ongoing" or _is_animating:
+	if _is_animating:
+		return
+	# Moonlight costs $2 from the run wallet
+	if _run_money_earned < 2:
+		sfx_manager.play_sfx("buzzer")
 		return
 	_is_animating = true
 
-	if not PlayerStorageData.spend_money(2):
-		sfx_manager.play_sfx("buzzer")
-		_is_animating = false
-		return
-
+	_run_money_earned -= 2
+	battle_sidebar.set_money(_run_money_earned)
 	consumable_shelf.consume_moonlight()
 	_on_storage_consumable_used(PlayerStorageData.CONSUMABLE_MOONLIGHT)
 
-	# Show pick mode for player to select cards to discard
-	var hand_cards: Array[CardDef] = []
-	for card in deck_manager.hand:
-		if not card.is_skip:
-			hand_cards.append(card)
-
+	# Create PickMode on the scene root so it spans the full viewport
 	if not _pick_mode:
 		_pick_mode = PickMode.new()
-		_pick_mode.card_scene = hand_view.card_scene
-		add_child(_pick_mode)
-		_pick_mode.z_index = 100
+		get_parent().add_child(_pick_mode)
 
-	_pick_mode.start(hand_cards, 2, _on_moonlight_discard_chosen)
-
+	hand_view.set_dragging_enabled(false)
+	_pick_mode.start(hand_view, 2, _on_moonlight_discard_chosen)
 	sfx_manager.play_sfx("card_pickup")
 
 
-func _on_moonlight_discard_chosen(selected: Array[CardDef]) -> void:
-	# Discard the chosen cards and draw the same number
-	for card in selected:
-		deck_manager.play_card(card.id)
+func _on_moonlight_discard_chosen(selected_views: Array[CardView]) -> void:
+	# Animate selected cards flying off screen, then draw replacements.
+	var discard_count := selected_views.size()
 
-	# Draw replacement cards — DeckManager.draw_until_full handles pile shuffle
-	deck_manager.draw_until_full(3)
-	hand_view.set_cards(deck_manager.hand)
+	for card_view in selected_views:
+		if not is_instance_valid(card_view) or not card_view.card_data:
+			discard_count -= 1
+			continue
+		var card_data: CardDef = card_view.card_data
+		# Remove from hand_view so the animator can take ownership
+		hand_view.remove_card_view(card_view)
+		# Re-parent to scene root so exit animation renders above everything
+		var prev_global := card_view.global_position
+		get_parent().add_child(card_view)
+		card_view.global_position = prev_global
+		card_view.z_index = 1200
+		# Move card data to discard pile
+		deck_manager.play_card(card_data.id)
+		# Fly off to the right
+		var exit_tween := card_view.create_tween().set_parallel(true)
+		exit_tween.tween_property(card_view, "global_position",
+			card_view.global_position + Vector2(500, -120), 0.42) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+		exit_tween.tween_property(card_view, "modulate:a", 0.0, 0.35) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+		exit_tween.tween_property(card_view, "rotation_degrees",
+			randf_range(15.0, 30.0), 0.42)
+		exit_tween.chain().tween_callback(card_view.queue_free)
 
-	_pick_mode.cleanup()
+	_animator.play_sfx("card_leave", -2.0, randf_range(0.97, 1.03))
+	# Brief pause to let the exit animations start before drawing
+	await get_tree().create_timer(0.20).timeout
+
+	# Draw the same number of replacement cards with animated refill
+	var current_count := hand_view.card_views.size()
+	var target_count := current_count + discard_count
+	deck_manager.draw_until_full(target_count)
+	hand_view.prepare_layout(deck_manager.hand.size())
+	for index in range(current_count, deck_manager.hand.size()):
+		var sig: Signal = _animator._animate_card_draw(
+			deck_manager.hand[index], index, deck_manager.hand.size(), 0.0
+		)
+		await sig
+
+	for cv: CardView in hand_view.card_views:
+		cv.set_interaction_enabled(true)
+	hand_view.normalize_card_layers()
+	_animator.update_pile_visuals()
+	hand_view.set_dragging_enabled(true)
 	_update_labels()
 	_is_animating = false
-
-	# Re-bless the enemy's card choice once hand is settled
-	await _prepare_enemy_card()
 
 
 func _on_snake_oil_requested() -> void:
