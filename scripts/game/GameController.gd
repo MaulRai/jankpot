@@ -105,10 +105,7 @@ func _ready() -> void:
 	consumable_shelf.snake_oil_requested.connect(_on_snake_oil_requested)
 	consumable_shelf.pocketwatch_requested.connect(_on_pocketwatch_requested)
 	_stock_consumables_from_storage()
-	# DEBUG: always stock Pocketwatch for testing
-	if OS.is_debug_build():
-		PlayerStorageData.add_consumable(PlayerStorageData.CONSUMABLE_POCKETWATCH, 3)
-		consumable_shelf.add_pocketwatch()
+	
 	await _initialize_first_battle()
 
 

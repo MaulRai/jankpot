@@ -17,6 +17,8 @@ signal card_clicked(card: CardView)
 @onready var card_back: TextureRect = %CardBack
 @onready var outline: Panel = %Outline
 
+const BACKGROUND_SHADER := preload("res://shaders/card_type_background.gdshader")
+
 var base_position: Vector2
 var base_z_index: int = 0
 var base_rotation_degrees: float = 0.0
@@ -27,6 +29,7 @@ var drag_enabled: bool = true
 var disabled_visual := false
 var drag_offset: Vector2 = Vector2.ZERO
 var transform_tween: Tween
+
 
 func _ready() -> void:
 	if card_data:
@@ -49,7 +52,25 @@ func render() -> void:
 	if description_label:
 		description_label.text = _format_description(card_data.brief_description, card_data.keywords)
 	if type_background:
-		type_background.color = card_data.background_color
+		var rarity_val := 0
+		match card_data.rarity:
+			"Common":
+				rarity_val = 1
+			"Uncommon":
+				rarity_val = 2
+			"Rare":
+				rarity_val = 3
+			_:
+				rarity_val = 0
+		
+		if not type_background.material or not type_background.material is ShaderMaterial:
+			var mat := ShaderMaterial.new()
+			mat.shader = BACKGROUND_SHADER
+			type_background.material = mat
+		
+		var shader_mat := type_background.material as ShaderMaterial
+		shader_mat.set_shader_parameter("base_color", card_data.background_color)
+		shader_mat.set_shader_parameter("rarity_mode", rarity_val)
 	if art_separator:
 		art_separator.color = card_data.background_color.darkened(0.3)
 

@@ -70,6 +70,13 @@ static func ensure_loaded() -> void:
 
 	if _weapon_ids.is_empty():
 		_set_default_inventory()
+	
+	# DEBUG: Load each upgrade card to the player's collection
+	if OS.is_debug_build():
+		for id in WeaponCatalogData._all_upgrade_ids():
+			if id not in _weapon_ids:
+				_weapon_ids.append(id)
+				
 	_normalize_selected_weapon_indices()
 
 
