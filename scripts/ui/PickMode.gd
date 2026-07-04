@@ -16,8 +16,10 @@ signal chosen(selected_views: Array[CardView])
 const OVERLAY_ALPHA      := 0.60
 const LIFT_OFFSET_Y      := -36.0   # selected cards lift this many px
 const SELECTED_SCALE     := Vector2(1.08, 1.08)
-const UNSEL_MODULATE     := Color(0.52, 0.52, 0.58, 1.0)
+const UNSEL_MODULATE     := Color.WHITE  # cards stay at normal colour; overlay provides dimming
 const TWEEN_DURATION     := 0.14
+
+const STAR_CRUSH_FONT    := preload("res://fonts/Star Crush.ttf")
 
 # ── internal state ────────────────────────────────────────────────────────────
 var _hand_view:        HandView
@@ -29,6 +31,7 @@ var _selected_views:   Array[CardView] = []
 var _overlay:      ColorRect
 var _hint_label:   Label
 var _choose_btn:   Button
+var _choose_frame: PixelFramePanel
 
 
 func _ready() -> void:
@@ -48,6 +51,7 @@ func _ready() -> void:
 	_hint_label.text = "Pick up to %d card(s) to discard, then press Choose." % _max_pick
 	_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_hint_label.add_theme_font_size_override("font_size", 18)
+	_hint_label.add_theme_font_override("font", STAR_CRUSH_FONT)
 	_hint_label.add_theme_color_override("font_color", Color(1, 1, 1, 0.92))
 	_hint_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
 	_hint_label.add_theme_constant_override("shadow_offset_y", 2)
@@ -57,39 +61,57 @@ func _ready() -> void:
 	_hint_label.mouse_filter  = Control.MOUSE_FILTER_IGNORE
 	add_child(_hint_label)
 
-	# ── Choose button (right side) ────────────────────────────────────────────
+	# ── Choose button (right side, framed in PixelFramePanel) ────────────────
+	_choose_frame = PixelFramePanel.new()
+	_choose_frame.name = "ChooseFrame"
+	_choose_frame.custom_minimum_size = Vector2(160, 56)
+	# Use same frame colours as main menu buttons
+	_choose_frame.base_tint = Color(0.12, 0.07, 0.12, 1.0)
+	_choose_frame.frame_outline_tint = Color(1.0, 0.86, 0.42, 1.0)
+	_choose_frame.base_outline_tint = Color(0.26, 0.12, 0.2, 1.0)
+	_choose_frame.base_fill_tint = Color(0.12, 0.07, 0.12, 1.0)
+	_choose_frame.component_scale = 2.0
+	_choose_frame.top_right_corner_variant = PixelFramePanel.TopRightCornerVariant.SHINING
+	# anchor to right-centre of screen
+	_choose_frame.anchor_left   = 1.0
+	_choose_frame.anchor_right  = 1.0
+	_choose_frame.anchor_top    = 0.5
+	_choose_frame.anchor_bottom = 0.5
+	_choose_frame.offset_left   = -168.0
+	_choose_frame.offset_right  = -24.0
+	_choose_frame.offset_top    = -28.0
+	_choose_frame.offset_bottom = 28.0
+	_choose_frame.mouse_filter = Control.MOUSE_FILTER_PASS
+	add_child(_choose_frame)
+
+	# Inner button (flat, transparent, sits inside the frame)
 	_choose_btn = Button.new()
 	_choose_btn.name   = "ChooseButton"
 	_choose_btn.text   = "Choose"
-	_choose_btn.visible = false
-	# anchor to right-centre of screen
-	_choose_btn.anchor_left   = 1.0
+	_choose_btn.flat     = true
+	_choose_frame.visible = false  # frame starts hidden
+	_choose_btn.anchor_left   = 0.0
 	_choose_btn.anchor_right  = 1.0
-	_choose_btn.anchor_top    = 0.5
-	_choose_btn.anchor_bottom = 0.5
-	_choose_btn.offset_left   = -160.0
-	_choose_btn.offset_right  = -24.0
-	_choose_btn.offset_top    = -28.0
-	_choose_btn.offset_bottom = 28.0
+	_choose_btn.anchor_top    = 0.0
+	_choose_btn.anchor_bottom = 1.0
+	_choose_btn.offset_left   = 0.0
+	_choose_btn.offset_right  = 0.0
+	_choose_btn.offset_top    = 0.0
+	_choose_btn.offset_bottom = 0.0
+	_choose_btn.mouse_filter = Control.MOUSE_FILTER_STOP
 	_choose_btn.pressed.connect(_on_choose_pressed)
-	# style
-	var normal_style := StyleBoxFlat.new()
-	normal_style.bg_color             = Color(0.18, 0.55, 0.90, 0.95)
-	normal_style.corner_radius_top_left    = 10
-	normal_style.corner_radius_top_right   = 10
-	normal_style.corner_radius_bottom_left = 10
-	normal_style.corner_radius_bottom_right = 10
-	normal_style.content_margin_left  = 18.0
-	normal_style.content_margin_right = 18.0
-	normal_style.content_margin_top   = 10.0
-	normal_style.content_margin_bottom = 10.0
-	_choose_btn.add_theme_stylebox_override("normal", normal_style)
-	var hover_style := normal_style.duplicate() as StyleBoxFlat
-	hover_style.bg_color = Color(0.24, 0.68, 1.0, 0.98)
-	_choose_btn.add_theme_stylebox_override("hover", hover_style)
+	# Transparent theme overrides so the frame's pixel art shows through
+	var empty_style := StyleBoxEmpty.new()
+	_choose_btn.add_theme_stylebox_override("normal", empty_style)
+	_choose_btn.add_theme_stylebox_override("hover", empty_style)
+	_choose_btn.add_theme_stylebox_override("pressed", empty_style)
+	_choose_btn.add_theme_stylebox_override("focus", empty_style)
+	_choose_btn.add_theme_stylebox_override("disabled", empty_style)
 	_choose_btn.add_theme_font_size_override("font_size", 20)
-	_choose_btn.add_theme_color_override("font_color", Color(1, 1, 1, 1))
-	add_child(_choose_btn)
+	_choose_btn.add_theme_color_override("font_color", Color(1, 0.93, 0.62, 1))
+	_choose_btn.add_theme_color_override("font_hover_color", Color(1, 1, 0.82, 1))
+	_choose_btn.add_theme_color_override("font_pressed_color", Color(0.86, 0.68, 0.3, 1))
+	_choose_frame.add_child(_choose_btn)
 
 	hide()
 
@@ -158,9 +180,9 @@ func _refresh_card_visuals() -> void:
 
 
 func _update_choose_button() -> void:
-	_choose_btn.visible = true   # always show the button during pick mode
-	_choose_btn.text = "Choose (%d)" % _selected_views.size() if _selected_views.size() > 0 \
-		else "Skip"
+	_choose_frame.visible = true   # always show the frame during pick mode
+	var count := _selected_views.size()
+	_choose_btn.text = "Choose (%d)" % count if count > 0 else "Skip"
 
 
 # ── confirm ───────────────────────────────────────────────────────────────────
