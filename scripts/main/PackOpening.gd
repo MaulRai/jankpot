@@ -17,7 +17,7 @@ const HIT_SFX := preload("res://audio/sfx/hit.mp3")
 const PACK_STATE_CLOSED   := "closed"
 const PACK_STATE_REVEALED := "revealed"
 
-const CARD_SIZE := Vector2(230.0, 318.0)
+const CARD_SIZE := Vector2(200.0, 300.0)
 const CARD_VIEW_SCENE := preload("res://scenes/ui/CardView.tscn")
 
 
@@ -252,9 +252,8 @@ func _open_floating_pack() -> void:
 func _reveal_card(card_data: CardDef) -> void:
 	_clear_revealed_card()
 
-	var base_card_size := Vector2(160.0, 240.0)
 	var viewport_size   := _pack_layer.get_viewport().get_visible_rect().size
-	var reveal_position := viewport_size * 0.5 - base_card_size * 0.5 + Vector2(0.0, 42.0)
+	var reveal_position := viewport_size * 0.5 - CARD_SIZE * 0.5 + Vector2(0.0, 42.0)
 
 	# Build FX node
 	_reveal_fx = CardRevealFxScript.new()
@@ -268,8 +267,12 @@ func _reveal_card(card_data: CardDef) -> void:
 	_pack_stage.add_child(_revealed_card)
 	_revealed_card.global_position = reveal_position
 
+	# Apply Star Crush font to the card's name label after _ready()
+	if _revealed_card.name_label:
+		_revealed_card.name_label.add_theme_font_override("font", STAR_CRUSH_FONT)
+
 	# Set pivot and initial state for scale animations
-	var pivot := base_card_size * 0.5
+	var pivot := CARD_SIZE * 0.5
 	var initial_rotation := randf_range(-7.0, 7.0)
 	_revealed_card.pivot_offset = pivot
 	_revealed_card.scale = Vector2(0.25, 0.25)
@@ -289,7 +292,7 @@ func _reveal_card(card_data: CardDef) -> void:
 func _tween_reveal_node(tween: Tween, node: CanvasItem) -> void:
 	tween.tween_property(node, "modulate:a", 1.0, 0.22) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	tween.tween_property(node, "scale", Vector2(1.4375, 1.4375), 0.42) \
+	tween.tween_property(node, "scale", Vector2(1.0, 1.0), 0.42) \
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(node, "rotation_degrees", 0.0, 0.36) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
@@ -299,8 +302,7 @@ func _build_reveal_card(card_data: CardDef) -> Control:
 	var card_view := CARD_VIEW_SCENE.instantiate() as CardView
 	card_view.card_data = card_data
 	card_view.interaction_enabled = false
-	if card_view.name_label:
-		card_view.name_label.add_theme_font_override("font", STAR_CRUSH_FONT)
+	card_view.custom_minimum_size = CARD_SIZE
 	return card_view
 
 

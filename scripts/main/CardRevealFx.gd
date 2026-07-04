@@ -13,7 +13,7 @@ extends Node2D
 const WeaponCatalogData = preload("res://scripts/data/WeaponCatalog.gd")
 
 ## Must match _build_reveal_card() in PackOpening.
-const CARD_SIZE := Vector2(230.0, 318.0)
+const CARD_SIZE := Vector2(200.0, 300.0)
 
 var _tweens: Array[Tween] = []
 
