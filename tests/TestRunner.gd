@@ -20,6 +20,7 @@ func _initialize() -> void:
 	_test_reaction_order()
 	_test_poison_ticks()
 	_test_pocketwatch_and_aegis()
+	_test_velvet_gloves()
 	await _test_scene_smoke()
 	if failures.is_empty():
 		print("TESTS PASSED")
@@ -205,10 +206,21 @@ func _test_pocketwatch_and_aegis() -> void:
 	_expect(not plan.old_player_aegis, "Player did not have Aegis at start of Turn 1")
 	_expect(state.player_has_aegis, "Losing clash with Pocketwatch active should raise Aegis for next turn")
 
-	# 4. Turn 2: Player has Aegis at start of turn. Win clash -> Aegis should expire, and not be re-raised
 	plan = resolver.build_plan(
 		BattleResolver.Result.WIN, rock, scissors, player_hand, enemy_hand, state
 	)
 	_expect(plan.old_player_aegis, "Player should have had Aegis at start of Turn 2")
 	_expect(not state.player_has_aegis, "Aegis should expire/reset at start of turn and not be raised if they win")
+
+
+func _test_velvet_gloves() -> void:
+	var state: Resource = BattleStateData.new()
+	
+	# 1. Initially skip_draw is false
+	_expect(not state.velvet_gloves_skip_draw, "Velvet Gloves skip draw flag should start false")
+	
+	# 2. Set velvet_gloves_skip_draw
+	state.velvet_gloves_skip_draw = true
+	_expect(state.velvet_gloves_skip_draw, "Velvet Gloves skip draw flag should be true after use")
+
 

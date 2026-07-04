@@ -13,7 +13,10 @@ const REMEDY_KIT_TEXTURE := preload("res://assets/item/remedy-kit.png")
 const CUP_A_JOE_TEXTURE := preload("res://assets/item/cup-a-joe.png")
 const SNAKE_OIL_TEXTURE := preload("res://assets/item/snake-oil.png")
 const POCKETWATCH_TEXTURE := preload("res://assets/item/pocketwatch.png")
+const VELVET_GLOVES_TEXTURE := preload("res://assets/item/velvet-gloves.png")
 const TOOLTIP_BOX_SCENE := preload("res://scenes/ui/TooltipBox.tscn")
+var STAR_CRUSH_FONT := preload("res://fonts/Star Crush.otf")
+
 
 const STAGES := [
 	{
@@ -61,6 +64,7 @@ var _active_tooltip: Control = null
 
 
 func _ready() -> void:
+	STAR_CRUSH_FONT.multichannel_signed_distance_field = true
 	_build_ui()
 
 
@@ -226,6 +230,14 @@ func _make_card_preview(card: CardDef, selected: bool) -> Control:
 	card_view.set_interaction_enabled(false)
 	card_view.scale = Vector2(1.2, 1.2)
 	card_view.position = wrapper.custom_minimum_size * 0.5 - card_view.pivot_offset
+
+	var name_lbl = card_view.get_node_or_null("%NameLabel")
+	if name_lbl:
+		name_lbl.add_theme_font_override("font", STAR_CRUSH_FONT)
+	var desc_lbl = card_view.get_node_or_null("%DescriptionLabel")
+	if desc_lbl:
+		desc_lbl.add_theme_font_override("normal_font", STAR_CRUSH_FONT)
+
 	wrapper.add_child(card_view)
 
 	return wrapper
@@ -288,6 +300,7 @@ func _add_owned_consumables(parent: GridContainer) -> void:
 		{ "id": PlayerStorageData.CONSUMABLE_CUP_A_JOE, "name": "Cup-a-Joe", "texture": CUP_A_JOE_TEXTURE },
 		{ "id": PlayerStorageData.CONSUMABLE_SNAKE_OIL, "name": "Snake Oil", "texture": SNAKE_OIL_TEXTURE },
 		{ "id": PlayerStorageData.CONSUMABLE_POCKETWATCH, "name": "Pocketwatch", "texture": POCKETWATCH_TEXTURE },
+		{ "id": PlayerStorageData.CONSUMABLE_VELVET_GLOVES, "name": "Velvet Gloves", "texture": VELVET_GLOVES_TEXTURE },
 	]
 	var has_any := false
 	for definition in definitions:

@@ -23,6 +23,7 @@ const REMEDY_KIT_TEXTURE := preload("res://assets/item/remedy-kit.png")
 const CUP_A_JOE_TEXTURE  := preload("res://assets/item/cup-a-joe.png")
 const SNAKE_OIL_TEXTURE  := preload("res://assets/item/snake-oil.png")
 const POCKETWATCH_TEXTURE := preload("res://assets/item/pocketwatch.png")
+const VELVET_GLOVES_TEXTURE := preload("res://assets/item/velvet-gloves.png")
 
 const SHOPKEEPER_LINES := [
 	"Welcome back. The shelves have been whispering about you.",
@@ -156,6 +157,7 @@ func _all_consumables() -> Array:
 		{ "name": "Cup-a-Joe",   "price": 2, "description": "Win attacks twice this turn.",       "texture": CUP_A_JOE_TEXTURE,  "kind": "consumable", "item_id": PlayerStorageData.CONSUMABLE_CUP_A_JOE },
 		{ "name": "Snake Oil",   "price": 6, "description": "Inflict 1 poison. If lose twice in a row, inflict 2 instead.", "texture": SNAKE_OIL_TEXTURE,  "kind": "consumable", "item_id": PlayerStorageData.CONSUMABLE_SNAKE_OIL },
 		{ "name": "Pocketwatch", "price": 6, "description": "Raise Aegis for next turn when you lose clash.", "texture": POCKETWATCH_TEXTURE, "kind": "consumable", "item_id": PlayerStorageData.CONSUMABLE_POCKETWATCH },
+		{ "name": "Velvet Gloves", "price": 2, "description": "Cherry pick a card from draw pile.", "texture": VELVET_GLOVES_TEXTURE, "kind": "consumable", "item_id": PlayerStorageData.CONSUMABLE_VELVET_GLOVES },
 	]
 
 

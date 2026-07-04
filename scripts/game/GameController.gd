@@ -9,6 +9,10 @@ const BattleAnimatorData = preload("res://scripts/animation/BattleAnimator.gd")
 const RunConfigData = preload("res://scripts/data/RunConfig.gd")
 const PlayerStorageData = preload("res://scripts/data/PlayerStorage.gd")
 const EffectKeywordData = preload("res://scripts/data/EffectKeyword.gd")
+const PIXEL_FRAME_SCRIPT := preload("res://scripts/ui/PixelFramePanel.gd")
+const STAR_CRUSH_FONT := preload("res://fonts/Star Crush.otf")
+const SELECTED_CARD_BASE_TEXTURE := preload("res://assets/ui/card-base.png")
+const CARD_SCENE := preload("res://scenes/ui/CardView.tscn")
 
 signal turn_resolved
 signal battle_ended(winner: String)
@@ -104,6 +108,7 @@ func _ready() -> void:
 	consumable_shelf.moonlight_requested.connect(_on_moonlight_requested)
 	consumable_shelf.snake_oil_requested.connect(_on_snake_oil_requested)
 	consumable_shelf.pocketwatch_requested.connect(_on_pocketwatch_requested)
+	consumable_shelf.velvet_gloves_requested.connect(_on_velvet_gloves_requested)
 	_stock_consumables_from_storage()
 	
 	await _initialize_first_battle()
@@ -360,6 +365,257 @@ func _on_pocketwatch_requested() -> void:
 	_is_animating = false
 
 
+func _on_velvet_gloves_requested() -> void:
+	if round_status != "ongoing" or _is_animating:
+		return
+
+	if deck_manager.draw_pile.is_empty():
+		sfx_manager.play_sfx("buzzer")
+		var player_card_view := player_slot.get_child(0) as CardView if player_slot.get_child_count() > 0 else null
+		var warn_target: Control = player_card_view if is_instance_valid(player_card_view) else player_slot
+		_animator.show_exclamation(warn_target, "Empty Draw Pile!", Color("#FF5555"))
+		return
+
+	_is_animating = true
+	hand_view.set_dragging_enabled(false)
+	sfx_manager.play_sfx("click")
+
+	var main_root = get_parent()
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+
+	# 1. Dim Backdrop Rect
+	var dim := ColorRect.new()
+	dim.name = "VelvetGlovesDim"
+	dim.color = Color(0.004, 0.007, 0.008, 0.72)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.z_index = 1100
+	dim.z_as_relative = false
+	main_root.add_child(dim)
+
+	# 2. Window Panel (panel-window-alt)
+	var window := TextureRect.new()
+	window.name = "VelvetGlovesWindow"
+	window.texture = load("res://assets/ui/panel-window-alt.png")
+	window.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	window.stretch_mode = TextureRect.STRETCH_SCALE
+	window.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	window.custom_minimum_size = Vector2(800, 540)
+	window.size = Vector2(800, 540)
+	window.pivot_offset = window.size * 0.5
+	window.position = Vector2(
+		(viewport_size.x - 800) * 0.5,
+		viewport_size.y + 40
+	)
+	window.z_index = 1101
+	window.z_as_relative = false
+	main_root.add_child(window)
+
+	# 3. Content Layout
+	var content := VBoxContainer.new()
+	content.alignment = BoxContainer.ALIGNMENT_CENTER
+	content.add_theme_constant_override("separation", 16)
+	content.set_anchors_preset(Control.PRESET_FULL_RECT)
+	content.offset_left = 40
+	content.offset_top = 64
+	content.offset_right = -40
+	content.offset_bottom = -40
+	window.add_child(content)
+
+	# Heading Label
+	var heading := Label.new()
+	heading.text = "CHERRY PICK A CARD"
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.add_theme_font_override("font", STAR_CRUSH_FONT)
+	heading.add_theme_font_size_override("font_size", 26)
+	heading.add_theme_color_override("font_color", Color(1.0, 0.9, 0.55, 1.0))
+	heading.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.72))
+	heading.add_theme_constant_override("shadow_offset_y", 3)
+	content.add_child(heading)
+
+	# Scroll Container
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(720, 240)
+	scroll.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	content.add_child(scroll)
+
+	var card_row := HBoxContainer.new()
+	card_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	card_row.add_theme_constant_override("separation", 14)
+	card_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(card_row)
+
+	# Create the SELECT and CANCEL buttons first so they are immediately accessible in the closures
+	var select_btn_frame = _make_gloves_button("SELECT")
+	var select_btn := select_btn_frame.get_child(0) as Button
+	select_btn.disabled = true
+	select_btn_frame.set("frame_outline_tint", Color(0.4, 0.36, 0.3, 1))
+
+	var cancel_btn_frame = _make_gloves_button("CANCEL")
+	var cancel_btn := cancel_btn_frame.get_child(0) as Button
+
+	# Shared state dictionary for mutually exclusive card selection
+	var state_data := {
+		"selected_card": null,
+		"selected_highlight": null
+	}
+
+	for card_data in deck_manager.draw_pile:
+		var wrapper := Control.new()
+		wrapper.custom_minimum_size = Vector2(160, 230)
+		wrapper.mouse_filter = Control.MOUSE_FILTER_STOP
+		card_row.add_child(wrapper)
+
+		var highlight := TextureRect.new()
+		highlight.texture = SELECTED_CARD_BASE_TEXTURE
+		highlight.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		highlight.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		highlight.stretch_mode = TextureRect.STRETCH_SCALE
+		highlight.size = Vector2(160, 230)
+		highlight.position = Vector2.ZERO
+		highlight.pivot_offset = highlight.size * 0.5
+		highlight.modulate = Color(0.35, 0.72, 1.0, 0.56)
+		highlight.visible = false
+		wrapper.add_child(highlight)
+
+		var card_view := CARD_SCENE.instantiate() as Control
+		card_view.set("card_data", card_data)
+		card_view.set("interaction_enabled", false)
+		card_view.scale = Vector2(0.9, 0.9)
+		card_view.position = wrapper.custom_minimum_size * 0.5 - card_view.pivot_offset
+		wrapper.add_child(card_view)
+
+		var name_lbl = card_view.get_node_or_null("%NameLabel")
+		if name_lbl:
+			name_lbl.add_theme_font_override("font", STAR_CRUSH_FONT)
+			name_lbl.add_theme_font_size_override("font_size", 16)
+		var desc_lbl = card_view.get_node_or_null("%DescriptionLabel")
+		if desc_lbl:
+			desc_lbl.add_theme_font_override("normal_font", STAR_CRUSH_FONT)
+			desc_lbl.add_theme_font_size_override("normal_font_size", 12)
+
+		var overlay_btn := Button.new()
+		overlay_btn.flat = true
+		overlay_btn.mouse_filter = Control.MOUSE_FILTER_STOP
+		overlay_btn.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		wrapper.add_child(overlay_btn)
+
+		overlay_btn.pressed.connect(func() -> void:
+			sfx_manager.play_sfx("click")
+			if state_data.selected_highlight:
+				state_data.selected_highlight.visible = false
+			state_data.selected_card = card_data
+			state_data.selected_highlight = highlight
+			highlight.visible = true
+			
+			select_btn.disabled = false
+			select_btn_frame.set("frame_outline_tint", Color(1, 0.86, 0.42, 1))
+		)
+
+	# Button row at bottom
+	var btn_row := HBoxContainer.new()
+	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	btn_row.add_theme_constant_override("separation", 24)
+	content.add_child(btn_row)
+	btn_row.add_child(select_btn_frame)
+	btn_row.add_child(cancel_btn_frame)
+
+	var target_y := (viewport_size.y - 540) * 0.5
+	var slide_in := create_tween().set_parallel(true)
+	slide_in.tween_property(window, "position:y", target_y, 0.38) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	slide_in.tween_property(dim, "modulate:a", 1.0, 0.25)
+
+	select_btn.pressed.connect(func() -> void:
+		var target_card_data = state_data.selected_card
+		if not target_card_data:
+			return
+		sfx_manager.play_sfx("card_pickup")
+		var slide_out := create_tween().set_parallel(true)
+		slide_out.tween_property(window, "position:y", viewport_size.y + 40, 0.3) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+		slide_out.tween_property(dim, "modulate:a", 0.0, 0.25)
+		await slide_out.finished
+		dim.queue_free()
+		window.queue_free()
+
+		consumable_shelf.consume_velvet_gloves()
+		_on_storage_consumable_used(PlayerStorageData.CONSUMABLE_VELVET_GLOVES)
+		_state.velvet_gloves_skip_draw = true
+
+		deck_manager.draw_pile.erase(target_card_data)
+		deck_manager.hand.append(target_card_data)
+		deck_manager.draw_pile_changed.emit()
+
+		hand_view.prepare_layout(deck_manager.hand.size())
+		var sig = _animator._animate_card_draw(target_card_data, deck_manager.hand.size() - 1, deck_manager.hand.size(), 0.0)
+		await sig
+
+		for cv in hand_view.card_views:
+			cv.set_interaction_enabled(true)
+		hand_view.set_dragging_enabled(true)
+		_is_animating = false
+		_update_labels()
+	)
+
+	cancel_btn.pressed.connect(func() -> void:
+		sfx_manager.play_sfx("click")
+		var slide_out := create_tween().set_parallel(true)
+		slide_out.tween_property(window, "position:y", viewport_size.y + 40, 0.3) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+		slide_out.tween_property(dim, "modulate:a", 0.0, 0.25)
+		await slide_out.finished
+		dim.queue_free()
+		window.queue_free()
+		hand_view.set_dragging_enabled(true)
+		_is_animating = false
+	)
+
+
+func _make_gloves_button(label: String) -> PanelContainer:
+	var frame := PanelContainer.new()
+	frame.custom_minimum_size = Vector2(160, 52)
+	frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var empty_style := StyleBoxEmpty.new()
+	frame.add_theme_stylebox_override("panel", empty_style)
+	frame.set_script(PIXEL_FRAME_SCRIPT)
+	frame.set("base_tint", Color(0.12, 0.07, 0.12, 1))
+	frame.set("frame_outline_tint", Color(1, 0.86, 0.42, 1))
+	frame.set("base_outline_tint", Color(0.26, 0.12, 0.2, 1))
+	frame.set("base_fill_tint", Color(0.12, 0.07, 0.12, 1))
+	frame.set("component_scale", 2.0)
+	frame.set("top_right_corner_variant", 1)
+	frame.pivot_offset = frame.custom_minimum_size * 0.5
+
+	var button := Button.new()
+	button.text = label
+	button.flat = true
+	button.add_theme_font_override("font", STAR_CRUSH_FONT)
+	button.add_theme_font_size_override("font_size", 18)
+	button.add_theme_color_override("font_color", Color(1.0, 0.93, 0.62, 1.0))
+	button.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 0.82, 1.0))
+	button.add_theme_color_override("font_pressed_color", Color(0.86, 0.68, 0.3, 1.0))
+	button.add_theme_stylebox_override("normal", empty_style)
+	button.add_theme_stylebox_override("hover", empty_style)
+	button.add_theme_stylebox_override("pressed", empty_style)
+	button.add_theme_stylebox_override("focus", empty_style)
+	frame.add_child(button)
+
+	button.mouse_entered.connect(func() -> void:
+		var tween := create_tween()
+		tween.tween_property(frame, "scale", Vector2(1.06, 1.06), 0.1) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	)
+	button.mouse_exited.connect(func() -> void:
+		var tween := create_tween()
+		tween.tween_property(frame, "scale", Vector2.ONE, 0.1) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	)
+	return frame
+
+
 func _check_double_loss_history() -> bool:
 	var player_history := battle_sidebar._player_history_cards
 	var enemy_history := battle_sidebar._enemy_history_cards
@@ -524,6 +780,13 @@ func _ensure_player_skip_if_needed() -> void:
 
 
 func _refill_hand_or_give_skip() -> void:
+	if _state.velvet_gloves_skip_draw:
+		_state.velvet_gloves_skip_draw = false
+		hand_view.prepare_layout(deck_manager.hand.size())
+		hand_view.set_cards(deck_manager.hand)
+		_animator.update_pile_visuals()
+		return
+
 	if not deck_manager.has_playable_available(
 		_state.has_disabled_player_type,
 		_state.disabled_player_type
@@ -645,6 +908,11 @@ func _stock_consumables_from_storage() -> void:
 					consumable_shelf.add_snake_oil()
 				PlayerStorageData.CONSUMABLE_POCKETWATCH:
 					consumable_shelf.add_pocketwatch()
+				PlayerStorageData.CONSUMABLE_VELVET_GLOVES:
+					consumable_shelf.add_velvet_gloves()
+
+	if OS.is_debug_build():
+		consumable_shelf.add_velvet_gloves()
 
 
 func _on_storage_consumable_used(consumable_id: String) -> void:

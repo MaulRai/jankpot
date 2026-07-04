@@ -12,6 +12,7 @@ const CONSUMABLE_CUP_A_JOE := "cup_a_joe"
 const CONSUMABLE_SNAKE_OIL := "snake_oil"
 const CONSUMABLE_MOONLIGHT := "moonlight"
 const CONSUMABLE_POCKETWATCH := "pocketwatch"
+const CONSUMABLE_VELVET_GLOVES := "velvet_gloves"
 
 static var _loaded := false
 

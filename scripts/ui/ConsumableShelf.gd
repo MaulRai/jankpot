@@ -8,6 +8,7 @@ const CUP_A_JOE_TEXTURE := preload("res://assets/item/cup-a-joe.png")
 const MOONLIGHT_TEXTURE := preload("res://assets/item/moonlight.png")
 const SNAKE_OIL_TEXTURE := preload("res://assets/item/snake-oil.png")
 const POCKETWATCH_TEXTURE := preload("res://assets/item/pocketwatch.png")
+const VELVET_GLOVES_TEXTURE := preload("res://assets/item/velvet-gloves.png")
 
 signal moonlight_requested
 signal magic_ball_requested
@@ -16,6 +17,7 @@ signal remedy_kit_requested
 signal cup_a_joe_requested
 signal snake_oil_requested
 signal pocketwatch_requested
+signal velvet_gloves_requested
 
 const MAX_ITEMS := 5
 const CHAIN_SWAY_DEGREES := 2.2
@@ -106,6 +108,14 @@ func add_pocketwatch() -> bool:
 		func() -> void: pocketwatch_requested.emit()
 	)
 
+func add_velvet_gloves() -> bool:
+	return _add_unique_consumable(
+		&"velvet_gloves",
+		VELVET_GLOVES_TEXTURE,
+		"Velvet Gloves\nCherry pick a card from draw pile.",
+		func() -> void: velvet_gloves_requested.emit()
+	)
+
 func consume_magic_ball() -> void:
 	_consume(&"magic_ball")
 
@@ -126,6 +136,9 @@ func consume_snake_oil() -> void:
 
 func consume_pocketwatch() -> void:
 	_consume(&"pocketwatch")
+
+func consume_velvet_gloves() -> void:
+	_consume(&"velvet_gloves")
 
 func show_level_complete(bonus_text := "") -> void:
 	if _complete_tween and _complete_tween.is_valid():
@@ -345,3 +358,5 @@ func restore_shelf(items: Array) -> void:
 				add_snake_oil()
 			"pocketwatch":
 				add_pocketwatch()
+			"velvet_gloves":
+				add_velvet_gloves()

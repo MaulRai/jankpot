@@ -19,6 +19,7 @@ var has_disabled_player_type := false
 var player_pocketwatch_active := false
 var player_has_aegis := false
 var enemy_has_aegis := false
+var velvet_gloves_skip_draw := false
 
 
 func reset_for_battle() -> void:
@@ -37,3 +38,4 @@ func reset_for_battle() -> void:
 	player_pocketwatch_active = false
 	player_has_aegis = false
 	enemy_has_aegis = false
+	velvet_gloves_skip_draw = false
