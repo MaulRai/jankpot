@@ -451,7 +451,14 @@ func _on_velvet_gloves_requested() -> void:
 	var select_btn_frame = _make_gloves_button("SELECT")
 	var select_btn := select_btn_frame.get_child(0) as Button
 	select_btn.disabled = true
-	select_btn_frame.set("frame_outline_tint", Color(0.4, 0.36, 0.3, 1))
+	select_btn_frame.set("base_tint", Color(0.16, 0.14, 0.12, 1.0))
+	select_btn_frame.set("frame_outline_tint", Color(0.3, 0.28, 0.24, 1.0))
+	select_btn_frame.set("base_outline_tint", Color(0.18, 0.16, 0.14, 1.0))
+	select_btn_frame.set("base_fill_tint", Color(0.08, 0.07, 0.06, 1.0))
+	if select_btn_frame.has_method("_rebuild_palette_textures"):
+		select_btn_frame.call("_rebuild_palette_textures")
+	if select_btn_frame.has_method("queue_redraw"):
+		select_btn_frame.queue_redraw()
 
 	var cancel_btn_frame = _make_gloves_button("CANCEL")
 	var cancel_btn := cancel_btn_frame.get_child(0) as Button
@@ -511,7 +518,14 @@ func _on_velvet_gloves_requested() -> void:
 			highlight.visible = true
 			
 			select_btn.disabled = false
-			select_btn_frame.set("frame_outline_tint", Color(1, 0.86, 0.42, 1))
+			select_btn_frame.set("base_tint", Color(0.26, 0.12, 0.2, 1.0))
+			select_btn_frame.set("frame_outline_tint", Color(1.0, 0.86, 0.42, 1.0))
+			select_btn_frame.set("base_outline_tint", Color(0.26, 0.12, 0.2, 1.0))
+			select_btn_frame.set("base_fill_tint", Color(0.12, 0.07, 0.12, 1.0))
+			if select_btn_frame.has_method("_rebuild_palette_textures"):
+				select_btn_frame.call("_rebuild_palette_textures")
+			if select_btn_frame.has_method("queue_redraw"):
+				select_btn_frame.queue_redraw()
 		)
 
 	# Button row at bottom
@@ -585,7 +599,7 @@ func _make_gloves_button(label: String) -> PanelContainer:
 	frame.set("frame_outline_tint", Color(1, 0.86, 0.42, 1))
 	frame.set("base_outline_tint", Color(0.26, 0.12, 0.2, 1))
 	frame.set("base_fill_tint", Color(0.12, 0.07, 0.12, 1))
-	frame.set("component_scale", 2.0)
+	frame.set("component_scale", 1.0)
 	frame.set("top_right_corner_variant", 1)
 	frame.pivot_offset = frame.custom_minimum_size * 0.5
 
@@ -597,6 +611,7 @@ func _make_gloves_button(label: String) -> PanelContainer:
 	button.add_theme_color_override("font_color", Color(1.0, 0.93, 0.62, 1.0))
 	button.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 0.82, 1.0))
 	button.add_theme_color_override("font_pressed_color", Color(0.86, 0.68, 0.3, 1.0))
+	button.add_theme_color_override("font_disabled_color", Color(0.42, 0.38, 0.35, 1.0))
 	button.add_theme_stylebox_override("normal", empty_style)
 	button.add_theme_stylebox_override("hover", empty_style)
 	button.add_theme_stylebox_override("pressed", empty_style)
