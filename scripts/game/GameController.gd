@@ -250,24 +250,21 @@ func _on_moonlight_discard_chosen(selected_views: Array[CardView]) -> void:
 			discard_count -= 1
 			continue
 		var card_data: CardDef = card_view.card_data
-		# Remove from hand_view so the animator can take ownership
-		hand_view.remove_card_view(card_view)
+		# Kill any active selection/hover tweens before changing parent coordinate space
+		card_view.cancel_transform_tween()
 		# Re-parent to scene root so exit animation renders above everything
-		var prev_global := card_view.global_position
-		get_parent().add_child(card_view)
-		card_view.global_position = prev_global
+		card_view.reparent(get_parent(), true)
 		card_view.z_index = 1200
+		hand_view.remove_card_view(card_view)
 		# Move card data to discard pile
 		deck_manager.play_card(card_data.id)
-		# Fly off to the right
+		# Clean upward move and fade out
 		var exit_tween := card_view.create_tween().set_parallel(true)
 		exit_tween.tween_property(card_view, "global_position",
-			card_view.global_position + Vector2(500, -120), 0.42) \
-			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+			card_view.global_position + Vector2(0.0, -100.0), 0.35) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		exit_tween.tween_property(card_view, "modulate:a", 0.0, 0.35) \
-			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-		exit_tween.tween_property(card_view, "rotation_degrees",
-			randf_range(15.0, 30.0), 0.42)
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 		exit_tween.chain().tween_callback(card_view.queue_free)
 
 	_animator.play_sfx("card_leave", -2.0, randf_range(0.97, 1.03))

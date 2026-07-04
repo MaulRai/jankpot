@@ -248,6 +248,8 @@ func _restore_card_visuals() -> void:
 		return
 	for i in range(_hand_view.card_views.size()):
 		var cv: CardView = _hand_view.card_views[i]
+		if _selected_views.has(cv):
+			continue
 		cv.cancel_transform_tween()
 		cv.position   = cv.base_position
 		cv.scale      = Vector2.ONE
