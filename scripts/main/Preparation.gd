@@ -201,7 +201,7 @@ func _add_card_section(parent: VBoxContainer, title_text: String, type: CardDef.
 
 func _make_card_preview(card: CardDef, selected: bool) -> Control:
 	var wrapper := Control.new()
-	wrapper.custom_minimum_size = Vector2(168, 252)
+	wrapper.custom_minimum_size = Vector2(208, 308)
 	wrapper.mouse_filter = Control.MOUSE_FILTER_STOP
 	wrapper.gui_input.connect(_on_card_preview_gui_input.bind(int(card.get_meta("storage_index", -1))))
 	wrapper.mouse_entered.connect(_on_card_mouse_entered.bind(wrapper, card))
@@ -214,7 +214,7 @@ func _make_card_preview(card: CardDef, selected: bool) -> Control:
 		selected_back.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		selected_back.stretch_mode = TextureRect.STRETCH_SCALE
 		selected_back.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		selected_back.size = Vector2(168, 252)
+		selected_back.size = Vector2(208, 308)
 		selected_back.position = Vector2.ZERO
 		selected_back.pivot_offset = selected_back.size * 0.5
 		selected_back.modulate = Color(0.35, 0.72, 1.0, 0.42)
@@ -224,11 +224,7 @@ func _make_card_preview(card: CardDef, selected: bool) -> Control:
 	var card_view: CardView = CARD_SCENE.instantiate()
 	card_view.set_card_data(card)
 	card_view.set_interaction_enabled(false)
-	var description := card_view.get_node_or_null("DescriptionLabel") as RichTextLabel
-	if description:
-		description.add_theme_font_size_override("normal_font_size", 13)
-		description.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	card_view.scale = Vector2(0.95, 0.95)
+	card_view.scale = Vector2(1.2, 1.2)
 	card_view.position = wrapper.custom_minimum_size * 0.5 - card_view.pivot_offset
 	wrapper.add_child(card_view)
 

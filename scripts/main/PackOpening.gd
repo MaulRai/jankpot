@@ -250,28 +250,25 @@ func _open_floating_pack() -> void:
 func _reveal_card(card_data: CardDef) -> void:
 	_clear_revealed_card()
 
+	var native_card_size := Vector2(230.0, 345.0)
 	var viewport_size   := _pack_layer.get_viewport().get_visible_rect().size
 	var card_center     := viewport_size * 0.5
-	var reveal_position := card_center - CARD_SIZE * 0.5
+	var reveal_position := card_center - native_card_size * 0.5
 
-	# Build FX node. Node2D has no pivot_offset, so its origin is anchored at
-	# the fixed visual centre (not the top-left) — this keeps the glow and
-	# sparkles centred on the card as it scales, instead of drifting toward
-	# the bottom-right as REVEAL_SCALE grows. display_size is the card's
-	# final on-screen footprint (post-scale), used to place the stage sparkles.
+	# Build FX node.
 	_reveal_fx = CardRevealFxScript.new()
 	_pack_stage.add_child(_reveal_fx)
 	_reveal_fx.global_position = card_center
-	_reveal_fx.setup(card_data, _pack_stage, CARD_SIZE * REVEAL_SCALE)
+	_reveal_fx.setup(card_data, _pack_stage, native_card_size)
 
-	# Build the card visual (instantiated CardView)
+	# Build the card visual (natively sized to prevent scaling blur)
 	_revealed_card          = _build_reveal_card(card_data)
 	_revealed_card.z_index  = 10
 	_pack_stage.add_child(_revealed_card)
 	_revealed_card.global_position = reveal_position
 
 	# Set pivot and initial state for scale animations
-	var pivot := CARD_SIZE * 0.5
+	var pivot := native_card_size * 0.5
 	var initial_rotation := randf_range(-7.0, 7.0)
 	_revealed_card.pivot_offset = pivot
 	_revealed_card.scale = Vector2(0.25, 0.25)
@@ -291,28 +288,120 @@ func _reveal_card(card_data: CardDef) -> void:
 func _tween_reveal_node(tween: Tween, node: CanvasItem) -> void:
 	tween.tween_property(node, "modulate:a", 1.0, 0.22) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	tween.tween_property(node, "scale", Vector2(REVEAL_SCALE, REVEAL_SCALE), 0.42) \
+	tween.tween_property(node, "scale", Vector2.ONE, 0.42) \
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(node, "rotation_degrees", 0.0, 0.36) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 
 func _build_reveal_card(card_data: CardDef) -> Control:
-	var card_view := CARD_VIEW_SCENE.instantiate() as Control
-	card_view.set("card_data", card_data)
-	card_view.set("interaction_enabled", false)
-	card_view.custom_minimum_size = CARD_SIZE
+	var native_card_size := Vector2(230.0, 345.0)
+	var card := Control.new()
+	card.custom_minimum_size = native_card_size
+	card.size = native_card_size
+	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	var name_lbl = card_view.get_node_or_null("%NameLabel")
-	if name_lbl:
-		name_lbl.add_theme_font_override("font", STAR_CRUSH_FONT)
-		name_lbl.add_theme_font_size_override("font_size", 16)
-	var desc_lbl = card_view.get_node_or_null("%DescriptionLabel")
-	if desc_lbl:
-		desc_lbl.add_theme_font_override("normal_font", STAR_CRUSH_FONT)
-		desc_lbl.add_theme_font_size_override("normal_font_size", 12)
+	# StyleBox shadow panel
+	var shadow := Panel.new()
+	shadow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	shadow.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var shadow_style = StyleBoxFlat.new()
+	shadow_style.bg_color = Color(0, 0, 0, 0.015)
+	shadow_style.corner_radius_top_left = 14
+	shadow_style.corner_radius_top_right = 14
+	shadow_style.corner_radius_bottom_right = 14
+	shadow_style.corner_radius_bottom_left = 14
+	shadow_style.shadow_color = Color(0, 0, 0, 0.28)
+	shadow_style.shadow_size = 10
+	shadow_style.shadow_offset = Vector2(0, 6)
+	shadow.add_theme_stylebox_override("panel", shadow_style)
+	card.add_child(shadow)
 
-	return card_view
+	# Card Base Background Texture (no colors or tints applied, kept original!)
+	var base_bg := TextureRect.new()
+	base_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	base_bg.texture = load("res://assets/ui/card-base.png")
+	base_bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	base_bg.stretch_mode = TextureRect.STRETCH_SCALE
+	card.add_child(base_bg)
+	base_bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+	# Type Background ColorRect with Rarity Shader (precise 1.4375 scaling ratio)
+	var type_bg := ColorRect.new()
+	type_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	type_bg.position = Vector2(14.375, 14.375)
+	type_bg.size = Vector2(201.25, 201.25)
+	
+	var BACKGROUND_SHADER = load("res://shaders/card_type_background.gdshader")
+	var shader_mat := ShaderMaterial.new()
+	shader_mat.shader = BACKGROUND_SHADER
+	
+	var rarity_val := 0
+	match card_data.rarity:
+		"Common": rarity_val = 1
+		"Uncommon": rarity_val = 2
+		"Rare": rarity_val = 3
+		_: rarity_val = 0
+		
+	shader_mat.set_shader_parameter("base_color", card_data.background_color)
+	shader_mat.set_shader_parameter("rarity_mode", rarity_val)
+	type_bg.material = shader_mat
+	card.add_child(type_bg)
+
+	# Art Texture Rect
+	var art := TextureRect.new()
+	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	art.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	if ResourceLoader.exists(card_data.art_path):
+		art.texture = load(card_data.art_path)
+	art.position = Vector2(23.0, 23.0)
+	art.size = Vector2(184.0, 184.0)
+	card.add_child(art)
+
+	# Art Separator
+	var sep := ColorRect.new()
+	sep.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	sep.position = Vector2(14.375, 215.625)
+	sep.size = Vector2(201.25, 2.875)
+	sep.color = card_data.background_color.darkened(0.3)
+	card.add_child(sep)
+
+	# Name Label
+	var name_lbl := Label.new()
+	name_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	name_lbl.position = Vector2(14.375, 224.25)
+	name_lbl.size = Vector2(201.25, 31.625)
+	name_lbl.text = card_data.card_name
+	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	name_lbl.add_theme_font_override("font", STAR_CRUSH_FONT)
+	name_lbl.add_theme_font_size_override("font_size", 23)
+	name_lbl.add_theme_color_override("font_color", Color(0.1, 0.1, 0.1, 1.0))
+	card.add_child(name_lbl)
+
+	# Description Label
+	var desc_lbl := RichTextLabel.new()
+	desc_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	desc_lbl.position = Vector2(17.25, 261.625)
+	desc_lbl.size = Vector2(195.5, 71.875)
+	desc_lbl.bbcode_enabled = true
+	desc_lbl.fit_content = true
+	desc_lbl.scroll_active = false
+	
+	var formatted_desc := card_data.brief_description
+	for kw in card_data.keywords:
+		var color = EffectKeyword.get_color(kw)
+		formatted_desc = formatted_desc.replace(kw, "[color=%s]%s[/color]" % [color, kw])
+	
+	desc_lbl.text = "[center]" + formatted_desc + "[/center]"
+	desc_lbl.add_theme_font_override("normal_font", STAR_CRUSH_FONT)
+	desc_lbl.add_theme_font_size_override("normal_font_size", 16)
+	desc_lbl.add_theme_color_override("default_color", Color(0.15, 0.15, 0.15, 1.0))
+	card.add_child(desc_lbl)
+
+	return card
 
 
 # ---------------------------------------------------------------------------
