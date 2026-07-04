@@ -1115,10 +1115,7 @@ func _stock_consumables_from_storage() -> void:
 					consumable_shelf.add_curio()
 
 	if OS.is_debug_build():
-		consumable_shelf.add_velvet_gloves()
-		consumable_shelf.add_l_ivoire()
-		consumable_shelf.add_sealed_missive()
-		consumable_shelf.add_curio()
+		pass
 
 
 func _on_storage_consumable_used(consumable_id: String) -> void:

@@ -78,7 +78,7 @@ layout_mode = 2
 theme_override_constants/separation = 10
 
 [node name="EnemyHeader" type="PanelContainer" parent="Margin/Sections"]
-custom_minimum_size = Vector2(0, 195)
+custom_minimum_size = Vector2(0, 0)
 layout_mode = 2
 theme_override_styles/panel = SubResource("Style_header")
 script = ExtResource("2_pixel_frame")
@@ -105,34 +105,52 @@ theme_override_colors/font_color = Color(0.96, 0.66, 0.55, 1)
 theme_override_font_sizes/font_size = 13
 text = "CURRENT RIVAL"
 
-[node name="EnemyName" type="Label" parent="Margin/Sections/EnemyHeader/Margin/Content"]
-unique_name_in_owner = true
+[node name="RivalRow" type="HBoxContainer" parent="Margin/Sections/EnemyHeader/Margin/Content"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.94, 0.83, 1)
-theme_override_font_sizes/font_size = 25
-text = "Goblin Trickster"
-autowrap_mode = 2
+theme_override_constants/separation = 12
 
-[node name="EnemyIcon" type="TextureRect" parent="Margin/Sections/EnemyHeader/Margin/Content"]
+[node name="EnemyIcon" type="TextureRect" parent="Margin/Sections/EnemyHeader/Margin/Content/RivalRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 58)
+custom_minimum_size = Vector2(72, 72)
 layout_mode = 2
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
+[node name="NameContainer" type="VBoxContainer" parent="Margin/Sections/EnemyHeader/Margin/Content/RivalRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = -2
+alignment = 1
+
+[node name="EnemyNameLine1" type="Label" parent="Margin/Sections/EnemyHeader/Margin/Content/RivalRow/NameContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.94, 0.83, 1)
+theme_override_font_sizes/font_size = 30
+text = "Goblin"
+clip_text = true
+
+[node name="EnemyNameLine2" type="Label" parent="Margin/Sections/EnemyHeader/Margin/Content/RivalRow/NameContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.66, 0.55, 1)
+theme_override_font_sizes/font_size = 22
+text = "Trickster"
+clip_text = true
+
 [node name="Behavior" type="Label" parent="Margin/Sections/EnemyHeader/Margin/Content"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.86, 0.79, 0.75, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 17
 text = "Repeats winning moves"
 
 [node name="Reward" type="Label" parent="Margin/Sections/EnemyHeader/Margin/Content"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.98, 0.8, 0.32, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 16
 text = "REWARD  -  $"
 
 [node name="HealthPanel" type="PanelContainer" parent="Margin/Sections"]

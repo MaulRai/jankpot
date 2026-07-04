@@ -9,7 +9,8 @@ const BUTTON_PRESS_SCALE := Vector2(0.96, 0.96)
 
 @onready var enemy_hearts: HBoxContainer = %EnemyHearts
 @onready var player_hearts: HBoxContainer = %PlayerHearts
-@onready var enemy_name: Label = %EnemyName
+@onready var enemy_name_line1: Label = %EnemyNameLine1
+@onready var enemy_name_line2: Label = %EnemyNameLine2
 @onready var enemy_icon: TextureRect = %EnemyIcon
 @onready var behavior: Label = %Behavior
 @onready var reward: Label = %Reward
@@ -127,11 +128,23 @@ func animate_money_gain(amount: int) -> void:
 	)
 
 func set_enemy_info(enemy_data: Dictionary) -> void:
-	if not enemy_name: enemy_name = %EnemyName
+	if not enemy_name_line1: enemy_name_line1 = %EnemyNameLine1
+	if not enemy_name_line2: enemy_name_line2 = %EnemyNameLine2
 	if not behavior: behavior = %Behavior
 	if not reward: reward = %Reward
 	if not enemy_icon: enemy_icon = %EnemyIcon
-	enemy_name.text = str(enemy_data.get("name", "Unknown Rival"))
+	
+	var name_str := str(enemy_data.get("name", "Unknown Rival"))
+	var parts := name_str.split(" ", true, 1)
+	if parts.size() > 1:
+		enemy_name_line1.text = parts[0]
+		enemy_name_line2.text = parts[1]
+		enemy_name_line2.visible = true
+	else:
+		enemy_name_line1.text = name_str
+		enemy_name_line2.text = ""
+		enemy_name_line2.visible = false
+
 	behavior.text = str(enemy_data.get("description", "No known pattern."))
 	var default_reward := "$$$" if bool(enemy_data.get("is_boss", false)) else "$"
 	reward.text = "REWARD  -  %s" % str(enemy_data.get("reward", default_reward))
