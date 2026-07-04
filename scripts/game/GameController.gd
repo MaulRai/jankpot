@@ -268,12 +268,30 @@ func _on_moonlight_discard_chosen(selected_views: Array[CardView]) -> void:
 		exit_tween.chain().tween_callback(card_view.queue_free)
 
 	_animator.play_sfx("card_leave", -2.0, randf_range(0.97, 1.03))
-	# Brief pause to let the exit animations start before drawing
-	await get_tree().create_timer(0.20).timeout
+	# Brief pause to let the exit animations start before sliding
+	await get_tree().create_timer(0.15).timeout
 
-	# Draw the same number of replacement cards with animated refill
+	# Slide remaining cards to their final slot positions (leftmost) of the target hand layout
 	var current_count := hand_view.card_views.size()
 	var target_count := current_count + discard_count
+	if current_count > 0:
+		var slide_tween := get_tree().create_tween().set_parallel(true)
+		for index in range(current_count):
+			var cv := hand_view.card_views[index]
+			# Position remaining cards starting at index 0 in the final layout
+			cv.base_position = hand_view._get_card_base_position(index, target_count)
+			var center_index: float = (target_count - 1) / 2.0
+			var offset := index - center_index
+			cv.base_rotation_degrees = offset * 3.0
+			cv.base_z_index = index
+			
+			slide_tween.tween_property(cv, "position", cv.base_position, 0.22) \
+				.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			slide_tween.tween_property(cv, "rotation_degrees", cv.base_rotation_degrees, 0.22) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		await slide_tween.finished
+
+	# Draw the same number of replacement cards with animated refill
 	deck_manager.draw_until_full(target_count)
 	hand_view.prepare_layout(deck_manager.hand.size())
 	for index in range(current_count, deck_manager.hand.size()):
