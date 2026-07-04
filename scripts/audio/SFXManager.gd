@@ -29,6 +29,8 @@ const STREAMS := {
 	"reward_hover": preload("res://audio/sfx/reward-item-hover.mp3"),
 	"reward_selected": preload("res://audio/sfx/reward-item-selected.mp3"),
 	"shield": preload("res://audio/sfx/shield.mp3"),
+	"pocketwatch": preload("res://audio/sfx/pocketwatch.mp3"),
+	"aegis": preload("res://audio/sfx/aegis.mp3"),
 }
 
 @export_range(-40.0, 6.0, 0.5) var volume_db := -4.0

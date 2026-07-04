@@ -22,6 +22,15 @@ var old_enemy_poison := 0
 var new_player_poison := 0
 var new_enemy_poison := 0
 
+var old_player_pocketwatch := false
+var new_player_pocketwatch := false
+var old_player_aegis := false
+var new_player_aegis := false
+var old_enemy_aegis := false
+var new_enemy_aegis := false
+var aegis_blocked_player := false
+var aegis_blocked_enemy := false
+
 var disable_enemy_type := -1
 var disable_player_type := -1
 var player_conceal := false

@@ -37,6 +37,21 @@ func build_plan(
 	else:
 		plan.new_enemy_poison = 0
 
+	plan.old_player_pocketwatch = state.player_pocketwatch_active
+	plan.old_player_aegis = state.player_has_aegis
+	plan.old_enemy_aegis = state.enemy_has_aegis
+
+	# Aegis is temporary and expires once the turn resolves
+	state.player_has_aegis = false
+	state.enemy_has_aegis = false
+
+	# If the pocketwatch is active and the side loses clash, raise Aegis for next turn
+	# Only raises if they didn't have Aegis or Shield active this turn (blocked damage doesn't count as harm)
+	if result == BattleResolver.Result.LOSE and plan.old_player_pocketwatch:
+		if not plan.old_player_aegis and state.player_shield <= 0:
+			state.player_has_aegis = true
+	# Keep pocketwatch active for the rest of the battle (gets cleared in state.reset_for_battle())
+
 	var player_luck := _luck_bonus(player_hand, player_card)
 	var enemy_luck := _luck_bonus(enemy_hand, enemy_card)
 	if not player_card.is_skip:

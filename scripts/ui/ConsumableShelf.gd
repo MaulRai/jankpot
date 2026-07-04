@@ -7,6 +7,7 @@ const REMEDY_KIT_TEXTURE := preload("res://assets/item/remedy-kit.png")
 const CUP_A_JOE_TEXTURE := preload("res://assets/item/cup-a-joe.png")
 const MOONLIGHT_TEXTURE := preload("res://assets/item/moonlight.png")
 const SNAKE_OIL_TEXTURE := preload("res://assets/item/snake-oil.png")
+const POCKETWATCH_TEXTURE := preload("res://assets/item/pocketwatch.png")
 
 signal moonlight_requested
 signal magic_ball_requested
@@ -14,6 +15,7 @@ signal shield_requested
 signal remedy_kit_requested
 signal cup_a_joe_requested
 signal snake_oil_requested
+signal pocketwatch_requested
 
 const MAX_ITEMS := 5
 const CHAIN_SWAY_DEGREES := 2.2
@@ -96,6 +98,14 @@ func add_snake_oil() -> bool:
 		func() -> void: snake_oil_requested.emit()
 	)
 
+func add_pocketwatch() -> bool:
+	return _add_unique_consumable(
+		&"pocketwatch",
+		POCKETWATCH_TEXTURE,
+		"Pocketwatch\nRaise Aegis for next turn every time you lose a clash. Lasts one trial.",
+		func() -> void: pocketwatch_requested.emit()
+	)
+
 func consume_magic_ball() -> void:
 	_consume(&"magic_ball")
 
@@ -113,6 +123,9 @@ func consume_moonlight() -> void:
 
 func consume_snake_oil() -> void:
 	_consume(&"snake_oil")
+
+func consume_pocketwatch() -> void:
+	_consume(&"pocketwatch")
 
 func show_level_complete(bonus_text := "") -> void:
 	if _complete_tween and _complete_tween.is_valid():
@@ -330,3 +343,5 @@ func restore_shelf(items: Array) -> void:
 				add_moonlight()
 			"snake_oil":
 				add_snake_oil()
+			"pocketwatch":
+				add_pocketwatch()

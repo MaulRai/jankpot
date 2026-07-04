@@ -16,6 +16,9 @@ var enemy_shield := 0
 var player_cup_a_joe_pending := false
 var disabled_player_type: CardDef.CardType = CardDef.CardType.ROCK
 var has_disabled_player_type := false
+var player_pocketwatch_active := false
+var player_has_aegis := false
+var enemy_has_aegis := false
 
 
 func reset_for_battle() -> void:
@@ -31,3 +34,6 @@ func reset_for_battle() -> void:
 	enemy_shield = 0
 	player_cup_a_joe_pending = false
 	has_disabled_player_type = false
+	player_pocketwatch_active = false
+	player_has_aegis = false
+	enemy_has_aegis = false

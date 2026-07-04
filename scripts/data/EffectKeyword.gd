@@ -12,6 +12,8 @@ const KEYWORD_COLORS := {
 	"Fragile": "#FF9DB5",
 	"Poison": "#A855F7",
 	"Moonlight": "#D4A8FF",
+	"Aegis": "#FFDE6A",
+	"Pocketwatch": "#FFDE6A",
 }
 
 const KEYWORD_DESCRIPTIONS := {
@@ -25,6 +27,8 @@ const KEYWORD_DESCRIPTIONS := {
 	"Fragile": "Temporarily disappears for the rest of the current battle after it breaks.",
 	"Poison": "Deals 1 damage at the end of every turn for a set number of turns.",
 	"Moonlight": "Discard up to 2 cards, then draw that many. Costs $2.",
+	"Aegis": "Protects against any incoming harm for 1 turn, then disappears.",
+	"Pocketwatch": "Raise Aegis for next turn every time you lose a clash. Lasts one trial.",
 }
 
 static func get_color(keyword: String) -> String:

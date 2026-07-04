@@ -19,6 +19,7 @@ func _initialize() -> void:
 	_test_basic_effect_plans()
 	_test_reaction_order()
 	_test_poison_ticks()
+	_test_pocketwatch_and_aegis()
 	await _test_scene_smoke()
 	if failures.is_empty():
 		print("TESTS PASSED")
@@ -179,3 +180,35 @@ func _test_poison_ticks() -> void:
 	)
 	_expect(plan.old_enemy_poison == 0, "Turn3: old_enemy_poison should be 0")
 	_expect(plan.new_enemy_poison == 0, "Turn3: new_enemy_poison should be 0")
+
+
+func _test_pocketwatch_and_aegis() -> void:
+	var resolver: RefCounted = BattleEffectResolverData.new()
+	var state: Resource = BattleStateData.new()
+	var rock := WeaponCatalogData.create_basic(CardDef.CardType.ROCK)
+	var scissors := WeaponCatalogData.create_basic(CardDef.CardType.SCISSORS)
+	var player_hand: Array[CardDef] = [rock]
+	var enemy_hand: Array[CardDef] = [scissors]
+
+	# 1. Pocketwatch starts inactive
+	_expect(not state.player_pocketwatch_active, "Pocketwatch should start inactive")
+	_expect(not state.player_has_aegis, "Aegis should start inactive")
+
+	# 2. Activate Pocketwatch
+	state.player_pocketwatch_active = true
+
+	# 3. Lose clash -> should trigger Aegis for the next turn
+	var plan: RefCounted = resolver.build_plan(
+		BattleResolver.Result.LOSE, scissors, rock, player_hand, enemy_hand, state
+	)
+	_expect(plan.old_player_pocketwatch, "Pocketwatch should have been recorded as active")
+	_expect(not plan.old_player_aegis, "Player did not have Aegis at start of Turn 1")
+	_expect(state.player_has_aegis, "Losing clash with Pocketwatch active should raise Aegis for next turn")
+
+	# 4. Turn 2: Player has Aegis at start of turn. Win clash -> Aegis should expire, and not be re-raised
+	plan = resolver.build_plan(
+		BattleResolver.Result.WIN, rock, scissors, player_hand, enemy_hand, state
+	)
+	_expect(plan.old_player_aegis, "Player should have had Aegis at start of Turn 2")
+	_expect(not state.player_has_aegis, "Aegis should expire/reset at start of turn and not be raised if they win")
+

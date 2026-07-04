@@ -21,17 +21,29 @@ const EffectKeywordData = preload("res://scripts/data/EffectKeyword.gd")
 @onready var player_cup_status: TextureRect = %PlayerCupStatus
 
 const POISON_KEYWORD := "Poison"
+const AEGIS_KEYWORD := "Aegis"
+const POCKETWATCH_KEYWORD := "Pocketwatch"
 
 var player_poison_status: TextureRect
 var enemy_poison_status: TextureRect
 var player_poison_pulse: TextureRect
 var enemy_poison_pulse: TextureRect
 
+var player_aegis_status: TextureRect
+var enemy_aegis_status: TextureRect
+var player_aegis_pulse: TextureRect
+var enemy_aegis_pulse: TextureRect
+
+var player_pocketwatch_status: TextureRect
+var player_pocketwatch_pulse: TextureRect
+
 var tooltip_manager: TooltipManager
 var _heart_texture: Texture2D = preload("res://assets/ui/heart.png")
 var _bleed_texture: Texture2D = preload("res://assets/icon/effect/bleed.png")
 var _shield_texture: Texture2D = preload("res://assets/item/shield.png")
 var _poison_texture: Texture2D = preload("res://assets/icon/effect/poison.png")
+var _pocketwatch_texture: Texture2D = preload("res://assets/item/pocketwatch.png")
+var _aegis_texture: Texture2D = preload("res://assets/icon/effect/aegis.png")
 var _player_health_displayed := 0
 var _enemy_health_displayed := 0
 var _heart_fill_tweens: Dictionary = {}
@@ -41,11 +53,15 @@ func _ready() -> void:
 	_build_heart_row(player_hearts)
 	_build_heart_row(enemy_hearts)
 	_initialize_poison_nodes()
+	_initialize_aegis_nodes()
+	_initialize_pocketwatch_nodes()
 	set_health(0, 0)
 	set_bleed_status(false, false)
 	set_shield_status(0, 0)
 	set_cup_a_joe_status(false)
 	set_poison_status(0, 0)
+	set_aegis_status(false, false)
+	set_pocketwatch_status(false)
 	_connect_status_hover(player_bleed_status, BLEED_KEYWORD)
 	_connect_status_hover(enemy_bleed_status, BLEED_KEYWORD)
 	_connect_status_hover(player_shield_status, SHIELD_KEYWORD)
@@ -53,6 +69,9 @@ func _ready() -> void:
 	_connect_status_hover(player_cup_status, CUP_A_JOE_KEYWORD)
 	_connect_status_hover(player_poison_status, POISON_KEYWORD)
 	_connect_status_hover(enemy_poison_status, POISON_KEYWORD)
+	_connect_status_hover(player_aegis_status, AEGIS_KEYWORD)
+	_connect_status_hover(enemy_aegis_status, AEGIS_KEYWORD)
+	_connect_status_hover(player_pocketwatch_status, POCKETWATCH_KEYWORD)
 
 
 func set_tooltip_manager(manager: TooltipManager) -> void:
@@ -356,43 +375,11 @@ func _play_shield_status_absorb(status_icon: TextureRect) -> void:
 
 
 func _play_bleed_status_expire(status_icon: TextureRect) -> void:
-	if not status_icon.visible:
-		return
-	status_icon.pivot_offset = status_icon.size * 0.5
-	status_icon.modulate = Color.WHITE
-
-	var tween := create_tween()
-	tween.tween_property(status_icon, "modulate", Color(1.0, 0.62, 0.62, 1.0), 0.08) \
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	tween.tween_property(status_icon, "modulate", Color(1.0, 1.0, 1.0, 0.72), 0.08) \
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	tween.tween_property(status_icon, "modulate", Color(1.0, 0.45, 0.45, 1.0), 0.07) \
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	tween.tween_property(status_icon, "modulate", Color(1.0, 0.92, 0.86, 0.0), 0.18) \
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-	await tween.finished
-	status_icon.visible = false
-	status_icon.modulate = Color.WHITE
+	_play_status_expire_downward(status_icon)
 
 
 func _play_cup_status_expire(status_icon: TextureRect) -> void:
-	if not status_icon.visible:
-		return
-	status_icon.pivot_offset = status_icon.size * 0.5
-	status_icon.modulate = Color.WHITE
-
-	var tween := create_tween()
-	tween.tween_property(status_icon, "modulate", Color(1.0, 0.82, 0.48, 1.0), 0.08) \
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	tween.tween_property(status_icon, "modulate", Color(1.0, 1.0, 1.0, 0.72), 0.08) \
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	tween.tween_property(status_icon, "modulate", Color(1.0, 0.7, 0.32, 1.0), 0.07) \
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	tween.tween_property(status_icon, "modulate", Color(1.0, 0.92, 0.72, 0.0), 0.18) \
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-	await tween.finished
-	status_icon.visible = false
-	status_icon.modulate = Color.WHITE
+	_play_status_expire_downward(status_icon)
 
 
 func _play_card_shield_overlay(target_card: Control) -> void:
@@ -605,33 +592,49 @@ func set_poison_status(player_poison_turns: int, enemy_poison_turns: int) -> voi
 		_play_poison_pulse_once(enemy_poison_pulse)
 
 
-func play_poison_damage_feedback(is_player: bool, target_card: Control) -> void:
-	_play_poison_status_expire(player_poison_status if is_player else enemy_poison_status)
+func play_poison_damage_feedback(is_player: bool, target_card: Control, is_expiring: bool) -> void:
+	if is_expiring:
+		_play_status_expire_downward(player_poison_status if is_player else enemy_poison_status)
 	_play_card_poison_overlay(target_card)
+
+
+func play_aegis_block_feedback(is_player: bool, target_card: Control) -> void:
+	_play_card_aegis_overlay(target_card)
+	await _play_status_expire_downward(player_aegis_status if is_player else enemy_aegis_status)
+
+
+func _play_card_aegis_overlay(target_card: Control) -> void:
+	if not target_card or not is_instance_valid(target_card):
+		return
+	_play_card_status_overlay(
+		target_card,
+		_aegis_texture,
+		Color(1.0, 0.88, 0.42, 0.78),
+		Vector2(1.55, 1.55)
+	)
 
 
 func _play_poison_pulse_once(pulse_icon: TextureRect) -> void:
 	_play_status_pulse_once(pulse_icon, Color(EffectKeywordData.get_color("Poison")))
 
 
-func _play_poison_status_expire(status_icon: TextureRect) -> void:
-	if not status_icon.visible:
+func _play_status_expire_downward(status_icon: TextureRect) -> void:
+	if not status_icon or not status_icon.visible:
 		return
 	status_icon.pivot_offset = status_icon.size * 0.5
-	status_icon.modulate = Color.WHITE
-
-	var tween := create_tween()
-	tween.tween_property(status_icon, "modulate", Color(0.66, 0.33, 0.97, 1.0), 0.08) \
+	var original_pos := status_icon.position
+	
+	var tween := create_tween().set_parallel(true)
+	# Slide downward by 30 pixels
+	tween.tween_property(status_icon, "position:y", original_pos.y + 30.0, 0.28) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(status_icon, "modulate:a", 0.0, 0.28) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	tween.tween_property(status_icon, "modulate", Color(1.0, 1.0, 1.0, 0.72), 0.08) \
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	tween.tween_property(status_icon, "modulate", Color(0.58, 0.27, 0.95, 1.0), 0.07) \
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	tween.tween_property(status_icon, "modulate", Color(0.94, 0.90, 1.0, 0.0), 0.18) \
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	await tween.finished
+	
 	status_icon.visible = false
-	status_icon.modulate = Color.WHITE
+	status_icon.modulate.a = 1.0
+	status_icon.position = original_pos
 
 
 func _play_card_poison_overlay(target_card: Control) -> void:
@@ -645,3 +648,168 @@ func _play_card_poison_overlay(target_card: Control) -> void:
 		poison_tint,
 		Vector2(1.95, 1.95)
 	)
+
+
+func _initialize_aegis_nodes() -> void:
+	# Player Aegis Status
+	player_aegis_status = TextureRect.new()
+	player_aegis_status.name = "PlayerAegisStatus"
+	player_aegis_status.texture = _aegis_texture
+	player_aegis_status.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	player_aegis_status.stretch_mode = TextureRect.STRETCH_SCALE
+	player_aegis_status.mouse_filter = Control.MOUSE_FILTER_PASS
+	player_aegis_status.size = Vector2(40, 40)
+	player_aegis_status.layout_mode = 1
+	player_aegis_status.anchor_left = 0.0
+	player_aegis_status.anchor_right = 0.0
+	player_aegis_status.anchor_top = 0.5
+	player_aegis_status.anchor_bottom = 0.5
+	player_aegis_status.offset_left = -214.0
+	player_aegis_status.offset_top = 122.0
+	player_aegis_status.offset_right = -174.0
+	player_aegis_status.offset_bottom = 162.0
+	player_aegis_status.visible = false
+	add_child(player_aegis_status)
+
+	# Player Aegis Pulse
+	player_aegis_pulse = TextureRect.new()
+	player_aegis_pulse.name = "PlayerAegisPulse"
+	player_aegis_pulse.texture = _aegis_texture
+	player_aegis_pulse.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	player_aegis_pulse.stretch_mode = TextureRect.STRETCH_SCALE
+	player_aegis_pulse.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	player_aegis_pulse.size = Vector2(40, 40)
+	player_aegis_pulse.layout_mode = 1
+	player_aegis_pulse.anchor_left = 0.0
+	player_aegis_pulse.anchor_right = 0.0
+	player_aegis_pulse.anchor_top = 0.5
+	player_aegis_pulse.anchor_bottom = 0.5
+	player_aegis_pulse.offset_left = -214.0
+	player_aegis_pulse.offset_top = 122.0
+	player_aegis_pulse.offset_right = -174.0
+	player_aegis_pulse.offset_bottom = 162.0
+	player_aegis_pulse.modulate = Color(EffectKeywordData.get_color("Aegis"))
+	player_aegis_pulse.modulate.a = 0.0
+	player_aegis_pulse.visible = false
+	add_child(player_aegis_pulse)
+
+	# Enemy Aegis Status
+	enemy_aegis_status = TextureRect.new()
+	enemy_aegis_status.name = "EnemyAegisStatus"
+	enemy_aegis_status.texture = _aegis_texture
+	enemy_aegis_status.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	enemy_aegis_status.stretch_mode = TextureRect.STRETCH_SCALE
+	enemy_aegis_status.mouse_filter = Control.MOUSE_FILTER_PASS
+	enemy_aegis_status.size = Vector2(40, 40)
+	enemy_aegis_status.layout_mode = 1
+	enemy_aegis_status.anchor_left = 1.0
+	enemy_aegis_status.anchor_right = 1.0
+	enemy_aegis_status.anchor_top = 0.5
+	enemy_aegis_status.anchor_bottom = 0.5
+	enemy_aegis_status.offset_left = 174.0
+	enemy_aegis_status.offset_top = 122.0
+	enemy_aegis_status.offset_right = 214.0
+	enemy_aegis_status.offset_bottom = 162.0
+	enemy_aegis_status.visible = false
+	add_child(enemy_aegis_status)
+
+	# Enemy Aegis Pulse
+	enemy_aegis_pulse = TextureRect.new()
+	enemy_aegis_pulse.name = "EnemyAegisPulse"
+	enemy_aegis_pulse.texture = _aegis_texture
+	enemy_aegis_pulse.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	enemy_aegis_pulse.stretch_mode = TextureRect.STRETCH_SCALE
+	enemy_aegis_pulse.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	enemy_aegis_pulse.size = Vector2(40, 40)
+	enemy_aegis_pulse.layout_mode = 1
+	enemy_aegis_pulse.anchor_left = 1.0
+	enemy_aegis_pulse.anchor_right = 1.0
+	enemy_aegis_pulse.anchor_top = 0.5
+	enemy_aegis_pulse.anchor_bottom = 0.5
+	enemy_aegis_pulse.offset_left = 174.0
+	enemy_aegis_pulse.offset_top = 122.0
+	enemy_aegis_pulse.offset_right = 214.0
+	enemy_aegis_pulse.offset_bottom = 162.0
+	enemy_aegis_pulse.modulate = Color(EffectKeywordData.get_color("Aegis"))
+	enemy_aegis_pulse.modulate.a = 0.0
+	enemy_aegis_pulse.visible = false
+	add_child(enemy_aegis_pulse)
+
+
+func _initialize_pocketwatch_nodes() -> void:
+	# Player Pocketwatch Status
+	player_pocketwatch_status = TextureRect.new()
+	player_pocketwatch_status.name = "PlayerPocketwatchStatus"
+	player_pocketwatch_status.texture = _pocketwatch_texture
+	player_pocketwatch_status.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	player_pocketwatch_status.stretch_mode = TextureRect.STRETCH_SCALE
+	player_pocketwatch_status.mouse_filter = Control.MOUSE_FILTER_PASS
+	player_pocketwatch_status.size = Vector2(40, 40)
+	player_pocketwatch_status.layout_mode = 1
+	player_pocketwatch_status.anchor_left = 0.0
+	player_pocketwatch_status.anchor_right = 0.0
+	player_pocketwatch_status.anchor_top = 0.5
+	player_pocketwatch_status.anchor_bottom = 0.5
+	player_pocketwatch_status.offset_left = -264.0
+	player_pocketwatch_status.offset_top = 122.0
+	player_pocketwatch_status.offset_right = -224.0
+	player_pocketwatch_status.offset_bottom = 162.0
+	player_pocketwatch_status.visible = false
+	add_child(player_pocketwatch_status)
+
+	# Player Pocketwatch Pulse
+	player_pocketwatch_pulse = TextureRect.new()
+	player_pocketwatch_pulse.name = "PlayerPocketwatchPulse"
+	player_pocketwatch_pulse.texture = _pocketwatch_texture
+	player_pocketwatch_pulse.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	player_pocketwatch_pulse.stretch_mode = TextureRect.STRETCH_SCALE
+	player_pocketwatch_pulse.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	player_pocketwatch_pulse.size = Vector2(40, 40)
+	player_pocketwatch_pulse.layout_mode = 1
+	player_pocketwatch_pulse.anchor_left = 0.0
+	player_pocketwatch_pulse.anchor_right = 0.0
+	player_pocketwatch_pulse.anchor_top = 0.5
+	player_pocketwatch_pulse.anchor_bottom = 0.5
+	player_pocketwatch_pulse.offset_left = -264.0
+	player_pocketwatch_pulse.offset_top = 122.0
+	player_pocketwatch_pulse.offset_right = -224.0
+	player_pocketwatch_pulse.offset_bottom = 162.0
+	player_pocketwatch_pulse.modulate = Color(EffectKeywordData.get_color("Pocketwatch"))
+	player_pocketwatch_pulse.modulate.a = 0.0
+	player_pocketwatch_pulse.visible = false
+	add_child(player_pocketwatch_pulse)
+
+
+func set_aegis_status(p_aegis: bool, e_aegis: bool) -> void:
+	if not player_aegis_status: player_aegis_status = get_node_or_null("PlayerAegisStatus")
+	if not enemy_aegis_status: enemy_aegis_status = get_node_or_null("EnemyAegisStatus")
+	if not player_aegis_pulse: player_aegis_pulse = get_node_or_null("PlayerAegisPulse")
+	if not enemy_aegis_pulse: enemy_aegis_pulse = get_node_or_null("EnemyAegisPulse")
+
+	if not player_aegis_status:
+		return
+
+	var player_was_visible := player_aegis_status.visible
+	var enemy_was_visible := enemy_aegis_status.visible
+
+	player_aegis_status.visible = p_aegis
+	enemy_aegis_status.visible = e_aegis
+
+	if p_aegis and not player_was_visible:
+		_play_status_pulse_once(player_aegis_pulse, Color(EffectKeywordData.get_color("Aegis")))
+	if e_aegis and not enemy_was_visible:
+		_play_status_pulse_once(enemy_aegis_pulse, Color(EffectKeywordData.get_color("Aegis")))
+
+
+func set_pocketwatch_status(active: bool) -> void:
+	if not player_pocketwatch_status: player_pocketwatch_status = get_node_or_null("PlayerPocketwatchStatus")
+	if not player_pocketwatch_pulse: player_pocketwatch_pulse = get_node_or_null("PlayerPocketwatchPulse")
+
+	if not player_pocketwatch_status:
+		return
+
+	var was_visible := player_pocketwatch_status.visible
+	player_pocketwatch_status.visible = active
+
+	if active and not was_visible:
+		_play_status_pulse_once(player_pocketwatch_pulse, Color(EffectKeywordData.get_color("Pocketwatch")))

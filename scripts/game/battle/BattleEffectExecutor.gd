@@ -12,6 +12,9 @@ var player_slot: Control
 var enemy_slot: Control
 var update_labels: Callable
 
+var _player_aegis_active := false
+var _enemy_aegis_active := false
+
 
 func configure(dependencies: Dictionary) -> void:
 	state = dependencies.state
@@ -32,6 +35,9 @@ func execute(
 	player_view: CardView,
 	enemy_view: CardView
 ) -> void:
+	_player_aegis_active = plan.old_player_aegis
+	_enemy_aegis_active = plan.old_enemy_aegis
+
 	animator.play_sfx(plan.result_sfx)
 	for sfx in plan.immediate_sfx:
 		animator.play_sfx(sfx)
@@ -94,7 +100,7 @@ func execute(
 			"Poisoned!",
 			Color(EffectKeywordData.get_color("Poison"))
 		)
-		health_display.play_poison_damage_feedback(false, enemy_view)
+		health_display.play_poison_damage_feedback(false, enemy_view, plan.new_enemy_poison == 0)
 		await _deal_damage(false, 1)
 	if plan.old_player_poison > 0:
 		animator.play_sfx("poison")
@@ -103,11 +109,14 @@ func execute(
 			"Poisoned!",
 			Color(EffectKeywordData.get_color("Poison"))
 		)
-		health_display.play_poison_damage_feedback(true, player_view)
+		health_display.play_poison_damage_feedback(true, player_view, plan.new_player_poison == 0)
 		await _deal_damage(true, 1)
 	_apply_recovery(plan)
 	_apply_card_mutations(plan, player_card, enemy_card)
 	update_labels.call()
+	if plan.old_player_pocketwatch and state.player_has_aegis:
+		await get_tree().create_timer(0.08).timeout
+		animator.play_sfx("aegis")
 	if result == BattleResolver.Result.DRAW \
 			and plan.damage_to_enemy == 0 and plan.damage_to_player == 0:
 		await get_tree().create_timer(0.3).timeout
@@ -190,8 +199,39 @@ func _apply_blood_price(card_view: CardView, damage_player: bool) -> void:
 	await _deal_damage(damage_player, 1)
 
 
+func _check_aegis_block(to_player: bool) -> bool:
+	if to_player:
+		if _player_aegis_active:
+			_player_aegis_active = false
+			state.player_has_aegis = false
+			animator.play_sfx("shield")
+			var card_view := player_slot.get_card() as CardView
+			if is_instance_valid(card_view):
+				animator.show_exclamation(card_view, "Aegis!", Color("#FFDE6A"))
+			await health_display.play_aegis_block_feedback(true, player_slot)
+			update_labels.call()
+			await animator.shake(player_slot)
+			return true
+	else:
+		if _enemy_aegis_active:
+			_enemy_aegis_active = false
+			state.enemy_has_aegis = false
+			animator.play_sfx("shield")
+			var card_view := enemy_slot.get_card() as CardView
+			if is_instance_valid(card_view):
+				animator.show_exclamation(card_view, "Aegis!", Color("#FFDE6A"))
+			await health_display.play_aegis_block_feedback(false, enemy_slot)
+			update_labels.call()
+			await animator.shake(enemy_slot)
+			return true
+	return false
+
+
 func _deal_damage(to_player: bool, amount: int) -> void:
 	for index in range(amount):
+		var aegis_blocked := await _check_aegis_block(to_player)
+		if aegis_blocked:
+			continue
 		var blocked := await _block_damage_if_shielded(to_player)
 		if blocked:
 			continue
@@ -210,6 +250,11 @@ func _deal_damage(to_player: bool, amount: int) -> void:
 
 
 func _deal_damage_burst(to_player: bool, amount: int) -> void:
+	if amount <= 0:
+		return
+	var aegis_blocked := await _check_aegis_block(to_player)
+	if aegis_blocked:
+		amount -= 1
 	if amount <= 0:
 		return
 	var blocked := await _block_damage_if_shielded(to_player)

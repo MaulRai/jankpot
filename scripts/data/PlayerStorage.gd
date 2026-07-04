@@ -11,6 +11,7 @@ const CONSUMABLE_REMEDY_KIT := "remedy_kit"
 const CONSUMABLE_CUP_A_JOE := "cup_a_joe"
 const CONSUMABLE_SNAKE_OIL := "snake_oil"
 const CONSUMABLE_MOONLIGHT := "moonlight"
+const CONSUMABLE_POCKETWATCH := "pocketwatch"
 
 static var _loaded := false
 

@@ -103,13 +103,12 @@ func _ready() -> void:
 	consumable_shelf.cup_a_joe_requested.connect(_on_cup_a_joe_requested)
 	consumable_shelf.moonlight_requested.connect(_on_moonlight_requested)
 	consumable_shelf.snake_oil_requested.connect(_on_snake_oil_requested)
+	consumable_shelf.pocketwatch_requested.connect(_on_pocketwatch_requested)
 	_stock_consumables_from_storage()
-	# Debug: always stock Moonlight on the shelf for testing
+	# DEBUG: always stock Pocketwatch for testing
 	if OS.is_debug_build():
-		PlayerStorageData.add_consumable("moonlight")
-		consumable_shelf.add_moonlight()
-		_run_money_earned = 10  # Seed run money for testing
-		battle_sidebar.set_money(_run_money_earned)
+		PlayerStorageData.add_consumable(PlayerStorageData.CONSUMABLE_POCKETWATCH, 3)
+		consumable_shelf.add_pocketwatch()
 	await _initialize_first_battle()
 
 
@@ -339,6 +338,31 @@ func _on_snake_oil_requested() -> void:
 	_is_animating = false
 
 
+func _on_pocketwatch_requested() -> void:
+	if round_status != "ongoing" or _is_animating:
+		return
+	if _state.player_pocketwatch_active:
+		return
+	_is_animating = true
+	_state.player_pocketwatch_active = true
+	consumable_shelf.consume_pocketwatch()
+	_on_storage_consumable_used(PlayerStorageData.CONSUMABLE_POCKETWATCH)
+	
+	sfx_manager.play_sfx("pocketwatch")
+	
+	var player_card_view := player_slot.get_child(0) as CardView if player_slot.get_child_count() > 0 else null
+	if is_instance_valid(player_card_view):
+		_animator.show_exclamation(
+			player_card_view,
+			"Pocketwatch!",
+			Color(EffectKeywordData.get_color("Pocketwatch"))
+		)
+	_update_labels()
+	var shake_target: Control = player_card_view if is_instance_valid(player_card_view) else player_slot
+	await _animator.shake(shake_target)
+	_is_animating = false
+
+
 func _check_double_loss_history() -> bool:
 	var player_history := battle_sidebar._player_history_cards
 	var enemy_history := battle_sidebar._enemy_history_cards
@@ -435,6 +459,8 @@ func _update_labels() -> void:
 	)
 	battle_board.set_cup_a_joe_status(_state.player_cup_a_joe_pending)
 	battle_board.set_poison_status(_state.player_poison_turns, _state.enemy_poison_turns)
+	battle_board.set_aegis_status(_state.player_has_aegis, _state.enemy_has_aegis)
+	battle_board.set_pocketwatch_status(_state.player_pocketwatch_active)
 	var total_trials := RunConfigData.encounter_ids.size()
 	if total_trials == 0:
 		total_trials = 3
@@ -620,6 +646,8 @@ func _stock_consumables_from_storage() -> void:
 					consumable_shelf.add_moonlight()
 				PlayerStorageData.CONSUMABLE_SNAKE_OIL:
 					consumable_shelf.add_snake_oil()
+				PlayerStorageData.CONSUMABLE_POCKETWATCH:
+					consumable_shelf.add_pocketwatch()
 
 
 func _on_storage_consumable_used(consumable_id: String) -> void:

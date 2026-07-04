@@ -12,6 +12,7 @@ const SHIELD_TEXTURE := preload("res://assets/item/shield.png")
 const REMEDY_KIT_TEXTURE := preload("res://assets/item/remedy-kit.png")
 const CUP_A_JOE_TEXTURE := preload("res://assets/item/cup-a-joe.png")
 const SNAKE_OIL_TEXTURE := preload("res://assets/item/snake-oil.png")
+const POCKETWATCH_TEXTURE := preload("res://assets/item/pocketwatch.png")
 const TOOLTIP_BOX_SCENE := preload("res://scenes/ui/TooltipBox.tscn")
 
 const STAGES := [
@@ -290,6 +291,7 @@ func _add_owned_consumables(parent: GridContainer) -> void:
 		{ "id": PlayerStorageData.CONSUMABLE_REMEDY_KIT, "name": "Remedy Kit", "texture": REMEDY_KIT_TEXTURE },
 		{ "id": PlayerStorageData.CONSUMABLE_CUP_A_JOE, "name": "Cup-a-Joe", "texture": CUP_A_JOE_TEXTURE },
 		{ "id": PlayerStorageData.CONSUMABLE_SNAKE_OIL, "name": "Snake Oil", "texture": SNAKE_OIL_TEXTURE },
+		{ "id": PlayerStorageData.CONSUMABLE_POCKETWATCH, "name": "Pocketwatch", "texture": POCKETWATCH_TEXTURE },
 	]
 	var has_any := false
 	for definition in definitions:
