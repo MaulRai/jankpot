@@ -66,23 +66,23 @@ func _ready() -> void:
 	# ── Choose button (right side, framed in PixelFramePanel) ────────────────
 	_choose_frame = PixelFramePanel.new()
 	_choose_frame.name = "ChooseFrame"
-	_choose_frame.custom_minimum_size = Vector2(130, 48)
+	_choose_frame.custom_minimum_size = Vector2(110, 44)
 	# Use same frame colours as main menu buttons
 	_choose_frame.base_tint = Color(0.12, 0.07, 0.12, 1.0)
 	_choose_frame.frame_outline_tint = Color(1.0, 0.86, 0.42, 1.0)
 	_choose_frame.base_outline_tint = Color(0.26, 0.12, 0.2, 1.0)
 	_choose_frame.base_fill_tint = Color(0.12, 0.07, 0.12, 1.0)
-	_choose_frame.component_scale = 2.0
+	_choose_frame.component_scale = 1.0
 	_choose_frame.top_right_corner_variant = PixelFramePanel.TopRightCornerVariant.SHINING
 	# anchor to right-centre of screen
 	_choose_frame.anchor_left   = 1.0
 	_choose_frame.anchor_right  = 1.0
 	_choose_frame.anchor_top    = 0.5
 	_choose_frame.anchor_bottom = 0.5
-	_choose_frame.offset_left   = -140.0
+	_choose_frame.offset_left   = -110.0
 	_choose_frame.offset_right  = -24.0
-	_choose_frame.offset_top    = -24.0
-	_choose_frame.offset_bottom = 24.0
+	_choose_frame.offset_top    = -22.0
+	_choose_frame.offset_bottom = 22.0
 	_choose_frame.mouse_filter = Control.MOUSE_FILTER_PASS
 	add_child(_choose_frame)
 
@@ -167,30 +167,25 @@ func _on_card_clicked(card_view: CardView) -> void:
 	_update_choose_button()
 
 
+
 func _on_card_hovered(card_view: CardView) -> void:
 	_hovered_view = card_view
 	_refresh_card_visuals()
 
 
-func _on_card_unhovered(_card_view: CardView) -> void:
+func _on_card_unhovered(card_view: CardView) -> void:
 	_hovered_view = null
 	_refresh_card_visuals()
 
 
 func _refresh_card_visuals() -> void:
 	for cv: CardView in _hand_view.card_views:
-		if cv == _hovered_view and cv != null:
-			# Hovered card gets full-bright preview
-			cv.cancel_transform_tween()
-			cv.transform_tween = cv.create_tween().set_parallel(true)
-			cv.transform_tween.tween_property(cv, "modulate", HOVER_MODULATE, TWEEN_DURATION)
-			cv.z_index = 100
-			continue
 		cv.cancel_transform_tween()
 		var picked := _selected_views.has(cv)
+		var is_hovered := cv == _hovered_view and _hovered_view != null
 		var target_pos := cv.base_position + (Vector2(0, LIFT_OFFSET_Y) if picked else Vector2.ZERO)
 		var target_scale := SELECTED_SCALE if picked else Vector2.ONE
-		var target_mod   := Color.WHITE if picked else UNSEL_MODULATE
+		var target_mod   := Color.WHITE if picked or is_hovered else UNSEL_MODULATE
 
 		cv.transform_tween = cv.create_tween().set_parallel(true)
 		cv.transform_tween.tween_property(cv, "position", target_pos, TWEEN_DURATION) \
