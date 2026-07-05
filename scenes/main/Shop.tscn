@@ -165,9 +165,9 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
-theme_override_constants/h_separation = 22
+theme_override_constants/h_separation = 16
 theme_override_constants/v_separation = 18
-columns = 5
+columns = 8
 
 [node name="ShopkeeperArea" type="HBoxContainer" parent="Content"]
 custom_minimum_size = Vector2(0, 166)

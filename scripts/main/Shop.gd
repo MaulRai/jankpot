@@ -16,6 +16,7 @@ const SHOPKEEPER_BLIP_STREAM := preload("res://audio/blip/shopkeeper-neutral.mp3
 const STAR_CRUSH_FONT    := preload("res://fonts/Star Crush.otf")
 const BASIC_PACK_TEXTURE := preload("res://assets/item/pack/basic-weapon-card-pack.png")
 const PREMIUM_PACK_TEXTURE := preload("res://assets/item/pack/premium-weapon-card-pack.png")
+const ITEM_PACK_TEXTURE := preload("res://assets/item/pack/item-pack.png")
 const SHOP_DISPLAY_TEXTURE := preload("res://assets/ui/shop-display.png")
 const MAGIC_BALL_TEXTURE := preload("res://assets/item/magic-ball.png")
 const SHIELD_TEXTURE     := preload("res://assets/item/shield.png")
@@ -116,6 +117,7 @@ func _ready() -> void:
 	_pack_opening = PackOpeningScript.new()
 	_pack_opening.initialise(self)
 	_pack_opening.card_awarded.connect(PlayerStorageData.add_weapon)
+	_pack_opening.item_awarded.connect(PlayerStorageData.add_consumable)
 
 	_setup_frame_button(_back_button, _back_frame)
 	_back_button.pressed.connect(
@@ -154,6 +156,15 @@ func _populate_shop() -> void:
 		"kind":        "pack",
 		"pack_id":     "premium",
 	}))
+	_offers_grid.add_child(_create_offer({
+		"name":        "Item Pack",
+		"price":       0,
+		"description": "A free pack containing a random consumable item.",
+		"texture":     ITEM_PACK_TEXTURE,
+		"kind":        "pack",
+		"pack_id":     "item",
+		"item_id":     "item_pack",
+	}))
 	for item in _rotating_consumables():
 		_offers_grid.add_child(_create_offer(item))
 
@@ -187,12 +198,12 @@ func _all_consumables() -> Array:
 
 func _create_offer(data: Dictionary) -> Control:
 	var card := VBoxContainer.new()
-	card.custom_minimum_size = Vector2(190.0, 300.0)
-	card.add_theme_constant_override("separation", 8)
+	card.custom_minimum_size = Vector2(145.0, 240.0)
+	card.add_theme_constant_override("separation", 6)
 
 	# --- Display area (shop frame + item icon) ---
 	var display_area := Control.new()
-	display_area.custom_minimum_size = Vector2(190.0, 144.0)
+	display_area.custom_minimum_size = Vector2(145.0, 100.0)
 	display_area.mouse_filter        = Control.MOUSE_FILTER_IGNORE
 	card.add_child(display_area)
 
@@ -203,13 +214,13 @@ func _create_offer(data: Dictionary) -> Control:
 	display.stretch_mode   = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	display.mouse_filter   = Control.MOUSE_FILTER_IGNORE
 	display.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	display.offset_left  = -78.0
-	display.offset_top   = -58.0
-	display.offset_right =  78.0
+	display.offset_left  = -60.0
+	display.offset_top   = -46.0
+	display.offset_right =  60.0
 	display.offset_bottom =  0.0
 	display_area.add_child(display)
 
-	var icon_size := Vector2(72.0, 72.0) if data.get("kind", "") == "consumable" else Vector2(86.0, 112.0)
+	var icon_size := Vector2(52.0, 52.0) if data.get("kind", "") == "consumable" else Vector2(62.0, 80.0)
 	var icon := TextureRect.new()
 	icon.texture        = data["texture"] as Texture2D
 	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -218,16 +229,16 @@ func _create_offer(data: Dictionary) -> Control:
 	icon.mouse_filter   = Control.MOUSE_FILTER_IGNORE
 	icon.set_anchors_preset(Control.PRESET_CENTER)
 	icon.offset_left   = -icon_size.x * 0.5
-	icon.offset_top    = -icon_size.y * 0.5 - 14.0
+	icon.offset_top    = -icon_size.y * 0.5 - 10.0
 	icon.offset_right  =  icon_size.x * 0.5
-	icon.offset_bottom =  icon_size.y * 0.5 - 14.0
+	icon.offset_bottom =  icon_size.y * 0.5 - 10.0
 	display_area.add_child(icon)
 
 	var name_label := Label.new()
 	name_label.text                = str(data["name"])
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_label.autowrap_mode       = TextServer.AUTOWRAP_WORD_SMART
-	name_label.add_theme_font_size_override("font_size", 18)
+	name_label.add_theme_font_size_override("font_size", 14)
 	name_label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.64, 1.0))
 	card.add_child(name_label)
 
@@ -236,10 +247,14 @@ func _create_offer(data: Dictionary) -> Control:
 	description.text                = str(data["description"])
 	description.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	description.autowrap_mode       = TextServer.AUTOWRAP_WORD_SMART
-	description.custom_minimum_size = Vector2(0.0, 42.0)
-	description.add_theme_font_size_override("font_size", 12)
+	description.custom_minimum_size = Vector2(0.0, 36.0)
+	description.add_theme_font_size_override("font_size", 10)
 	description.add_theme_color_override("font_color", Color(0.78, 0.86, 0.82, 1.0))
 	card.add_child(description)
+
+	var item_id := str(data.get("item_id", ""))
+	var is_limited := (item_id != "")
+	var is_purchased := is_limited and PlayerStorageData.is_item_purchased(item_id, _current_reset_block())
 
 	# --- Buy button ---
 	var buy_frame  := _create_button_frame()
@@ -249,41 +264,53 @@ func _create_offer(data: Dictionary) -> Control:
 	var price := int(data["price"])
 	buy_button.text = _format_buy_button_text(price, false)
 	buy_button.flat = true
-	buy_button.add_theme_font_size_override("font_size", 21)
+	buy_button.add_theme_font_size_override("font_size", 15)
 	buy_button.add_theme_color_override("font_color",         Color(1.0,  0.93, 0.62, 1.0))
 	buy_button.add_theme_color_override("font_hover_color",   Color(1.0,  1.0,  0.82, 1.0))
 	buy_button.add_theme_color_override("font_pressed_color", Color(0.86, 0.68, 0.3,  1.0))
 	for style in ["normal", "hover", "pressed", "focus"]:
 		buy_button.add_theme_stylebox_override(style, StyleBoxEmpty.new())
+	
+	if is_purchased:
+		buy_button.disabled = true
+		buy_button.text = "SOLD"
+		buy_button.add_theme_color_override("font_disabled_color", Color(0.58, 0.58, 0.58, 1.0))
+		buy_frame.base_outline_tint = Color(0.18, 0.18, 0.18, 1.0)
+		buy_frame.frame_outline_tint = Color(0.38, 0.38, 0.38, 1.0)
+		buy_frame.base_tint = Color(0.08, 0.08, 0.08, 1.0)
+		buy_frame.base_fill_tint = Color(0.08, 0.08, 0.08, 1.0)
+		
 	buy_frame.add_child(buy_button)
 	_setup_frame_button(buy_button, buy_frame)
-	buy_button.mouse_entered.connect(
-		func() -> void: _set_buy_button_text(buy_button, price, true)
-	)
-	buy_button.mouse_exited.connect(
-		func() -> void: _set_buy_button_text(buy_button, price, false)
-	)
-	buy_button.button_down.connect(
-		func() -> void: _set_buy_button_text(buy_button, price, true)
-	)
-	buy_button.button_up.connect(
-		func() -> void: _set_buy_button_text(buy_button, price, buy_button.is_hovered())
-	)
-	buy_button.pressed.connect(_on_buy_pressed.bind(buy_button, buy_frame, data))
+	
+	if not is_purchased:
+		buy_button.mouse_entered.connect(
+			func() -> void: _set_buy_button_text(buy_button, price, true)
+		)
+		buy_button.mouse_exited.connect(
+			func() -> void: _set_buy_button_text(buy_button, price, false)
+		)
+		buy_button.button_down.connect(
+			func() -> void: _set_buy_button_text(buy_button, price, true)
+		)
+		buy_button.button_up.connect(
+			func() -> void: _set_buy_button_text(buy_button, price, buy_button.is_hovered())
+		)
+		buy_button.pressed.connect(_on_buy_pressed.bind(buy_button, buy_frame, data))
 
 	return card
 
 
 func _create_button_frame() -> PixelFramePanel:
 	var frame := PixelFramePanel.new()
-	frame.custom_minimum_size     = Vector2(132.0, 50.0)
+	frame.custom_minimum_size     = Vector2(110.0, 38.0)
 	frame.size_flags_horizontal   = Control.SIZE_SHRINK_CENTER
 	frame.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	frame.base_tint               = Color(0.12, 0.07, 0.12, 1.0)
 	frame.frame_outline_tint      = Color(1.0,  0.86, 0.42, 1.0)
 	frame.base_outline_tint       = Color(0.26, 0.12, 0.2,  1.0)
 	frame.base_fill_tint          = Color(0.12, 0.07, 0.12, 1.0)
-	frame.component_scale         = 1.5
+	frame.component_scale         = 1.0
 	frame.top_right_corner_variant = PixelFramePanel.TopRightCornerVariant.SHINING
 	return frame
 
@@ -291,10 +318,26 @@ func _create_button_frame() -> PixelFramePanel:
 func _setup_frame_button(button: Button, frame: PixelFramePanel) -> void:
 	frame.pivot_offset = frame.size * 0.5
 	frame.resized.connect(func() -> void: frame.pivot_offset = frame.size * 0.5)
-	button.mouse_entered.connect(_tween_frame.bind(frame, HOVER_SCALE, 0.12))
-	button.mouse_exited.connect(_on_button_mouse_exited.bind(button, frame))
-	button.button_down.connect(_tween_frame.bind(frame, PRESS_SCALE, 0.06))
-	button.button_up.connect(_on_button_up.bind(button, frame))
+	button.mouse_entered.connect(
+		func() -> void:
+			if not button.disabled:
+				_tween_frame(frame, HOVER_SCALE, 0.12)
+	)
+	button.mouse_exited.connect(
+		func() -> void:
+			if not button.disabled:
+				_on_button_mouse_exited(button, frame)
+	)
+	button.button_down.connect(
+		func() -> void:
+			if not button.disabled:
+				_tween_frame(frame, PRESS_SCALE, 0.06)
+	)
+	button.button_up.connect(
+		func() -> void:
+			if not button.disabled:
+				_on_button_up(button, frame)
+	)
 
 
 func _on_button_mouse_exited(button: Button, frame: PixelFramePanel) -> void:
@@ -327,10 +370,17 @@ func _on_buy_pressed(button: Button, frame: PixelFramePanel, data: Dictionary) -
 	if is_instance_valid(frame):
 		_tween_frame(frame, HOVER_SCALE if button.is_hovered() else Vector2.ONE, 0.12)
 	_show_shopkeeper_thanks()
+	
+	var item_id := str(data.get("item_id", ""))
+	if item_id != "":
+		PlayerStorageData.mark_item_purchased(item_id, _current_reset_block())
+	
 	if data.get("kind", "") == "pack":
 		await _pack_opening.start(str(data.get("pack_id", "basic")), data["texture"] as Texture2D)
 	elif data.get("kind", "") == "consumable":
 		PlayerStorageData.add_consumable(str(data.get("item_id", "")))
+	
+	_populate_shop()
 
 
 func _tween_frame(frame: PixelFramePanel, target_scale: Vector2, duration: float) -> void:
@@ -345,6 +395,8 @@ func _tween_frame(frame: PixelFramePanel, target_scale: Vector2, duration: float
 
 
 func _format_buy_button_text(price: int, show_action: bool) -> String:
+	if price == 0:
+		return "BUY FREE" if show_action else "FREE"
 	return "BUY $%d" % price if show_action else "$%d" % price
 
 
@@ -352,9 +404,16 @@ func _set_buy_button_text(button: Button, price: int, show_action: bool) -> void
 	if is_instance_valid(button):
 		button.text = _format_buy_button_text(price, show_action)
 
+var _last_block := -1
+
 func _update_reset_label() -> void:
+	var block := _current_reset_block()
+	if _last_block != block:
+		_last_block = block
+		_populate_shop()
+		
 	var seconds_left := maxi(0,
-		(_current_reset_block() + 1) * RESET_SECONDS - Time.get_unix_time_from_system()
+		(block + 1) * RESET_SECONDS - Time.get_unix_time_from_system()
 	)
 	_reset_label.text = "CONSUMABLES RESET IN %02d:%02d:%02d" % [
 		seconds_left / 3600,

@@ -2,9 +2,11 @@ class_name PackOpening
 extends Control
 
 signal card_awarded(card: CardDef)
+signal item_awarded(item_id: String)
 
 const WeaponCatalogData  = preload("res://scripts/data/WeaponCatalog.gd")
 const CardRevealFxScript := preload("res://scripts/main/CardRevealFx.gd")
+const PixelFramePanel    := preload("res://scripts/ui/PixelFramePanel.gd")
 
 const STAR_CRUSH_FONT := preload("res://fonts/Star Crush.otf")
 const ITEM_REVEALING_SFX := preload("res://audio/sfx/item-revealing.mp3")
@@ -204,7 +206,6 @@ func _open_floating_pack() -> void:
 	_pack_prompt.modulate.a = 0.0
 
 	var pack_id := str(_pack_texture.get_meta("pack_id", "basic"))
-	var reward  := _roll_pack_card(pack_id)
 
 	_play_sfx(HIT_SFX, -4.0)
 	_play_sfx(ITEM_REVEALING_SFX)
@@ -233,14 +234,161 @@ func _open_floating_pack() -> void:
 	await burst.finished
 	_pack_texture.visible = false
 
-	await _reveal_card(reward)
-	card_awarded.emit(reward)
+	if pack_id == "item":
+		var reward_item := _roll_pack_item()
+		await _reveal_item(reward_item)
+		item_awarded.emit(reward_item)
+	else:
+		var reward  := _roll_pack_card(pack_id)
+		await _reveal_card(reward)
+		card_awarded.emit(reward)
 
 	_pack_prompt.text = "TAP ANYWHERE TO CONTINUE"
 	var prompt_tween := _pack_stage.create_tween()
 	prompt_tween.tween_property(_pack_prompt, "modulate:a", 1.0, 0.18)
 	_pack_state = PACK_STATE_REVEALED
 	_pack_busy  = false
+
+
+func _reveal_item(item_id: String) -> void:
+	_clear_revealed_card()
+
+	var native_size := Vector2(280.0, 420.0)
+	var viewport_size := _pack_layer.get_viewport().get_visible_rect().size
+	var center := viewport_size * 0.5
+	var reveal_position := center - native_size * 0.5
+
+	# Build a container for the item
+	var container := Control.new()
+	container.custom_minimum_size = native_size
+	container.size = native_size
+	container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_revealed_card = container
+	_revealed_card.z_index = 10
+	_pack_stage.add_child(_revealed_card)
+	_revealed_card.global_position = reveal_position
+
+	# Item Icon (Enlarged and centered in upper 260px area)
+	var icon := TextureRect.new()
+	icon.texture = load(_get_item_texture_path(item_id))
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon.size = Vector2(110.0, 110.0)
+	icon.position = Vector2((native_size.x - icon.size.x) / 2.0, (260.0 - icon.size.y) / 2.0)
+	container.add_child(icon)
+
+	# PixelFramePanel for item details below (anchored to bottom edge, no gaps!)
+	var info_frame := PixelFramePanel.new()
+	info_frame.layout_mode = 1
+	container.add_child(info_frame)
+	info_frame.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	info_frame.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	info_frame.offset_left = 0.0
+	info_frame.offset_right = 0.0
+	info_frame.offset_top = -160.0
+	info_frame.offset_bottom = 0.0
+	info_frame.custom_minimum_size = Vector2(280.0, 160.0)
+	info_frame.base_tint = Color(0.08, 0.09, 0.12, 0.95)
+	info_frame.frame_outline_tint = Color(0.52, 0.6, 0.74, 1.0)
+	info_frame.base_outline_tint = Color(0.12, 0.15, 0.205, 1.0)
+	info_frame.base_fill_tint = Color(0.055, 0.068, 0.1, 0.95)
+	info_frame.component_scale = 1.0
+
+	# Margin inside the panel
+	var margin := MarginContainer.new()
+	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	margin.add_theme_constant_override("margin_left", 12)
+	margin.add_theme_constant_override("margin_top", 12)
+	margin.add_theme_constant_override("margin_right", 12)
+	margin.add_theme_constant_override("margin_bottom", 12)
+	info_frame.add_child(margin)
+
+	# VBox inside margin
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 6)
+	margin.add_child(vbox)
+
+	var info := _get_item_info(item_id)
+
+	# Item Name Label
+	var name_lbl := Label.new()
+	name_lbl.text = info["name"]
+	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_lbl.add_theme_font_override("font", STAR_CRUSH_FONT)
+	name_lbl.add_theme_font_size_override("font_size", 18)
+	name_lbl.add_theme_color_override("font_color", Color(1.0, 0.92, 0.64, 1.0))
+	vbox.add_child(name_lbl)
+
+	# Item Description Label (overridden with Star Crush font)
+	var desc_lbl := Label.new()
+	desc_lbl.text = info["description"]
+	desc_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	desc_lbl.add_theme_font_override("font", STAR_CRUSH_FONT)
+	desc_lbl.add_theme_font_size_override("font_size", 14)
+	desc_lbl.add_theme_color_override("font_color", Color(0.78, 0.86, 0.82, 1.0))
+	vbox.add_child(desc_lbl)
+
+	# Set pivot and initial state for scale animations (matching card reveal)
+	var pivot := native_size * 0.5
+	var initial_rotation := randf_range(-7.0, 7.0)
+	_revealed_card.pivot_offset = pivot
+	_revealed_card.scale = Vector2(0.25, 0.25)
+	_revealed_card.rotation_degrees = initial_rotation
+	_revealed_card.modulate.a = 0.0
+
+	var tween := _pack_stage.create_tween()
+	tween.set_parallel(true)
+	_tween_reveal_node(tween, _revealed_card)
+	await tween.finished
+
+
+func _roll_pack_item() -> String:
+	var items = [
+		"magic_ball",
+		"shield",
+		"remedy_kit",
+		"cup_a_joe",
+		"snake_oil",
+		"pocketwatch",
+		"velvet_gloves",
+		"l_ivoire",
+		"sealed_missive",
+		"curio"
+	]
+	return items.pick_random()
+
+
+func _get_item_texture_path(item_id: String) -> String:
+	var file_name = item_id.replace("_", "-")
+	return "res://assets/item/%s.png" % file_name
+
+
+func _get_item_info(item_id: String) -> Dictionary:
+	match item_id:
+		"magic_ball":
+			return { "name": "Magic Ball", "description": "Predicts the enemy's next weapon." }
+		"shield":
+			return { "name": "Shield", "description": "Blocks 1 DMG." }
+		"remedy_kit":
+			return { "name": "Remedy Kit", "description": "Removes all ailments (Bleed, Poison)." }
+		"cup_a_joe":
+			return { "name": "Cup-a-Joe", "description": "Win attacks twice this turn." }
+		"snake_oil":
+			return { "name": "Snake Oil", "description": "Inflict 1 poison. If lose twice in a row, inflict 2 instead." }
+		"pocketwatch":
+			return { "name": "Pocketwatch", "description": "Raise Aegis for next turn when you lose clash." }
+		"velvet_gloves":
+			return { "name": "Velvet Gloves", "description": "Cherry pick a card from draw pile." }
+		"l_ivoire":
+			return { "name": "L'Ivoire", "description": "Add random Rare Scissors to deck that lasts entire run." }
+		"sealed_missive":
+			return { "name": "Sealed Missive", "description": "Add random Rare Paper to deck that lasts entire run." }
+		"curio":
+			return { "name": "Curio", "description": "Add random Rare Rock to deck that lasts entire run." }
+	return { "name": "Unknown", "description": "" }
 
 
 # ---------------------------------------------------------------------------

@@ -26,6 +26,8 @@ static var _run_weapon_indices: Array[int] = []
 static var _consumable_counts: Dictionary = {}
 static var _selected_consumable_ids: Array[String] = []
 static var _saved_run: Dictionary = {}
+static var _purchased_item_ids: Array[String] = []
+static var _shop_reset_block: int = -1
 
 
 static func ensure_loaded() -> void:
@@ -47,6 +49,12 @@ static func ensure_loaded() -> void:
 		return
 
 	_money = maxi(0, int(data.get("money", 0)))
+	
+	_purchased_item_ids.clear()
+	var raw_purchased: Array = data.get("purchased_item_ids", [])
+	for item in raw_purchased:
+		_purchased_item_ids.append(str(item))
+	_shop_reset_block = int(data.get("shop_reset_block", -1))
 
 	_weapon_ids.clear()
 	var raw_weapons: Array = data.get("weapons", [])
@@ -95,6 +103,8 @@ static func save() -> void:
 		"consumables": _consumable_counts,
 		"selected_consumables": _selected_consumable_ids,
 		"saved_run": _saved_run,
+		"purchased_item_ids": _purchased_item_ids,
+		"shop_reset_block": _shop_reset_block,
 	}))
 
 
@@ -298,6 +308,8 @@ static func _set_default_inventory() -> void:
 			_weapon_ids.append(id)
 	_selected_weapon_indices = _default_selected_weapon_indices()
 	_consumable_counts.clear()
+	_purchased_item_ids.clear()
+	_shop_reset_block = -1
 
 
 static func _normalize_selected_weapon_indices() -> void:
@@ -356,3 +368,20 @@ static func _storage_id_for_card(card: CardDef) -> String:
 			clean_id = parts[0]
 			break
 	return clean_id
+
+
+static func is_item_purchased(item_id: String, current_block: int) -> bool:
+	ensure_loaded()
+	if _shop_reset_block != current_block:
+		return false
+	return item_id in _purchased_item_ids
+
+
+static func mark_item_purchased(item_id: String, current_block: int) -> void:
+	ensure_loaded()
+	if _shop_reset_block != current_block:
+		_shop_reset_block = current_block
+		_purchased_item_ids.clear()
+	if item_id not in _purchased_item_ids:
+		_purchased_item_ids.append(item_id)
+	save()
