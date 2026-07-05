@@ -28,18 +28,13 @@ func _ready() -> void:
 
 func _reposition_dynamically() -> void:
 	var sidebar = get_node_or_null("../LeftPanel")
-	var board = get_node_or_null("../CenterBoard")
-	if not sidebar or not board:
+	if not sidebar:
 		return
 	
 	var sidebar_right = sidebar.position.x + sidebar.size.x
-	var board_left = board.position.x
 	
-	var gap_width = board_left - sidebar_right
-	var my_width = size.x
-	
-	var target_x = sidebar_right + (gap_width - my_width) / 2.0
-	target_x = maxf(target_x, sidebar_right + 10.0)
+	# Match the 24px gap of the draw pile from the right side of the screen
+	var target_x = sidebar_right + 24.0
 	
 	# Match the Y position of the DrawPileVisual sibling
 	var draw_pile = get_node_or_null("../DrawPileVisual")
