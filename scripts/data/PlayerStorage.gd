@@ -291,7 +291,7 @@ static func clear_saved_run() -> void:
 
 
 static func _set_default_inventory() -> void:
-	_money = 0
+	_money = 10
 	_weapon_ids.clear()
 	for id in ["basic_rock", "basic_paper", "basic_scissors"]:
 		for _i in range(3):
