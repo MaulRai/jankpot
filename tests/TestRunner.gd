@@ -23,6 +23,7 @@ func _initialize() -> void:
 	_test_velvet_gloves()
 	_test_rare_card_add_consumables()
 	_test_garnet()
+	_test_origami()
 	await _test_scene_smoke()
 	if failures.is_empty():
 		print("TESTS PASSED")
@@ -272,6 +273,36 @@ func _test_garnet() -> void:
 	_expect(plan.new_player_aegis, "Garnet should raise Aegis in the current plan at 1 health")
 	_expect(not state.player_has_aegis, "Garnet Aegis should not persist to state.player_has_aegis")
 	_expect("aegis" in plan.immediate_sfx, "Garnet should trigger aegis immediate sfx")
+
+
+func _test_origami() -> void:
+	var controller = load("res://scripts/game/GameController.gd").new()
+	var origami := WeaponCatalogData.create_weapon("origami")
+	var rock := WeaponCatalogData.create_basic(CardDef.CardType.ROCK)
+	var scissors := WeaponCatalogData.create_basic(CardDef.CardType.SCISSORS)
+	var paper := WeaponCatalogData.create_basic(CardDef.CardType.PAPER)
+
+	# 1. Opponent has Scissors (origami is Paper, player chooses Rock) -> should morph to Rock (Win)
+	var player_card := origami.copy()
+	player_card.set_meta("origami_choice", CardDef.CardType.ROCK)
+	var enemy_card := scissors.copy()
+	controller._resolve_origami_morphs(player_card, enemy_card, null, null)
+	_expect(player_card.card_type == CardDef.CardType.ROCK, "Origami should morph to Rock against Scissors")
+
+	# 2. Opponent has Rock (origami is Paper, player chooses Scissors) -> should NOT morph to Scissors (Lose)
+	player_card = origami.copy()
+	player_card.set_meta("origami_choice", CardDef.CardType.SCISSORS)
+	enemy_card = rock.copy()
+	controller._resolve_origami_morphs(player_card, enemy_card, null, null)
+	_expect(player_card.card_type == CardDef.CardType.PAPER, "Origami should remain Paper against Rock")
+
+	# 3. Opponent has Paper (origami is Paper, player chooses Scissors) -> should morph to Scissors (Win)
+	player_card = origami.copy()
+	player_card.set_meta("origami_choice", CardDef.CardType.SCISSORS)
+	enemy_card = paper.copy()
+	controller._resolve_origami_morphs(player_card, enemy_card, null, null)
+	_expect(player_card.card_type == CardDef.CardType.SCISSORS, "Origami should morph to Scissors against Paper")
+
 
 
 

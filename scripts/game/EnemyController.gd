@@ -109,6 +109,9 @@ func choose_card(enemy_hp: int = 6, _player_hp: int = 6) -> CardDef:
 			matching.append(card)
 	var chosen: CardDef = matching.pick_random() \
 		if not matching.is_empty() else enemy_hand.pick_random()
+	if chosen and chosen.id.begins_with("origami"):
+		var enemy_choice: CardDef.CardType = CardDef.CardType.ROCK if randf() < 0.5 else CardDef.CardType.SCISSORS
+		chosen.set_meta("origami_choice", enemy_choice)
 	enemy_card_chosen.emit(chosen)
 	return chosen
 

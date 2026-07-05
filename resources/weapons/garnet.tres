@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="CardDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardDef.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "garnet"
+card_type = 0
+card_name = "Garnet"
+brief_description = "On 1 health, raise Aegis."
+art_path = "res://assets/weapon/rock-5.png"
+background_color = Color(0.494, 0.569, 0.639, 1)
+keywords = Array[String](["Aegis"])
+effects = Array[String](["garnet_aegis"])
+rarity = "Common"
+price = 0
+is_basic = false

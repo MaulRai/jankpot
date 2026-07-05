@@ -1,4 +1,4 @@
-[gd_scene load_steps=36 format=3 uid="uid://m1w3e3a3e3a3i"]
+[gd_scene load_steps=38 format=3 uid="uid://m1w3e3a3e3a3i"]
 
 [ext_resource type="Script" path="res://scripts/game/GameController.gd" id="1_abc12"]
 [ext_resource type="Script" path="res://scripts/main/GameplayIntro.gd" id="1_intro"]
@@ -33,7 +33,9 @@
 [ext_resource type="Resource" path="res://resources/weapons/bronze_razor.tres" id="31_bronze_razor"]
 [ext_resource type="Resource" path="res://resources/weapons/sculptural_sheet.tres" id="32_sculptural_sheet"]
 [ext_resource type="Resource" path="res://resources/weapons/rusty_shears.tres" id="33_rusty_shears"]
-[ext_resource type="PackedScene" path="res://scenes/ui/PauseOverlay.tscn" id="34_pause_overlay"]
+[ext_resource type="Resource" path="res://resources/weapons/garnet.tres" id="34_garnet"]
+[ext_resource type="Resource" path="res://resources/weapons/origami.tres" id="35_origami"]
+[ext_resource type="PackedScene" path="res://scenes/ui/PauseOverlay.tscn" id="36_pause_overlay"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_gameplay_background"]
 shader = ExtResource("25_gameplay_background_shader")
@@ -157,7 +159,7 @@ tooltip_scene = ExtResource("9_yz123")
 
 [node name="MagicBallModal" parent="." instance=ExtResource("17_magic_modal")]
 
-[node name="PauseOverlay" parent="." instance=ExtResource("34_pause_overlay")]
+[node name="PauseOverlay" parent="." instance=ExtResource("36_pause_overlay")]
 
 [node name="TransitionCover" type="ColorRect" parent="."]
 z_index = 1000

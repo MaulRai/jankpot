@@ -78,6 +78,10 @@ const SHOPKEEPER_LINES := [
 	"A Sealed Missive. Once opened, a rare piece of paper joins your deck. Deadlier than bills.",
 	"This Curio is heavy with old magic. It leaves a rare stone for your entire run.",
 	"This Curio binds a rare stone to your deck. A very expensive pet rock.",
+	"Garnet holds strong under pressure, raising an Aegis to guard you when your health hits rock bottom.",
+	"That Garnet stone looks shiny, but it only starts acting like a shield when you're about to meet your maker.",
+	"Origami is a highly adaptable parchment. It folds into whichever shape beats the opponent's choice, if one exists.",
+	"Origami: looks like plain paper, but folds under pressure. In a good way.",
 ]
 
 const SHOPKEEPER_THANKS_LINES := [

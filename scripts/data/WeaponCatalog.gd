@@ -17,6 +17,7 @@ const EFFECT_RUBY_REVIVE := "ruby_revive_fragile"
 const EFFECT_GUILLOTINE := "guillotine_blades"
 const EFFECT_HATTER_SLIP := "hatter_slip_luck"
 const EFFECT_GARNET := "garnet_aegis"
+const EFFECT_ORIGAMI := "origami_morph"
 
 static func create_skip(instance_id: String = "skip") -> CardDef:
 	var card := CardDef.new()
@@ -105,6 +106,10 @@ static func create_weapon(weapon_id: String) -> CardDef:
 			_setup(card, CardDef.CardType.ROCK, "Garnet", RARITY_COMMON,
 				"On 1 health, raise Aegis.", "res://assets/weapon/rock-5.png",
 				["Aegis"], [EFFECT_GARNET])
+		"origami":
+			_setup(card, CardDef.CardType.PAPER, "Origami", RARITY_RARE,
+				"Morph into another weapon type if it's favorable.", "res://assets/weapon/paper-5.png",
+				[], [EFFECT_ORIGAMI])
 		_:
 			return create_basic(CardDef.CardType.ROCK)
 	return card
@@ -183,7 +188,7 @@ static func _all_upgrade_ids() -> Array[String]:
 	return [
 		"quartz", "bronze_razor", "sculptural_sheet",
 		"spiked_boulder", "rusty_shears", "mist_veil",
-		"ruby", "guillotine_blades", "hatter_slip", "garnet",
+		"ruby", "guillotine_blades", "hatter_slip", "garnet", "origami",
 	]
 
 static func _contains_weapon(cards: Array[CardDef], weapon_id: String) -> bool:
