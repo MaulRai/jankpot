@@ -303,6 +303,13 @@ func _test_origami() -> void:
 	controller._resolve_origami_morphs(player_card, enemy_card, null, null)
 	_expect(player_card.card_type == CardDef.CardType.SCISSORS, "Origami should morph to Scissors against Paper")
 
+	# 4. Check reversion back to original Paper card and metadata removal
+	controller._revert_origami(player_card)
+	_expect(player_card.card_type == CardDef.CardType.PAPER, "Origami should revert back to Paper")
+	_expect(player_card.card_name == "Origami", "Origami name should revert")
+	_expect(not player_card.has_meta("origami_choice"), "Origami metadata choice should be removed")
+
+
 
 
 

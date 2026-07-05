@@ -869,6 +869,8 @@ func _play_card(card_data: CardDef, card_view: CardView) -> void:
 	hand_view.set_dragging_enabled(true)
 	_pending_enemy_card = null
 	_enemy_preview_view = null
+	_revert_origami(card_data)
+	_revert_origami(enemy_card)
 	deck_manager.play_card(card_data.id)
 	enemy_controller.play_card(enemy_card)
 	if player_hp <= 0 or enemy_hp <= 0:
@@ -1509,3 +1511,18 @@ func _resolve_origami_morphs(player_card: CardDef, enemy_card: CardDef, player_v
 			enemy_view.set_card_data(enemy_card)
 			_animator.show_exclamation(enemy_view, "Morphed!", Color("#FFD166"))
 		await get_tree().create_timer(0.4).timeout
+
+
+func _revert_origami(card: CardDef) -> void:
+	if card and card.id.begins_with("origami"):
+		var origami := WeaponCatalogData.create_weapon("origami")
+		card.card_type = origami.card_type
+		card.card_name = origami.card_name
+		card.brief_description = origami.brief_description
+		card.art_path = origami.art_path
+		card.background_color = origami.background_color
+		card.keywords = origami.keywords.duplicate()
+		card.effects = origami.effects.duplicate()
+		card.is_basic = origami.is_basic
+		if card.has_meta("origami_choice"):
+			card.remove_meta("origami_choice")
