@@ -2,6 +2,7 @@ class_name BattleEffectExecutor
 extends Node
 
 const EffectKeywordData = preload("res://scripts/data/EffectKeyword.gd")
+const WeaponCatalogData = preload("res://scripts/data/WeaponCatalog.gd")
 
 var state: Resource
 var animator: Node
@@ -35,8 +36,8 @@ func execute(
 	player_view: CardView,
 	enemy_view: CardView
 ) -> void:
-	_player_aegis_active = plan.old_player_aegis
-	_enemy_aegis_active = plan.old_enemy_aegis
+	_player_aegis_active = plan.old_player_aegis or plan.new_player_aegis
+	_enemy_aegis_active = plan.old_enemy_aegis or plan.new_enemy_aegis
 
 	animator.play_sfx(plan.result_sfx)
 	for sfx in plan.immediate_sfx:
@@ -45,6 +46,11 @@ func execute(
 			_sync_bleed_status(plan)
 		elif sfx == "poison":
 			_sync_poison_status(plan)
+		elif sfx == "aegis":
+			if WeaponCatalogData.EFFECT_GARNET in player_card.effects and state.player_hp == 1:
+				animator.show_exclamation(player_view, "Aegis!", Color("#FFDE6A"))
+			if WeaponCatalogData.EFFECT_GARNET in enemy_card.effects and state.enemy_hp == 1:
+				animator.show_exclamation(enemy_view, "Aegis!", Color("#FFDE6A"))
 	if plan.disable_enemy_type >= 0:
 		enemy_controller.disable_type_once(plan.disable_enemy_type as CardDef.CardType)
 		animator.show_exclamation(player_view, "Concealed!", Color("#AAAAFF"))

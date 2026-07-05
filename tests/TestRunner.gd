@@ -22,6 +22,7 @@ func _initialize() -> void:
 	_test_pocketwatch_and_aegis()
 	_test_velvet_gloves()
 	_test_rare_card_add_consumables()
+	_test_garnet()
 	await _test_scene_smoke()
 	if failures.is_empty():
 		print("TESTS PASSED")
@@ -246,5 +247,31 @@ func _test_rare_card_add_consumables() -> void:
 		if card.card_type == CardDef.CardType.ROCK and card.rarity == WeaponCatalogData.RARITY_RARE:
 			rock_rares.append(weapon_id)
 	_expect(rock_rares.has("ruby"), "Ruby should be registered as a Rare Rock")
+
+
+func _test_garnet() -> void:
+	var resolver: RefCounted = BattleEffectResolverData.new()
+	var state: Resource = BattleStateData.new()
+	var garnet := WeaponCatalogData.create_weapon("garnet")
+	var rock := WeaponCatalogData.create_basic(CardDef.CardType.ROCK)
+	var player_hand: Array[CardDef] = [garnet]
+	var enemy_hand: Array[CardDef] = [rock]
+
+	# 1. At 6 health -> should NOT raise Aegis
+	state.player_hp = 6
+	var plan := resolver.build_plan(
+		BattleResolver.Result.DRAW, garnet, rock, player_hand, enemy_hand, state
+	)
+	_expect(not plan.new_player_aegis, "Garnet should not raise Aegis at 6 health")
+
+	# 2. At 1 health -> should raise Aegis in the plan, but not persist to state.player_has_aegis
+	state.player_hp = 1
+	plan = resolver.build_plan(
+		BattleResolver.Result.DRAW, garnet, rock, player_hand, enemy_hand, state
+	)
+	_expect(plan.new_player_aegis, "Garnet should raise Aegis in the current plan at 1 health")
+	_expect(not state.player_has_aegis, "Garnet Aegis should not persist to state.player_has_aegis")
+	_expect("aegis" in plan.immediate_sfx, "Garnet should trigger aegis immediate sfx")
+
 
 

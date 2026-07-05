@@ -107,6 +107,9 @@ func _apply_player_effects(
 	plan.player_regen = WeaponCatalogData.EFFECT_RUBY_REGEN in card.effects \
 		and result == BattleResolver.Result.WIN
 	plan.player_revive = WeaponCatalogData.EFFECT_RUBY_REVIVE in card.effects
+	if WeaponCatalogData.EFFECT_GARNET in card.effects and state.player_hp == 1:
+		plan.new_player_aegis = true
+		plan.immediate_sfx.append("aegis")
 
 
 func _apply_enemy_effects(
@@ -150,6 +153,9 @@ func _apply_enemy_effects(
 	plan.enemy_regen = WeaponCatalogData.EFFECT_RUBY_REGEN in card.effects \
 		and result == BattleResolver.Result.LOSE
 	plan.enemy_revive = WeaponCatalogData.EFFECT_RUBY_REVIVE in card.effects
+	if WeaponCatalogData.EFFECT_GARNET in card.effects and state.enemy_hp == 1:
+		plan.new_enemy_aegis = true
+		plan.immediate_sfx.append("aegis")
 
 
 func _luck_bonus(cards: Array[CardDef], excluded_card: CardDef) -> float:

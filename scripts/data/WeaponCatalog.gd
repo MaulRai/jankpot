@@ -16,6 +16,7 @@ const EFFECT_RUBY_REGEN := "ruby_regen"
 const EFFECT_RUBY_REVIVE := "ruby_revive_fragile"
 const EFFECT_GUILLOTINE := "guillotine_blades"
 const EFFECT_HATTER_SLIP := "hatter_slip_luck"
+const EFFECT_GARNET := "garnet_aegis"
 
 static func create_skip(instance_id: String = "skip") -> CardDef:
 	var card := CardDef.new()
@@ -100,6 +101,10 @@ static func create_weapon(weapon_id: String) -> CardDef:
 			_setup(card, CardDef.CardType.PAPER, "Hatter Slip", RARITY_RARE,
 				"While in hand, 15% chance to tilt the hidden choice in your favor.",
 				"res://assets/weapon/paper-4.png", ["Luck"], [EFFECT_HATTER_SLIP])
+		"garnet":
+			_setup(card, CardDef.CardType.ROCK, "Garnet", RARITY_COMMON,
+				"On 1 health, raise Aegis.", "res://assets/weapon/rock-5.png",
+				["Aegis"], [EFFECT_GARNET])
 		_:
 			return create_basic(CardDef.CardType.ROCK)
 	return card
@@ -178,7 +183,7 @@ static func _all_upgrade_ids() -> Array[String]:
 	return [
 		"quartz", "bronze_razor", "sculptural_sheet",
 		"spiked_boulder", "rusty_shears", "mist_veil",
-		"ruby", "guillotine_blades", "hatter_slip",
+		"ruby", "guillotine_blades", "hatter_slip", "garnet",
 	]
 
 static func _contains_weapon(cards: Array[CardDef], weapon_id: String) -> bool:
