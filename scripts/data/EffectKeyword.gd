@@ -14,6 +14,7 @@ const KEYWORD_COLORS := {
 	"Moonlight": "#D4A8FF",
 	"Aegis": "#FFDE6A",
 	"Pocketwatch": "#FFDE6A",
+	"Plague": "#5C824E",
 }
 
 const KEYWORD_DESCRIPTIONS := {
@@ -29,6 +30,7 @@ const KEYWORD_DESCRIPTIONS := {
 	"Moonlight": "Discard up to 2 cards, then draw that many. Costs $2.",
 	"Aegis": "Protects against any incoming harm for 1 turn, then disappears.",
 	"Pocketwatch": "Raise Aegis for next turn every time you lose a clash. Lasts one trial.",
+	"Plague": "Inflicts 1 Poison to you when played, then reverts to a normal card.",
 }
 
 static func get_color(keyword: String) -> String:

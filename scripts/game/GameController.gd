@@ -871,6 +871,8 @@ func _play_card(card_data: CardDef, card_view: CardView) -> void:
 	_enemy_preview_view = null
 	_revert_origami(card_data)
 	_revert_origami(enemy_card)
+	_revert_plague(card_data)
+	_revert_plague(enemy_card)
 	deck_manager.play_card(card_data.id)
 	enemy_controller.play_card(enemy_card)
 	if player_hp <= 0 or enemy_hp <= 0:
@@ -1526,3 +1528,8 @@ func _revert_origami(card: CardDef) -> void:
 		card.is_basic = origami.is_basic
 		if card.has_meta("origami_choice"):
 			card.remove_meta("origami_choice")
+
+
+func _revert_plague(card: CardDef) -> void:
+	if card and card.has_meta("plague"):
+		card.remove_meta("plague")

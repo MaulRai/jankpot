@@ -24,6 +24,7 @@ func _initialize() -> void:
 	_test_rare_card_add_consumables()
 	_test_garnet()
 	_test_origami()
+	_test_davys_and_plague()
 	await _test_scene_smoke()
 	if failures.is_empty():
 		print("TESTS PASSED")
@@ -308,6 +309,38 @@ func _test_origami() -> void:
 	_expect(player_card.card_type == CardDef.CardType.PAPER, "Origami should revert back to Paper")
 	_expect(player_card.card_name == "Origami", "Origami name should revert")
 	_expect(not player_card.has_meta("origami_choice"), "Origami metadata choice should be removed")
+
+
+func _test_davys_and_plague() -> void:
+	var resolver: RefCounted = BattleEffectResolverData.new()
+	var state: Resource = BattleStateData.new()
+	var davys := WeaponCatalogData.create_weapon("davys")
+	var rock := WeaponCatalogData.create_basic(CardDef.CardType.ROCK)
+	var scissors := WeaponCatalogData.create_basic(CardDef.CardType.SCISSORS)
+	var player_hand: Array[CardDef] = [davys]
+	var enemy_hand: Array[CardDef] = [scissors]
+
+	# 1. Davy's Wins -> should flag player_plague_inflicted
+	var plan := resolver.build_plan(
+		BattleResolver.Result.WIN, davys, scissors, player_hand, enemy_hand, state
+	)
+	_expect(plan.player_plague_inflicted, "Davy's win should inflict plague on enemy hand / player draw pile")
+
+	# 2. Test Plague card resolution & revert
+	var plagued_card := rock.copy()
+	var executor = load("res://scripts/game/battle/BattleEffectExecutor.gd").new()
+	executor._infect_with_plague(plagued_card)
+	_expect(plagued_card.has_meta("plague"), "Card should be plagued")
+	_expect(plagued_card.card_name == "Plague", "Plagued card name should be Plague")
+
+	state.player_poison_turns = 0
+	plan = resolver.build_plan(
+		BattleResolver.Result.DRAW, plagued_card, scissors, player_hand, enemy_hand, state
+	)
+	_expect(state.player_poison_turns == 1, "Plague card should inflict 1 turn of poison when resolved")
+	_expect(not plagued_card.has_meta("plague"), "Plagued card should revert after resolution")
+	_expect(plagued_card.card_name == "Rock", "Reverted card name should go back to Rock")
+
 
 
 

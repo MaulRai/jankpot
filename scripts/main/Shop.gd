@@ -82,6 +82,8 @@ const SHOPKEEPER_LINES := [
 	"That Garnet stone looks shiny, but it only starts acting like a shield when you're about to meet your maker.",
 	"Origami is a highly adaptable parchment. It folds into whichever shape beats the opponent's choice, if one exists.",
 	"Origami: looks like plain paper, but folds under pressure. In a good way.",
+	"Davy's shears are rusted with rot. A clean cut will contaminate their options and spoil your next draw.",
+	"Buying Davy's? Spread the plague! Just try not to get any of it on your own draw pile.",
 ]
 
 const SHOPKEEPER_THANKS_LINES := [

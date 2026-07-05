@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="CardDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CardDef.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "davys"
+card_type = 2
+card_name = "Davy's"
+brief_description = "On win, turn 2 in enemy's hand and 1 in your draw pile into Plague cards."
+art_path = "res://assets/weapon/scissors-5.png"
+background_color = Color(0.604, 0.290, 0.290, 1)
+keywords = Array[String](["Plague", "Poison"])
+effects = Array[String](["davys_plague"])
+rarity = "Rare"
+price = 0
+is_basic = false

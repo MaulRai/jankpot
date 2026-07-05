@@ -140,10 +140,15 @@ func _on_card_drag_ended(card: CardView) -> void:
 		emit_signal("card_play_requested", card.card_data, card)
 
 func _on_card_hovered(card: CardView) -> void:
-	if not tooltip_manager or not card.card_data or card.card_data.keywords.is_empty():
+	if not tooltip_manager or not card.card_data:
+		return
+	var keywords := card.card_data.keywords.duplicate()
+	if card.card_data.has_meta("plague") and card.card_data.get_meta("plague") == true:
+		keywords.append("Plague")
+	if keywords.is_empty():
 		return
 	var tooltip_global_position := card.global_position + Vector2(card.size.x + 12.0, 8.0)
-	tooltip_manager.show_tooltip(card.card_data.keywords, tooltip_global_position)
+	tooltip_manager.show_tooltip(keywords, tooltip_global_position)
 
 func _on_card_unhovered(_card: CardView) -> void:
 	_hide_tooltip()

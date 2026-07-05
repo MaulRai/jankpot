@@ -39,6 +39,12 @@ func execute(
 	_player_aegis_active = plan.old_player_aegis or plan.new_player_aegis
 	_enemy_aegis_active = plan.old_enemy_aegis or plan.new_enemy_aegis
 
+	if is_instance_valid(player_view):
+		player_view.set_card_data(player_card)
+	if is_instance_valid(enemy_view):
+		enemy_view.set_card_data(enemy_card)
+
+
 	animator.play_sfx(plan.result_sfx)
 	for sfx in plan.immediate_sfx:
 		animator.play_sfx(sfx)
@@ -176,6 +182,11 @@ func _apply_card_mutations(
 		deck_manager.temporarily_downgrade(player_card)
 	if plan.enemy_downgrade:
 		enemy_controller.temporarily_downgrade(enemy_card)
+	if plan.player_plague_inflicted:
+		_apply_plague_debuff(false)
+	if plan.enemy_plague_inflicted:
+		_apply_plague_debuff(true)
+
 
 
 func _reaction(
@@ -302,3 +313,54 @@ func _block_damage_if_shielded(to_player: bool) -> bool:
 	update_labels.call()
 	await animator.shake(enemy_slot)
 	return true
+
+
+func _apply_plague_debuff(to_player_hand: bool) -> void:
+	animator.play_sfx("poison")
+	if to_player_hand:
+		var candidates: Array = deck_manager.hand.duplicate()
+		candidates.shuffle()
+		var count := 0
+		for card in candidates:
+			if count >= 2:
+				break
+			if card and not card.has_meta("plague") and not card.is_skip:
+				_infect_with_plague(card)
+				count += 1
+		
+		if not enemy_controller.enemy_draw_pile.is_empty():
+			var draw_candidates: Array = enemy_controller.enemy_draw_pile.duplicate()
+			draw_candidates.shuffle()
+			for card in draw_candidates:
+				if card and not card.has_meta("plague") and not card.is_skip:
+					_infect_with_plague(card)
+					break
+		
+		# Refresh player HandView
+		var hand_view = get_tree().current_scene.get_node_or_null("HandView")
+		if hand_view:
+			hand_view.set_cards(deck_manager.hand)
+	else:
+		var candidates: Array = enemy_controller.enemy_hand.duplicate()
+		candidates.shuffle()
+		var count := 0
+		for card in candidates:
+			if count >= 2:
+				break
+			if card and not card.has_meta("plague") and not card.is_skip:
+				_infect_with_plague(card)
+				count += 1
+		
+		if not deck_manager.draw_pile.is_empty():
+			var draw_candidates: Array = deck_manager.draw_pile.duplicate()
+			draw_candidates.shuffle()
+			for card in draw_candidates:
+				if card and not card.has_meta("plague") and not card.is_skip:
+					_infect_with_plague(card)
+					break
+
+
+func _infect_with_plague(card: CardDef) -> void:
+	if not card or card.has_meta("plague"):
+		return
+	card.set_meta("plague", true)

@@ -45,6 +45,14 @@ func build_plan(
 	state.player_has_aegis = false
 	state.enemy_has_aegis = false
 
+	if player_card.has_meta("plague"):
+		state.player_poison_turns += 1
+		plan.immediate_sfx.append("poison")
+	if enemy_card.has_meta("plague"):
+		state.enemy_poison_turns += 1
+		plan.immediate_sfx.append("poison")
+
+
 	# If the pocketwatch is active and the side loses clash, raise Aegis for next turn
 	# Only raises if they didn't have Aegis or Shield active this turn (blocked damage doesn't count as harm)
 	if result == BattleResolver.Result.LOSE and plan.old_player_pocketwatch:
@@ -110,6 +118,9 @@ func _apply_player_effects(
 	if WeaponCatalogData.EFFECT_GARNET in card.effects and state.player_hp == 1:
 		plan.new_player_aegis = true
 		plan.immediate_sfx.append("aegis")
+	if WeaponCatalogData.EFFECT_DAVYS in card.effects and result == BattleResolver.Result.WIN:
+		plan.player_plague_inflicted = true
+
 
 
 func _apply_enemy_effects(
@@ -156,6 +167,9 @@ func _apply_enemy_effects(
 	if WeaponCatalogData.EFFECT_GARNET in card.effects and state.enemy_hp == 1:
 		plan.new_enemy_aegis = true
 		plan.immediate_sfx.append("aegis")
+	if WeaponCatalogData.EFFECT_DAVYS in card.effects and result == BattleResolver.Result.LOSE:
+		plan.enemy_plague_inflicted = true
+
 
 
 func _luck_bonus(cards: Array[CardDef], excluded_card: CardDef) -> float:
@@ -164,6 +178,7 @@ func _luck_bonus(cards: Array[CardDef], excluded_card: CardDef) -> float:
 				and WeaponCatalogData.EFFECT_HATTER_SLIP in card.effects:
 			return 0.15
 	return 0.0
+
 
 
 func _chance(base_chance: float, luck_bonus: float) -> bool:

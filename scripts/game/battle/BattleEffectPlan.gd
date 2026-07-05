@@ -49,6 +49,9 @@ var player_downgrade := false
 var enemy_downgrade := false
 var player_fragile := false
 var enemy_fragile := false
+var player_plague_inflicted := false
+var enemy_plague_inflicted := false
+
 
 
 func ordered_reactions(result: BattleResolver.Result) -> Array[Dictionary]:

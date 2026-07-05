@@ -18,6 +18,8 @@ const EFFECT_GUILLOTINE := "guillotine_blades"
 const EFFECT_HATTER_SLIP := "hatter_slip_luck"
 const EFFECT_GARNET := "garnet_aegis"
 const EFFECT_ORIGAMI := "origami_morph"
+const EFFECT_DAVYS := "davys_plague"
+
 
 static func create_skip(instance_id: String = "skip") -> CardDef:
 	var card := CardDef.new()
@@ -110,6 +112,10 @@ static func create_weapon(weapon_id: String) -> CardDef:
 			_setup(card, CardDef.CardType.PAPER, "Origami", RARITY_RARE,
 				"Morph into another weapon type if it's favorable.", "res://assets/weapon/paper-5.png",
 				[], [EFFECT_ORIGAMI])
+		"davys":
+			_setup(card, CardDef.CardType.SCISSORS, "Davy's", RARITY_RARE,
+				"Turn 2 cards in enemy's hand and 1 in your draw pile into Plague cards.",
+				"res://assets/weapon/scissors-5.png", ["Poison", "Plague"], [EFFECT_DAVYS])
 		_:
 			return create_basic(CardDef.CardType.ROCK)
 	return card
@@ -188,7 +194,7 @@ static func _all_upgrade_ids() -> Array[String]:
 	return [
 		"quartz", "bronze_razor", "sculptural_sheet",
 		"spiked_boulder", "rusty_shears", "mist_veil",
-		"ruby", "guillotine_blades", "hatter_slip", "garnet", "origami",
+		"ruby", "guillotine_blades", "hatter_slip", "garnet", "origami", "davys",
 	]
 
 static func _contains_weapon(cards: Array[CardDef], weapon_id: String) -> bool:

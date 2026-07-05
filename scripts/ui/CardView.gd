@@ -29,6 +29,7 @@ var drag_enabled: bool = true
 var disabled_visual := false
 var drag_offset: Vector2 = Vector2.ZERO
 var transform_tween: Tween
+var plague_overlay: TextureRect = null
 
 
 func _ready() -> void:
@@ -43,7 +44,7 @@ func set_card_data(data: CardDef) -> void:
 	render()
 
 func render() -> void:
-	if not card_data:
+	if not is_node_ready() or not card_data:
 		return
 	if art_texture and ResourceLoader.exists(card_data.art_path):
 		art_texture.texture = load(card_data.art_path)
@@ -74,6 +75,26 @@ func render() -> void:
 	if art_separator:
 		art_separator.color = card_data.background_color.darkened(0.3)
 
+	# Handle Plague Card overlay
+	if card_data and card_data.has_meta("plague") and card_data.get_meta("plague") == true:
+		if not plague_overlay:
+			plague_overlay = TextureRect.new()
+			plague_overlay.name = "PlagueOverlay"
+			plague_overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			plague_overlay.stretch_mode = TextureRect.STRETCH_SCALE
+			plague_overlay.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			plague_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			plague_overlay.texture = load("res://assets/texture/card/plague.png")
+			plague_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			add_child(plague_overlay)
+			if outline:
+				move_child(outline, get_child_count() - 1)
+		plague_overlay.visible = not card_back.visible
+	else:
+		if plague_overlay:
+			plague_overlay.visible = false
+
+
 func set_face_down(face_down: bool) -> void:
 	card_back.visible = face_down
 	$Background.visible = not face_down
@@ -82,6 +103,8 @@ func set_face_down(face_down: bool) -> void:
 	description_label.visible = not face_down
 	type_background.visible = not face_down
 	art_separator.visible = not face_down
+	if plague_overlay:
+		plague_overlay.visible = not face_down and card_data and card_data.has_meta("plague") and card_data.get_meta("plague") == true
 	if not face_down:
 		if card_data:
 			render()

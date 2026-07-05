@@ -510,7 +510,7 @@ func _weapon_ids_for_rarity(rarity: String) -> Array[String]:
 	match rarity:
 		WeaponCatalogData.RARITY_COMMON:   return ["quartz", "bronze_razor", "sculptural_sheet", "garnet"]
 		WeaponCatalogData.RARITY_UNCOMMON: return ["spiked_boulder", "rusty_shears", "mist_veil"]
-		WeaponCatalogData.RARITY_RARE:     return ["ruby", "guillotine_blades", "hatter_slip", "origami"]
+		WeaponCatalogData.RARITY_RARE:     return ["ruby", "guillotine_blades", "hatter_slip", "origami", "davys"]
 	return []
 
 func _type_outline_color(type: CardDef.CardType) -> Color:
