@@ -203,7 +203,7 @@ func _create_offer(data: Dictionary) -> Control:
 
 	# --- Display area (shop frame + item icon) ---
 	var display_area := Control.new()
-	display_area.custom_minimum_size = Vector2(145.0, 100.0)
+	display_area.custom_minimum_size = Vector2(145.0, 90.0)
 	display_area.mouse_filter        = Control.MOUSE_FILTER_IGNORE
 	card.add_child(display_area)
 
@@ -220,7 +220,7 @@ func _create_offer(data: Dictionary) -> Control:
 	display.offset_bottom =  0.0
 	display_area.add_child(display)
 
-	var icon_size := Vector2(52.0, 52.0) if data.get("kind", "") == "consumable" else Vector2(62.0, 80.0)
+	var icon_size := Vector2(68.0, 68.0) if data.get("kind", "") == "consumable" else Vector2(74.0, 96.0)
 	var icon := TextureRect.new()
 	icon.texture        = data["texture"] as Texture2D
 	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -229,9 +229,9 @@ func _create_offer(data: Dictionary) -> Control:
 	icon.mouse_filter   = Control.MOUSE_FILTER_IGNORE
 	icon.set_anchors_preset(Control.PRESET_CENTER)
 	icon.offset_left   = -icon_size.x * 0.5
-	icon.offset_top    = -icon_size.y * 0.5 - 10.0
+	icon.offset_top    = 18.0 - icon_size.y
 	icon.offset_right  =  icon_size.x * 0.5
-	icon.offset_bottom =  icon_size.y * 0.5 - 10.0
+	icon.offset_bottom =  18.0
 	display_area.add_child(icon)
 
 	var name_label := Label.new()
@@ -247,8 +247,8 @@ func _create_offer(data: Dictionary) -> Control:
 	description.text                = str(data["description"])
 	description.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	description.autowrap_mode       = TextServer.AUTOWRAP_WORD_SMART
-	description.custom_minimum_size = Vector2(0.0, 36.0)
-	description.add_theme_font_size_override("font_size", 10)
+	description.custom_minimum_size = Vector2(0.0, 48.0)
+	description.add_theme_font_size_override("font_size", 12)
 	description.add_theme_color_override("font_color", Color(0.78, 0.86, 0.82, 1.0))
 	card.add_child(description)
 
@@ -264,7 +264,7 @@ func _create_offer(data: Dictionary) -> Control:
 	var price := int(data["price"])
 	buy_button.text = _format_buy_button_text(price, false)
 	buy_button.flat = true
-	buy_button.add_theme_font_size_override("font_size", 15)
+	buy_button.add_theme_font_size_override("font_size", 18)
 	buy_button.add_theme_color_override("font_color",         Color(1.0,  0.93, 0.62, 1.0))
 	buy_button.add_theme_color_override("font_hover_color",   Color(1.0,  1.0,  0.82, 1.0))
 	buy_button.add_theme_color_override("font_pressed_color", Color(0.86, 0.68, 0.3,  1.0))
@@ -303,7 +303,7 @@ func _create_offer(data: Dictionary) -> Control:
 
 func _create_button_frame() -> PixelFramePanel:
 	var frame := PixelFramePanel.new()
-	frame.custom_minimum_size     = Vector2(110.0, 38.0)
+	frame.custom_minimum_size     = Vector2(120.0, 42.0)
 	frame.size_flags_horizontal   = Control.SIZE_SHRINK_CENTER
 	frame.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	frame.base_tint               = Color(0.12, 0.07, 0.12, 1.0)
