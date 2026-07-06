@@ -14,6 +14,8 @@ offset_left = -384.0
 offset_right = 384.0
 offset_bottom = 192.0
 grow_horizontal = 2
+scale = Vector2(0.75, 0.75)
+pivot_offset = Vector2(384, 0)
 script = ExtResource("1_shelf")
 
 [node name="LeftChain" type="TextureRect" parent="."]

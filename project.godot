@@ -13,7 +13,15 @@ config_version=5
 config/name="JankPot"
 run/main_scene="res://scenes/main/MainMenu.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
-config/icon="res://icon.svg"
+config/icon="uid://n00pnb7o11dt"
+
+[display]
+
+window/size/window_width_override=1382
+window/size/window_height_override=778
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation="landscape"
 
 [gui]
 
