@@ -198,12 +198,12 @@ func _all_consumables() -> Array:
 
 func _create_offer(data: Dictionary) -> Control:
 	var card := VBoxContainer.new()
-	card.custom_minimum_size = Vector2(145.0, 240.0)
+	card.custom_minimum_size = Vector2(172.0, 240.0)
 	card.add_theme_constant_override("separation", 6)
 
 	# --- Display area (shop frame + item icon) ---
 	var display_area := Control.new()
-	display_area.custom_minimum_size = Vector2(145.0, 90.0)
+	display_area.custom_minimum_size = Vector2(172.0, 90.0)
 	display_area.mouse_filter        = Control.MOUSE_FILTER_IGNORE
 	card.add_child(display_area)
 
@@ -238,7 +238,7 @@ func _create_offer(data: Dictionary) -> Control:
 	name_label.text                = str(data["name"])
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_label.autowrap_mode       = TextServer.AUTOWRAP_WORD_SMART
-	name_label.add_theme_font_size_override("font_size", 14)
+	name_label.add_theme_font_size_override("font_size", 18)
 	name_label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.64, 1.0))
 	card.add_child(name_label)
 
@@ -248,7 +248,7 @@ func _create_offer(data: Dictionary) -> Control:
 	description.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	description.autowrap_mode       = TextServer.AUTOWRAP_WORD_SMART
 	description.custom_minimum_size = Vector2(0.0, 48.0)
-	description.add_theme_font_size_override("font_size", 12)
+	description.add_theme_font_size_override("font_size", 16)
 	description.add_theme_color_override("font_color", Color(0.78, 0.86, 0.82, 1.0))
 	card.add_child(description)
 
