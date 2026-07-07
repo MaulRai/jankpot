@@ -477,6 +477,8 @@ func _has_hatter_slip(cards: Array[CardDef], excluded_card: CardDef) -> bool:
 
 
 func _select_stage_enemy(upgrade_count: int) -> Dictionary:
+	# DEBUG: force every stage to spawn the Hatter Mimic. Remove when done.
+	return enemy_controller.select_enemy("dice_imp", upgrade_count)
 	var enemy_id := RunConfigData.enemy_id_for_stage(stage_number)
 	if enemy_id.is_empty():
 		return enemy_controller.select_random_non_boss(upgrade_count)

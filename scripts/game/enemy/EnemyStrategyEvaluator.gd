@@ -97,10 +97,11 @@ func choose_type(weights: Array[float]) -> CardDef.CardType:
 
 
 func _dice_imp(context: RefCounted) -> Array[float]:
-	var result := _balanced()
-	if context.clash_count > 0 and context.clash_count % 3 == 0:
-		result[randi_range(0, 2)] += 18.0
-	return result
+	# Loathes repeating itself — almost never throws the same weapon it just
+	# threw, splitting fresh between the other two.
+	if not context.has_enemy_last_type:
+		return _balanced()
+	return _with_preference(context.enemy_last_type, 20.0, 48.5)
 
 
 func _echo(context: RefCounted) -> Array[float]:

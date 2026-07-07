@@ -17,7 +17,7 @@ const STRATEGY_DETAILS := {
 	"rock_bias": "Leans hard on Rock, throwing it roughly half the time. Paper and Scissors show up only now and then.",
 	"paper_bias": "Favours Paper above all, playing it about half the time. Rock and Scissors are rare filler.",
 	"scissors_bias": "A Scissors specialist that reaches for the blades about half of every clash.",
-	"dice_imp": "Throws at random, but every third clash its nerves spike and it doubles down on one weapon unpredictably.",
+	"dice_imp": "Can't stand throwing the same weapon twice, almost always switches, splitting evenly between the two weapons it didn't just play.",
 	"echo": "Echoes its last weapon after a loss or draw, doubling down on whatever it just threw.",
 	"counter_player": "Studies your previous throw and heavily favours the weapon that beats it.",
 	"mirror_player": "Tends to mirror you, repeating the weapon you played last clash.",
@@ -31,7 +31,7 @@ const STRATEGY_DETAILS := {
 	"mad_hatter": "Cycles four moods every 3 clashes: random, then mirror you, then counter you, then Paper-heavy.",
 	"iron_tortoise": "A stubborn wall of Rock that only hardens further as its health drops.",
 	"guillotine_duke": "A Scissors duelist that punishes Paper especially — expect blades when you show paper.",
-	"hatter_mimic": "Wears a false face — it advertises {face}, yet truly splits its throws between {face} and the {counter} that beats it. The pattern it shows you is only half the story.",
+	"hatter_mimic": "Wears a false face. It advertises {face}, yet truly splits its throws between {face} and the {counter} that beats it. The pattern it shows you is only half the story.",
 }
 
 const TYPE_LABELS := ["ROCK", "PAPER", "SCISSORS"]

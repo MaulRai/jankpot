@@ -4,7 +4,7 @@
 script = ExtResource("1")
 id = "dice_imp"
 display_name = "Dice Imp"
-description = "Completely unpredictable."
-rule = "No stable pattern"
+description = "Hates repeating itself."
+rule = "Almost never repeats its last weapon"
 icon_path = "res://assets/icon/enemy/dice-imp.png"
 strategy_id = "dice_imp"
