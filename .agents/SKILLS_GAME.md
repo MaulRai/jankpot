@@ -9,9 +9,9 @@ Game scripts (`scripts/game/`) contain core battle logic, game flow, and decisio
 **Responsibilities:**
 - Initializes battle with player and enemy
 - Manages turn resolution
-- Coordinates between sub-systems (DeckManager, BattleResolver, EnemyController)
+- Coordinates helper delegates (ItemHandler, MorphResolver, RunSerializer) and sub-systems (DeckManager, BattleResolver, EnemyController)
 - Tracks player/enemy HP
-- Handles battle outcomes and rewards
+- Handles general battle flow orchestration
 
 **Key Signals:**
 - `turn_resolved` - Emitted when a turn completes
@@ -184,6 +184,57 @@ Game scripts (`scripts/game/`) contain core battle logic, game flow, and decisio
 5. Return best card choice
 
 **Configurable Via:** Enemy definition properties
+
+---
+
+## ItemHandler.gd
+
+**Purpose:** Manages active consumable items, Velvet Gloves choice prompt, and Rare card reward animations.
+
+**Responsibilities:**
+- Resolves the execution/activation of items (e.g. Magic Ball, Remedy Kit, Velvet Gloves)
+- Manages the visual modal for Velvet Gloves deck selection
+- Handles animating the addition of Rare card rewards to the player's deck
+
+**Key Methods:**
+- `use_item(item_id: String, controller: GameController) -> void`
+- `_handle_velvet_gloves(controller: GameController) -> void`
+- `_add_rare_card_and_animate(card_type: int, controller: GameController, anim_type: String) -> void`
+
+**Integration:** Invoked by `GameController` for items; interacts with `ConsumableShelf` and `RewardOverlay`.
+
+---
+
+## MorphResolver.gd
+
+**Purpose:** Handles card transformation logic (morphing) during turn transitions.
+
+**Responsibilities:**
+- Resolves Origami morph checks and scores choices against enemy plays
+- Spawns the Origami choice dim-backdrop and window prompt UI
+- Restores morphed cards back to their base definitions after combat completes
+
+**Key Methods:**
+- `resolve_origami_morphs(player_card, enemy_card, player_view, enemy_view)`
+- `revert_combat_cards(card)`
+
+**Integration:** Invoked by `GameController` during resolution phases; interacts with `CardView` and `SFXManager`.
+
+---
+
+## RunSerializer.gd
+
+**Purpose:** Handles saving, restoring, and tracking run state data.
+
+**Responsibilities:**
+- Collects state parameters (HP, stages, items, decks) into dictionaries
+- Restores state snapshots back to corresponding controller and deck variables
+
+**Key Methods:**
+- `get_run_state() -> Dictionary`
+- `restore_run_state(state: Dictionary) -> void`
+
+**Integration:** Called by `GameController` and `PlayerStorage` during game loads, saves, and resets.
 
 ---
 

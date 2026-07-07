@@ -14,6 +14,7 @@ This project is organized into **6 skill categories**, each documented separatel
 | **[Audio](SKILLS_AUDIO.md)** | Music and sound effects | BGMPlayer, SFXManager, audio buses |
 | **[Animation](SKILLS_ANIMATION.md)** | Visual effects and tweens | BattleAnimator, CardExitAnimator |
 | **[Main](SKILLS_MAIN.md)** | Scene flow and progression | MainMenu, Shop, Preparation, GameplayIntro |
+| **[AI/Strategy](SKILLS_AI.md)** | Enemy AI behaviors and logic | EnemyStrategyEvaluator, EnemyCatalog |
 
 ---
 
@@ -104,10 +105,13 @@ scripts/
 │
 ├── game/              [→ SKILLS_GAME.md]
 │   ├── GameController.gd
+│   ├── ItemHandler.gd
+│   ├── MorphResolver.gd
+│   ├── RunSerializer.gd
 │   ├── DeckManager.gd
 │   ├── BattleResolver.gd
 │   ├── EnemyController.gd
-│   ├── battle/
+│   └── battle/
 │   │   ├── BattleState.gd
 │   │   ├── BattleEffectPlan.gd
 │   │   ├── BattleEffectResolver.gd
@@ -162,6 +166,9 @@ scripts/
 
 ### Battle System
 - **GameController:** Main battle orchestrator
+- **ItemHandler:** Manages consumable item activation and card rewards animations
+- **MorphResolver:** Coordinates card transformations (e.g. Origami morphs)
+- **RunSerializer:** Handles saving and restoring state snapshots of battles and runs
 - **BattleResolver:** Determines battle outcome (RPS logic)
 - **BattleEffectResolver:** Complex effect interactions
 - **BattleState:** Current turn state snapshot
@@ -242,6 +249,7 @@ scripts/
 - [README.md](README.md) - Project overview
 - [IMPLEMENTATION.md](IMPLEMENTATION.md) - Implementation details
 - [enemy-mode.md](markdown/enemy-mode.md) - Enemy system specifics
+- [SKILLS_AI.md](.agents/SKILLS_AI.md) - Enemy AI strategy guide
 
 ---
 
