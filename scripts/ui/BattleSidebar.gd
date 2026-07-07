@@ -21,7 +21,7 @@ const STRATEGY_DETAILS := {
 	"echo": "Echoes its last weapon after a loss or draw, doubling down on whatever it just threw.",
 	"counter_player": "Studies your previous throw and heavily favours the weapon that beats it.",
 	"mirror_player": "Tends to mirror you, repeating the weapon you played last clash.",
-	"cowardly": "Fights evenly while healthy, but at 3 hearts or fewer it panics and clings to Rock.",
+	"cowardly": "Relies on basic weapons early on, saving its rarer cards for a low-health panic.",
 	"avoid_last": "Rarely repeats itself, steering away from the weapon it threw last.",
 	"bruise_toad": "After beating you it presses the wound, countering the throw you just lost with.",
 	"gambler": "Mostly random, but every third clash it commits fully to its strongest card in hand.",

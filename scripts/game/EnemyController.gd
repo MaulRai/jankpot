@@ -103,13 +103,23 @@ func choose_card(enemy_hp: int = 6, _player_hp: int = 6) -> CardDef:
 		var skip := WeaponCatalogData.create_skip("enemy_skip_%d" % Time.get_ticks_usec())
 		enemy_card_chosen.emit(skip)
 		return skip
-	var chosen_type: CardDef.CardType = _strategy.choose_type(weights)
-	var matching: Array[CardDef] = []
-	for card in enemy_hand:
-		if card.card_type == chosen_type:
-			matching.append(card)
-	var chosen: CardDef = matching.pick_random() \
-		if not matching.is_empty() else enemy_hand.pick_random()
+	var chosen: CardDef
+	var preference := _strategy.card_preference(definition.strategy_id, context)
+	if preference != 0:
+		# Rarity-driven rivals pick across every usable card, not by weapon type.
+		var available: Array[CardDef] = []
+		for card in enemy_hand:
+			if weights[card.card_type] > 0.0:
+				available.append(card)
+		chosen = _pick_card_by_rarity_preference(available, preference)
+	else:
+		var chosen_type: CardDef.CardType = _strategy.choose_type(weights)
+		var matching: Array[CardDef] = []
+		for card in enemy_hand:
+			if card.card_type == chosen_type:
+				matching.append(card)
+		chosen = matching.pick_random() \
+			if not matching.is_empty() else enemy_hand.pick_random()
 	if chosen and chosen.id.begins_with("origami"):
 		var enemy_choice: CardDef.CardType = CardDef.CardType.ROCK if randf() < 0.5 else CardDef.CardType.SCISSORS
 		chosen.set_meta("origami_choice", enemy_choice)
@@ -164,6 +174,22 @@ func _make_strategy_context(enemy_hp: int) -> RefCounted:
 	context.clash_count = clash_count
 	context.hand = enemy_hand
 	return context
+
+
+# Picks a card with a strong-but-not-absolute lean toward (preference > 0) or
+# away from (preference < 0) non-basic cards. Falls back to any card when the
+# preferred rarity isn't in hand.
+func _pick_card_by_rarity_preference(cards: Array[CardDef], preference: int) -> CardDef:
+	if cards.is_empty():
+		return enemy_hand.pick_random()
+	var want_nonbasic := preference > 0
+	var preferred: Array[CardDef] = []
+	for card in cards:
+		if (not card.is_basic) == want_nonbasic:
+			preferred.append(card)
+	if not preferred.is_empty() and randf() < 0.8:
+		return preferred.pick_random()
+	return cards.pick_random()
 
 
 func _total_weight(weights: Array[float]) -> float:

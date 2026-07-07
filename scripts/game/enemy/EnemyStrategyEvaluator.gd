@@ -21,6 +21,14 @@ func advertised_face(strategy_id: String) -> int:
 	return -1
 
 
+# Preference over card rarity rather than weapon type. Returns 1 to favour
+# non-basic (upgraded) cards, -1 to save them and play basics, 0 for none.
+func card_preference(strategy_id: String, context: RefCounted) -> int:
+	if strategy_id == "cowardly":
+		return 1 if context.enemy_hp <= 3 else -1
+	return 0
+
+
 func weights(strategy_id: String, context: RefCounted) -> Array[float]:
 	match strategy_id:
 		"rock_bias":
@@ -38,8 +46,7 @@ func weights(strategy_id: String, context: RefCounted) -> Array[float]:
 		"mirror_player":
 			return _relative_to_player(context, 60.0, 20.0, 20.0)
 		"cowardly":
-			return _make_weights(60.0, 25.0, 15.0) \
-				if context.enemy_hp <= 3 else _balanced()
+			return _balanced()
 		"avoid_last":
 			return _avoid_last(context)
 		"bruise_toad":
