@@ -31,10 +31,13 @@ const STRATEGY_DETAILS := {
 	"mad_hatter": "Cycles four moods every 3 clashes: random, then mirror you, then counter you, then Paper-heavy.",
 	"iron_tortoise": "A stubborn wall of Rock that only hardens further as its health drops.",
 	"guillotine_duke": "A Scissors duelist that punishes Paper especially — expect blades when you show paper.",
-	"hatter_mimic": "Wears a false face — it advertises Paper, yet truly splits its throws between Paper and the Scissors that beat it. The pattern it shows you is only half the story.",
+	"hatter_mimic": "Wears a false face — it advertises {face}, yet truly splits its throws between {face} and the {counter} that beats it. The pattern it shows you is only half the story.",
 }
 
 const TYPE_LABELS := ["ROCK", "PAPER", "SCISSORS"]
+const TYPE_NAMES := ["Rock", "Paper", "Scissors"]
+# Weapon that beats each type, by CardType index: Rock->Paper, Paper->Scissors, Scissors->Rock.
+const TYPE_COUNTERED_BY := [1, 2, 0]
 const TYPE_COLORS := [
 	Color(0.60, 0.80, 0.96, 1.0),
 	Color(0.78, 0.62, 0.46, 1.0),
@@ -200,7 +203,7 @@ func set_enemy_info(enemy_data: Dictionary) -> void:
 		enemy_name_line2.text = ""
 		enemy_name_line2.visible = false
 
-	behavior.text = str(enemy_data.get("description", "No known pattern."))
+	behavior.text = _apply_face_placeholders(str(enemy_data.get("description", "No known pattern.")))
 	reward.text = "TAP FOR MORE INFO"
 	var icon_path := str(enemy_data.get("icon", ""))
 	enemy_icon.visible = not icon_path.is_empty() and ResourceLoader.exists(icon_path)
@@ -645,6 +648,7 @@ func _populate_info_content() -> void:
 	var detail_text := str(STRATEGY_DETAILS.get(
 		strategy_id, _enemy_data.get("description", "This rival keeps its methods a secret.")
 	))
+	detail_text = _apply_face_placeholders(detail_text)
 	var rule := str(_enemy_data.get("rule", ""))
 	if not rule.is_empty():
 		detail_text += "\n(%s)" % rule
@@ -672,6 +676,18 @@ func _populate_info_content() -> void:
 	var percents := _composition_percents(strategy_id)
 	_info_content.add_child(_make_composition_bar(percents))
 	_info_content.add_child(_make_composition_legend())
+
+
+# Substitutes {face}/{counter} in mimic text with the weapon advertised this
+# battle and the weapon that counters it. No-op when text has no placeholders.
+func _apply_face_placeholders(text: String) -> String:
+	if not text.contains("{face}") and not text.contains("{counter}"):
+		return text
+	var face := int(_enemy_data.get("advertised_face", -1))
+	if face < 0 or face >= TYPE_NAMES.size():
+		return text.replace("{face}", "one weapon").replace("{counter}", "counter")
+	return text.replace("{face}", TYPE_NAMES[face]) \
+		.replace("{counter}", TYPE_NAMES[TYPE_COUNTERED_BY[face]])
 
 
 func _make_info_heading(text: String) -> Label:

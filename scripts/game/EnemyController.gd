@@ -74,6 +74,7 @@ func select_enemy(enemy_id: String, upgrade_count: int = 0) -> Dictionary:
 	current_enemy = definition.to_dictionary()
 	current_enemy["strategy_id"] = definition.strategy_id
 	setup_enemy_deck(upgrade_count)
+	current_enemy["advertised_face"] = _strategy.advertised_face(definition.strategy_id)
 	enemy_selected.emit(current_enemy)
 	return current_enemy
 

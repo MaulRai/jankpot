@@ -3,14 +3,22 @@ extends RefCounted
 
 const WeaponCatalogData = preload("res://scripts/data/WeaponCatalog.gd")
 
-const HATTER_MIMIC_FACE: CardDef.CardType = CardDef.CardType.PAPER
-
 var _fog_mode := -1
 var _variable_type: CardDef.CardType = CardDef.CardType.ROCK
+var _hatter_face := -1
 
 
 func reset() -> void:
 	_fog_mode = -1
+	_hatter_face = -1
+
+
+# The weapon a mimic-style rival advertises this battle, or -1 if the strategy
+# has no advertised face. Picked once and kept stable for the whole battle.
+func advertised_face(strategy_id: String) -> int:
+	if strategy_id == "hatter_mimic":
+		return _ensure_hatter_face()
+	return -1
 
 
 func weights(strategy_id: String, context: RefCounted) -> Array[float]:
@@ -167,13 +175,19 @@ func _blood_magpie(context: RefCounted) -> Array[float]:
 
 
 func _hatter_mimic() -> Array[float]:
-	# Advertises HATTER_MIMIC_FACE, but really splits between that weapon and the
-	# weapon that counters it, so its shown pattern is only half true.
-	var face := HATTER_MIMIC_FACE
+	# Advertises a random weapon this battle, but really splits between that
+	# weapon and the weapon that counters it, so its shown pattern is half true.
+	var face := _ensure_hatter_face()
 	var result := _make_weights(8.0, 8.0, 8.0)
 	result[face] = 46.0
-	result[_counter_of(face)] = 46.0
+	result[_counter_of(face as CardDef.CardType)] = 46.0
 	return result
+
+
+func _ensure_hatter_face() -> int:
+	if _hatter_face < 0:
+		_hatter_face = randi_range(0, 2)
+	return _hatter_face
 
 
 func _mad_hatter(context: RefCounted) -> Array[float]:
