@@ -7,6 +7,40 @@ const MAX_HEALTH := 6
 const BUTTON_HOVER_SCALE := Vector2(1.04, 1.04)
 const BUTTON_PRESS_SCALE := Vector2(0.96, 0.96)
 
+const PANEL_TEXTURE := preload("res://assets/ui/panel-window.png")
+const STAR_CRUSH_FONT := preload("res://fonts/Star Crush.otf")
+const PIXEL_FRAME_SCRIPT := preload("res://scripts/ui/PixelFramePanel.gd")
+const STRATEGY_EVALUATOR := preload("res://scripts/game/enemy/EnemyStrategyEvaluator.gd")
+
+# Detailed, human-readable explanation of each enemy strategy. Keyed by strategy_id.
+const STRATEGY_DETAILS := {
+	"rock_bias": "Leans hard on Rock, throwing it roughly half the time. Paper and Scissors show up only now and then.",
+	"paper_bias": "Favours Paper above all, playing it about half the time. Rock and Scissors are rare filler.",
+	"scissors_bias": "A Scissors specialist that reaches for the blades about half of every clash.",
+	"dice_imp": "Throws at random, but every third clash its nerves spike and it doubles down on one weapon unpredictably.",
+	"echo": "Echoes its last weapon after a loss or draw, doubling down on whatever it just threw.",
+	"counter_player": "Studies your previous throw and heavily favours the weapon that beats it.",
+	"mirror_player": "Tends to mirror you, repeating the weapon you played last clash.",
+	"cowardly": "Fights evenly while healthy, but at 3 hearts or fewer it panics and clings to Rock.",
+	"avoid_last": "Rarely repeats itself, steering away from the weapon it threw last.",
+	"bruise_toad": "After beating you it presses the wound, countering the throw you just lost with.",
+	"gambler": "Mostly random, but every third clash it commits fully to its strongest card in hand.",
+	"fog_witch": "Rotates its favoured weapon every 3 clashes, keeping its true pattern hidden in the fog.",
+	"ledger": "Counts methodically, cycling its preference Rock, then Paper, then Scissors each clash.",
+	"blood_magpie": "After a loss it fixates, throwing the same weapon it just lost with over and over.",
+	"mad_hatter": "Cycles four moods every 3 clashes: random, then mirror you, then counter you, then Paper-heavy.",
+	"iron_tortoise": "A stubborn wall of Rock that only hardens further as its health drops.",
+	"guillotine_duke": "A Scissors duelist that punishes Paper especially — expect blades when you show paper.",
+	"hatter_mimic": "Wears a false face — it advertises Paper, yet truly splits its throws between Paper and the Scissors that beat it. The pattern it shows you is only half the story.",
+}
+
+const TYPE_LABELS := ["ROCK", "PAPER", "SCISSORS"]
+const TYPE_COLORS := [
+	Color(0.60, 0.80, 0.96, 1.0),
+	Color(0.78, 0.62, 0.46, 1.0),
+	Color(0.92, 0.48, 0.44, 1.0),
+]
+
 @onready var enemy_hearts: HBoxContainer = %EnemyHearts
 @onready var player_hearts: HBoxContainer = %PlayerHearts
 @onready var enemy_name_line1: Label = %EnemyNameLine1
@@ -14,6 +48,7 @@ const BUTTON_PRESS_SCALE := Vector2(0.96, 0.96)
 @onready var enemy_icon: TextureRect = %EnemyIcon
 @onready var behavior: Label = %Behavior
 @onready var reward: Label = %Reward
+@onready var info_button: Button = %InfoButton
 @onready var enemy_history: HBoxContainer = %EnemyHistory
 @onready var player_history: HBoxContainer = %PlayerHistory
 @onready var turn_history: HBoxContainer = %TurnHistory
@@ -35,6 +70,16 @@ var _player_health_displayed := 0
 var _enemy_health_displayed := 0
 var _heart_fill_tweens: Dictionary = {}
 
+var _enemy_data: Dictionary = {}
+var _info_layer: CanvasLayer
+var _info_root: Control
+var _info_window: Control
+var _info_content: VBoxContainer
+var _info_window_base_position := Vector2.ZERO
+var _info_tween: Tween
+var _info_open := false
+var _info_close_frame: PixelFramePanel
+
 func _ready() -> void:
 	_build_heart_row(enemy_hearts)
 	_build_heart_row(player_hearts)
@@ -48,6 +93,14 @@ func _ready() -> void:
 	pause_button.pressed.connect(func() -> void:
 		_play_sfx("click")
 		pause_requested.emit()
+	)
+	_build_info_overlay()
+	info_button.pressed.connect(_on_info_pressed)
+	info_button.mouse_entered.connect(func() -> void:
+		reward.add_theme_color_override("font_color", Color(1.0, 0.95, 0.66, 1.0))
+	)
+	info_button.mouse_exited.connect(func() -> void:
+		reward.add_theme_color_override("font_color", Color(0.98, 0.8, 0.32, 1.0))
 	)
 
 func set_health(player_health: int, enemy_health: int) -> void:
@@ -133,7 +186,9 @@ func set_enemy_info(enemy_data: Dictionary) -> void:
 	if not behavior: behavior = %Behavior
 	if not reward: reward = %Reward
 	if not enemy_icon: enemy_icon = %EnemyIcon
-	
+
+	_enemy_data = enemy_data.duplicate(true)
+
 	var name_str := str(enemy_data.get("name", "Unknown Rival"))
 	var parts := name_str.split(" ", true, 1)
 	if parts.size() > 1:
@@ -146,8 +201,7 @@ func set_enemy_info(enemy_data: Dictionary) -> void:
 		enemy_name_line2.visible = false
 
 	behavior.text = str(enemy_data.get("description", "No known pattern."))
-	var default_reward := "$$$" if bool(enemy_data.get("is_boss", false)) else "$"
-	reward.text = "REWARD  -  %s" % str(enemy_data.get("reward", default_reward))
+	reward.text = "TAP FOR MORE INFO"
 	var icon_path := str(enemy_data.get("icon", ""))
 	enemy_icon.visible = not icon_path.is_empty() and ResourceLoader.exists(icon_path)
 	if enemy_icon.visible:
@@ -381,3 +435,335 @@ func _play_sfx(sfx_name: String, volume_offset_db: float = 0.0) -> void:
 	var manager: Node = get_tree().get_first_node_in_group("sfx_manager")
 	if manager:
 		manager.play_sfx(sfx_name, volume_offset_db)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if _info_open and event.is_action_pressed("ui_cancel"):
+		get_viewport().set_input_as_handled()
+		_close_info()
+
+
+# --- Enemy info overlay ------------------------------------------------------
+
+func _build_info_overlay() -> void:
+	_info_layer = CanvasLayer.new()
+	_info_layer.name = "EnemyInfoLayer"
+	_info_layer.layer = 960
+	add_child(_info_layer)
+
+	var root := Control.new()
+	root.name = "EnemyInfoRoot"
+	root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root.mouse_filter = Control.MOUSE_FILTER_STOP
+	root.visible = false
+	_info_layer.add_child(root)
+	_info_root = root
+
+	var dim := ColorRect.new()
+	dim.name = "Dim"
+	dim.color = Color(0.005, 0.009, 0.011, 0.62)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	dim.gui_input.connect(func(dim_event: InputEvent) -> void:
+		if dim_event is InputEventMouseButton and dim_event.pressed:
+			_close_info()
+	)
+	root.add_child(dim)
+
+	var window := Control.new()
+	window.name = "Window"
+	window.set_anchors_preset(Control.PRESET_CENTER)
+	window.offset_left = -310.0
+	window.offset_top = -246.0
+	window.offset_right = 310.0
+	window.offset_bottom = 246.0
+	root.add_child(window)
+	_info_window = window
+
+	var panel_image := TextureRect.new()
+	panel_image.texture = PANEL_TEXTURE
+	panel_image.set_anchors_preset(Control.PRESET_FULL_RECT)
+	panel_image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel_image.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	panel_image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	panel_image.stretch_mode = TextureRect.STRETCH_SCALE
+	window.add_child(panel_image)
+
+	var content := VBoxContainer.new()
+	content.set_anchors_preset(Control.PRESET_FULL_RECT)
+	content.offset_left = 52.0
+	content.offset_top = 40.0
+	content.offset_right = -52.0
+	content.offset_bottom = -88.0
+	content.add_theme_constant_override("separation", 10)
+	content.alignment = BoxContainer.ALIGNMENT_CENTER
+	window.add_child(content)
+	_info_content = content
+
+	_info_close_frame = _make_info_close_button()
+	window.add_child(_info_close_frame)
+
+
+func _make_info_close_button() -> PixelFramePanel:
+	var frame := PixelFramePanel.new()
+	frame.custom_minimum_size = Vector2(150.0, 52.0)
+	frame.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	frame.offset_left = -75.0
+	frame.offset_top = -70.0
+	frame.offset_right = 75.0
+	frame.offset_bottom = -18.0
+	frame.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	frame.base_tint = Color(0.12, 0.07, 0.12, 1.0)
+	frame.frame_outline_tint = Color(1.0, 0.86, 0.42, 1.0)
+	frame.base_outline_tint = Color(0.26, 0.12, 0.2, 1.0)
+	frame.base_fill_tint = Color(0.12, 0.07, 0.12, 1.0)
+	frame.component_scale = 1.6
+	frame.top_right_corner_variant = PixelFramePanel.TopRightCornerVariant.SHINING
+
+	var button := Button.new()
+	button.set_anchors_preset(Control.PRESET_FULL_RECT)
+	button.text = "CLOSE"
+	button.flat = true
+	button.add_theme_font_override("font", STAR_CRUSH_FONT)
+	button.add_theme_font_size_override("font_size", 22)
+	button.add_theme_color_override("font_color", Color(1.0, 0.93, 0.62, 1.0))
+	button.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 0.82, 1.0))
+	button.add_theme_color_override("font_pressed_color", Color(0.86, 0.68, 0.3, 1.0))
+	for style in ["normal", "hover", "pressed", "focus"]:
+		button.add_theme_stylebox_override(style, StyleBoxEmpty.new())
+	frame.add_child(button)
+
+	frame.pivot_offset = frame.custom_minimum_size * 0.5
+	frame.resized.connect(func() -> void: frame.pivot_offset = frame.size * 0.5)
+	button.mouse_entered.connect(_tween_info_close.bind(BUTTON_HOVER_SCALE, 0.12))
+	button.mouse_exited.connect(func() -> void:
+		if not button.button_pressed:
+			_tween_info_close(Vector2.ONE, 0.12)
+	)
+	button.button_down.connect(_tween_info_close.bind(BUTTON_PRESS_SCALE, 0.06))
+	button.button_up.connect(func() -> void:
+		_tween_info_close(BUTTON_HOVER_SCALE if button.is_hovered() else Vector2.ONE, 0.1)
+	)
+	button.pressed.connect(_close_info)
+	return frame
+
+
+func _tween_info_close(target_scale: Vector2, duration: float) -> void:
+	if not is_instance_valid(_info_close_frame):
+		return
+	var tween := create_tween()
+	tween.tween_property(_info_close_frame, "scale", target_scale, duration) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func _on_info_pressed() -> void:
+	_play_sfx("click")
+	_open_info()
+
+
+func _open_info() -> void:
+	if _info_open:
+		return
+	_info_open = true
+	_populate_info_content()
+	_info_root.visible = true
+	if _info_window_base_position == Vector2.ZERO:
+		_info_window_base_position = _info_window.position
+
+	var dim := _info_root.get_node("Dim") as ColorRect
+	dim.modulate.a = 0.0
+	_info_window.position = _info_window_base_position + Vector2(0.0, get_viewport_rect().size.y)
+	_info_window.scale = Vector2(0.96, 0.96)
+
+	if _info_tween and _info_tween.is_valid():
+		_info_tween.kill()
+	_info_tween = create_tween()
+	_info_tween.set_parallel(true)
+	_info_tween.tween_property(dim, "modulate:a", 1.0, 0.18) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	_info_tween.tween_property(_info_window, "position", _info_window_base_position, 0.34) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_info_tween.tween_property(_info_window, "scale", Vector2.ONE, 0.34) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func _close_info() -> void:
+	if not _info_open:
+		return
+	_info_open = false
+	_play_sfx("click")
+	var dim := _info_root.get_node("Dim") as ColorRect
+	if _info_tween and _info_tween.is_valid():
+		_info_tween.kill()
+	_info_tween = create_tween()
+	_info_tween.set_parallel(true)
+	_info_tween.tween_property(dim, "modulate:a", 0.0, 0.16) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	_info_tween.tween_property(
+		_info_window,
+		"position",
+		_info_window_base_position + Vector2(0.0, get_viewport_rect().size.y),
+		0.24
+	).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	_info_tween.tween_property(_info_window, "scale", Vector2(0.96, 0.96), 0.24) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	await _info_tween.finished
+	if not _info_open:
+		_info_root.visible = false
+		_info_window.position = _info_window_base_position
+		_info_window.scale = Vector2.ONE
+
+
+func _populate_info_content() -> void:
+	for child in _info_content.get_children():
+		child.queue_free()
+
+	var name_str := str(_enemy_data.get("name", "Unknown Rival"))
+	var is_boss := bool(_enemy_data.get("is_boss", false))
+
+	var title := Label.new()
+	title.text = name_str
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_override("font", STAR_CRUSH_FONT)
+	title.add_theme_font_size_override("font_size", 38)
+	title.add_theme_color_override("font_color", Color(1.0, 0.9, 0.55, 1.0))
+	title.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.7))
+	title.add_theme_constant_override("shadow_offset_y", 3)
+	_info_content.add_child(title)
+
+	var subtitle := Label.new()
+	subtitle.text = ("BOSS RIVAL" if is_boss else "RIVAL DOSSIER")
+	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitle.add_theme_font_override("font", STAR_CRUSH_FONT)
+	subtitle.add_theme_font_size_override("font_size", 15)
+	subtitle.add_theme_color_override("font_color", Color(0.96, 0.66, 0.55, 1.0))
+	_info_content.add_child(subtitle)
+
+	_info_content.add_child(_make_info_heading("MECHANIC"))
+
+	var strategy_id := str(_enemy_data.get("strategy_id", ""))
+	var detail_text := str(STRATEGY_DETAILS.get(
+		strategy_id, _enemy_data.get("description", "This rival keeps its methods a secret.")
+	))
+	var rule := str(_enemy_data.get("rule", ""))
+	if not rule.is_empty():
+		detail_text += "\n(%s)" % rule
+
+	var detail := Label.new()
+	detail.text = detail_text
+	detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	detail.add_theme_font_override("font", STAR_CRUSH_FONT)
+	detail.add_theme_font_size_override("font_size", 19)
+	detail.add_theme_color_override("font_color", Color(0.9, 0.86, 0.72, 0.92))
+	detail.add_theme_constant_override("line_spacing", 3)
+	_info_content.add_child(detail)
+
+	_info_content.add_child(_make_info_heading("DECK COMPOSITION"))
+
+	var hint := Label.new()
+	hint.text = "roughly, before it starts scheming"
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint.add_theme_font_override("font", STAR_CRUSH_FONT)
+	hint.add_theme_font_size_override("font_size", 13)
+	hint.add_theme_color_override("font_color", Color(0.7, 0.72, 0.68, 0.7))
+	_info_content.add_child(hint)
+
+	var percents := _composition_percents(strategy_id)
+	_info_content.add_child(_make_composition_bar(percents))
+	_info_content.add_child(_make_composition_legend())
+
+
+func _make_info_heading(text: String) -> Label:
+	var heading := Label.new()
+	heading.text = text
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.add_theme_font_override("font", STAR_CRUSH_FONT)
+	heading.add_theme_font_size_override("font_size", 16)
+	heading.add_theme_color_override("font_color", Color(0.62, 0.72, 0.9, 1.0))
+	return heading
+
+
+func _make_composition_bar(percents: Array) -> Control:
+	var track := Panel.new()
+	track.custom_minimum_size = Vector2(0.0, 30.0)
+	track.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var track_style := StyleBoxFlat.new()
+	track_style.bg_color = Color(0.06, 0.07, 0.09, 0.85)
+	track_style.set_corner_radius_all(6)
+	track.add_theme_stylebox_override("panel", track_style)
+
+	var row := HBoxContainer.new()
+	row.set_anchors_preset(Control.PRESET_FULL_RECT)
+	row.offset_left = 3.0
+	row.offset_top = 3.0
+	row.offset_right = -3.0
+	row.offset_bottom = -3.0
+	row.add_theme_constant_override("separation", 2)
+	track.add_child(row)
+
+	for type in range(3):
+		var segment := Panel.new()
+		segment.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		# Proportion is carried by the stretch ratio, so no numbers are shown.
+		segment.size_flags_stretch_ratio = maxf(float(percents[type]), 0.001)
+		segment.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var segment_style := StyleBoxFlat.new()
+		segment_style.bg_color = TYPE_COLORS[type]
+		if type == 0:
+			segment_style.corner_radius_top_left = 4
+			segment_style.corner_radius_bottom_left = 4
+		if type == 2:
+			segment_style.corner_radius_top_right = 4
+			segment_style.corner_radius_bottom_right = 4
+		segment.add_theme_stylebox_override("panel", segment_style)
+		row.add_child(segment)
+
+	return track
+
+
+func _make_composition_legend() -> Control:
+	var legend := HBoxContainer.new()
+	legend.alignment = BoxContainer.ALIGNMENT_CENTER
+	legend.add_theme_constant_override("separation", 20)
+
+	for type in range(3):
+		var item := HBoxContainer.new()
+		item.add_theme_constant_override("separation", 7)
+
+		var swatch := Panel.new()
+		swatch.custom_minimum_size = Vector2(16.0, 16.0)
+		swatch.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		var swatch_style := StyleBoxFlat.new()
+		swatch_style.bg_color = TYPE_COLORS[type]
+		swatch_style.set_corner_radius_all(3)
+		swatch.add_theme_stylebox_override("panel", swatch_style)
+		item.add_child(swatch)
+
+		var label := Label.new()
+		label.text = TYPE_LABELS[type]
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.add_theme_font_override("font", STAR_CRUSH_FONT)
+		label.add_theme_font_size_override("font_size", 15)
+		label.add_theme_color_override("font_color", Color(0.9, 0.88, 0.8, 0.95))
+		item.add_child(label)
+
+		legend.add_child(item)
+
+	return legend
+
+
+func _composition_percents(strategy_id: String) -> Array:
+	var evaluator := STRATEGY_EVALUATOR.new()
+	var counts: Array = evaluator.deck_type_counts(strategy_id)
+	var total := 0
+	for count in counts:
+		total += int(count)
+	if total <= 0:
+		return [33, 33, 34]
+	# Round to the nearest 5% so the numbers read as an estimate, not a spec sheet.
+	var percents: Array = []
+	for count in counts:
+		var raw := float(int(count)) / float(total) * 100.0
+		percents.append(int(round(raw / 5.0)) * 5)
+	return percents

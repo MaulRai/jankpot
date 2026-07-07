@@ -3,6 +3,8 @@ extends RefCounted
 
 const WeaponCatalogData = preload("res://scripts/data/WeaponCatalog.gd")
 
+const HATTER_MIMIC_FACE: CardDef.CardType = CardDef.CardType.PAPER
+
 var _fog_mode := -1
 var _variable_type: CardDef.CardType = CardDef.CardType.ROCK
 
@@ -55,7 +57,7 @@ func weights(strategy_id: String, context: RefCounted) -> Array[float]:
 				return _make_weights(15.0, 10.0, 75.0)
 			return _make_weights(25.0, 20.0, 55.0)
 		"hatter_mimic":
-			return _make_weights(40.0, 40.0, 20.0)
+			return _hatter_mimic()
 	return _balanced()
 
 
@@ -162,6 +164,16 @@ func _blood_magpie(context: RefCounted) -> Array[float]:
 			and context.has_enemy_last_type:
 		return _with_preference(context.enemy_last_type, 70.0, 15.0)
 	return _balanced()
+
+
+func _hatter_mimic() -> Array[float]:
+	# Advertises HATTER_MIMIC_FACE, but really splits between that weapon and the
+	# weapon that counters it, so its shown pattern is only half true.
+	var face := HATTER_MIMIC_FACE
+	var result := _make_weights(8.0, 8.0, 8.0)
+	result[face] = 46.0
+	result[_counter_of(face)] = 46.0
+	return result
 
 
 func _mad_hatter(context: RefCounted) -> Array[float]:

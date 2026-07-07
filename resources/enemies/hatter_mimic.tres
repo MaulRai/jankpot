@@ -4,7 +4,7 @@
 script = ExtResource("1")
 id = "hatter_mimic"
 display_name = "Hatter Mimic"
-description = "Often plays Paper."
+description = "Often plays Paper?"
 rule = "Its displayed pattern may be false"
 icon_path = "res://assets/icon/enemy/hatter-mimic.png"
 strategy_id = "hatter_mimic"
