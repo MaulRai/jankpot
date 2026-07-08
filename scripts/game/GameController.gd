@@ -277,10 +277,22 @@ func _play_card(card_data: CardDef, card_view: CardView) -> void:
 	turn_resolved.emit()
 
 
+func _player_remaining_type_counts() -> Array[int]:
+	# Cards the player can still draw and play this battle: hand + draw pile.
+	# Analytical rivals use this to reason about the player's likely throws.
+	var counts: Array[int] = [0, 0, 0]
+	for card in deck_manager.hand:
+		counts[card.card_type] += 1
+	for card in deck_manager.draw_pile:
+		counts[card.card_type] += 1
+	return counts
+
+
 func _prepare_enemy_card() -> void:
 	if round_status != "ongoing" or not hand_view.card_scene \
 			or is_instance_valid(_enemy_preview_view):
 		return
+	enemy_controller.set_player_remaining_counts(_player_remaining_type_counts())
 	_pending_enemy_card = enemy_controller.choose_card(enemy_hp, player_hp)
 	if not _pending_enemy_card:
 		_pending_enemy_card = WeaponCatalogData.create_skip("enemy_skip_%d" % Time.get_ticks_usec())
@@ -478,7 +490,7 @@ func _has_hatter_slip(cards: Array[CardDef], excluded_card: CardDef) -> bool:
 
 func _select_stage_enemy(upgrade_count: int) -> Dictionary:
 	# DEBUG: force every stage to spawn the Hatter Mimic. Remove when done.
-	return enemy_controller.select_enemy("ledger_golem", upgrade_count)
+	return enemy_controller.select_enemy("iron_tortoise", upgrade_count)
 	var enemy_id := RunConfigData.enemy_id_for_stage(stage_number)
 	if enemy_id.is_empty():
 		return enemy_controller.select_random_non_boss(upgrade_count)

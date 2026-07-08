@@ -122,10 +122,11 @@ These AI types adjust their play weights based on the player's last action, prev
 - **Logic:** Chooses a random card type to "advertise" on its status (its face) at start of battle. However, it splits its play weight equally (`46%` each) between that advertised type and the type that *counters* it.
 
 #### `iron_tortoise`
-- **Behavior:** Fortifies when damaged.
+- **Behavior:** Analytical predictor that fortifies when damaged.
 - **Logic:**
-  - Normal state: Moderate Rock bias (`[50%, 30%, 20%]`).
-  - Low health (**HP <= 3**): Heavy Rock bias (`[70%, 20%, 10%]`).
+  - Normal state: Predicts the player's next throw and counters it. The prediction scores each type by `player_history * 2 + player_remaining_counts` (proven habits weigh double the cards still in hand + draw pile) and picks the highest. It then favours the counter to that type with `60%` weight (`20%` to the others). Falls back to a moderate Rock bias (`[50%, 30%, 20%]`) only when there is no signal at all (opening move vs an even, untouched deck).
+  - Low health (**HP <= 3**): Abandons the analysis and turtles up — heavy Rock bias (`[70%, 20%, 10%]`).
+- **Data used:** `player_type_history` (cumulative throws) and `player_remaining_counts` (hand + draw pile), both supplied via `EnemyStrategyContext`.
 
 #### `guillotine_duke`
 - **Behavior:** Punishes Paper plays.
@@ -141,7 +142,8 @@ For training AI agents to defeat these strategies:
 
 | Enemy Strategy | Best Counter Strategy |
 |----------------|----------------------|
-| `rock_bias` / `iron_tortoise` | Play **Paper** heavy. |
+| `rock_bias` | Play **Paper** heavy. |
+| `iron_tortoise` (healthy) | It counters your *most-played / most-held* type. Throw against your own habit — play the type that beats what it expects, i.e. the counter to the counter of your dominant type. When you drop it to **HP ≤ 3**, it reverts to heavy Rock — punish with **Paper**. |
 | `paper_bias` | Play **Scissors** heavy. |
 | `mad_hatter` (Phase 0, self-chase) | Its next throw beats its own last card. Beat *that*: play what loses to its last card. |
 | `scissors_bias` / `guillotine_duke` | Play **Rock** heavy. Avoid Paper when Duke prepares. |

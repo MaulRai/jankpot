@@ -23,6 +23,11 @@ var has_player_last_type := false
 var last_result: BattleResolver.Result = BattleResolver.Result.DRAW
 var has_last_result := false
 var clash_count := 0
+# Cumulative tally of the player's throws this battle, indexed by CardType.
+var player_type_history: Array[int] = [0, 0, 0]
+# Snapshot of the type counts still in the player's hand + draw pile, set by
+# GameController just before each enemy card selection.
+var player_remaining_counts: Array[int] = [0, 0, 0]
 
 var _disabled_type: CardDef.CardType = CardDef.CardType.ROCK
 var _has_disabled_type := false
@@ -84,8 +89,14 @@ func reset_battle_context() -> void:
 	has_player_last_type = false
 	has_last_result = false
 	clash_count = 0
+	player_type_history = [0, 0, 0]
+	player_remaining_counts = [0, 0, 0]
 	_has_disabled_type = false
 	_strategy.reset()
+
+
+func set_player_remaining_counts(counts: Array[int]) -> void:
+	player_remaining_counts = counts
 
 
 func choose_card(enemy_hp: int = 6, _player_hp: int = 6) -> CardDef:
@@ -160,6 +171,7 @@ func record_clash(
 	last_result = result
 	has_last_result = true
 	clash_count += 1
+	player_type_history[player_type] += 1
 
 
 func _make_strategy_context(enemy_hp: int) -> RefCounted:
@@ -173,6 +185,8 @@ func _make_strategy_context(enemy_hp: int) -> RefCounted:
 	context.has_last_result = has_last_result
 	context.clash_count = clash_count
 	context.hand = enemy_hand
+	context.player_type_history = player_type_history
+	context.player_remaining_counts = player_remaining_counts
 	return context
 
 

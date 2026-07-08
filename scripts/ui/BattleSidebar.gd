@@ -29,7 +29,7 @@ const STRATEGY_DETAILS := {
 	"ledger": "A methodical accountant working a fixed loop. Rock, then Paper, then Scissors. It usually sticks to the count...",
 	"blood_magpie": "After a loss it fixates, throwing the same weapon it just lost with over and over.",
 	"mad_hatter": "Drifts through three obsessions, each lasting 6 clashes: first it chases its own tail, always beating the weapon it just threw; then it mirrors you; then it counters you.",
-	"iron_tortoise": "A stubborn wall of Rock that only hardens further as its health drops.",
+	"iron_tortoise": "A patient tactician that studies your habits and the cards you have left, then throws the weapon to beat your likeliest pick. Wounded (HP 3 or less), it panics and turtles up behind heavy Rock.",
 	"guillotine_duke": "A Scissors duelist that punishes Paper especially — expect blades when you show paper.",
 	"hatter_mimic": "Wears a false face. It advertises {face}, yet truly splits its throws between {face} and the {counter} that beats it. The pattern it shows you is only half the story.",
 }

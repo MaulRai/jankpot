@@ -64,8 +64,7 @@ func weights(strategy_id: String, context: RefCounted) -> Array[float]:
 		"mad_hatter":
 			return _mad_hatter(context)
 		"iron_tortoise":
-			return _make_weights(70.0, 20.0, 10.0) \
-				if context.enemy_hp <= 3 else _make_weights(50.0, 30.0, 20.0)
+			return _iron_tortoise(context)
 		"guillotine_duke":
 			if context.has_player_last_type \
 					and context.player_last_type == CardDef.CardType.PAPER:
@@ -84,8 +83,6 @@ func deck_type_counts(strategy_id: String) -> Array[int]:
 			return _counts_with_preference(CardDef.CardType.PAPER)
 		"scissors_bias":
 			return _counts_with_preference(CardDef.CardType.SCISSORS)
-		"iron_tortoise":
-			return _counts_with_preference(CardDef.CardType.ROCK)
 		"guillotine_duke":
 			return _counts_with_preference(CardDef.CardType.SCISSORS)
 	return _balanced_counts()
@@ -160,6 +157,36 @@ func _gambler(context: RefCounted) -> Array[float]:
 	for type in upgraded:
 		result[type] += 25.0
 	return result
+
+
+func _iron_tortoise(context: RefCounted) -> Array[float]:
+	# A patient analyst. It predicts the player's next throw from two clues —
+	# what they have thrown most so far, and what they can still throw from their
+	# hand and draw pile — then leans on the weapon that beats that prediction.
+	# Wounded, it drops the analysis and turtles up behind heavy Rock.
+	if context.enemy_hp <= 3:
+		return _make_weights(70.0, 20.0, 10.0)
+	var predicted := _predicted_player_type(context)
+	if predicted < 0:
+		return _make_weights(50.0, 30.0, 20.0)
+	return _with_preference(_counter_of(predicted as CardDef.CardType), 60.0, 20.0)
+
+
+# Guesses the type the player is most likely to throw next by blending their
+# throw history with the cards they have left. Returns -1 when there is no
+# signal yet (opening move against a perfectly even, untouched deck).
+func _predicted_player_type(context: RefCounted) -> int:
+	var history: Array = context.player_type_history
+	var remaining: Array = context.player_remaining_counts
+	var best_type := -1
+	var best_score := 0.0
+	for type in range(3):
+		# History counts double: proven habits weigh more than mere availability.
+		var score := float(history[type]) * 2.0 + float(remaining[type])
+		if score > best_score:
+			best_score = score
+			best_type = type
+	return best_type
 
 
 func _fog_witch(context: RefCounted) -> Array[float]:
