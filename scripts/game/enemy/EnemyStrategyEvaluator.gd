@@ -199,17 +199,20 @@ func _ensure_hatter_face() -> int:
 
 
 func _mad_hatter(context: RefCounted) -> Array[float]:
-	match (context.clash_count / 3) % 4:
+	# Three obsessions, each gripping the Hatter for six clashes before the next
+	# one takes hold.
+	match (context.clash_count / 6) % 3:
 		0:
-			return _balanced()
+			# Chases its own tail: every throw beats the weapon it just played,
+			# spiralling Rock -> Paper -> Scissors -> Rock all on its own.
+			if context.has_enemy_last_type:
+				return _with_preference(_counter_of(context.enemy_last_type), 65.0, 17.5)
 		1:
 			if context.has_player_last_type:
 				return _with_preference(context.player_last_type, 60.0, 20.0)
 		2:
 			if context.has_player_last_type:
 				return _with_preference(_counter_of(context.player_last_type), 65.0, 17.5)
-		_:
-			return _make_weights(20.0, 60.0, 20.0)
 	return _balanced()
 
 

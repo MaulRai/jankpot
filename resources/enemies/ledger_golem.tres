@@ -5,6 +5,6 @@ script = ExtResource("1")
 id = "ledger_golem"
 display_name = "Ledger Golem"
 description = "Follows a fixed sequence."
-rule = "Cycles Rock, Paper, Scissors"
+rule = "Rotates preference: Rock, then Paper, then Scissors."
 icon_path = "res://assets/icon/enemy/ledger-golem.png"
 strategy_id = "ledger"

@@ -111,12 +111,11 @@ These AI types adjust their play weights based on the player's last action, prev
 - **Logic:** Follows a strict turn cycle. It prefers the type matching `(turn_count % 3)` (0 = Rock, 1 = Paper, 2 = Scissors) with `75%` weight, and other types with `12.5%`.
 
 #### `mad_hatter` (Mad Hatter Boss)
-- **Behavior:** Highly erratic, shifting styles every 3 turns.
-- **Logic:** Changes phases in a 4-phase cycle:
-  - **Phase 0:** Balanced (`33%` each).
+- **Behavior:** Cycles through three obsessions, holding each for 6 turns.
+- **Logic:** Changes phases in a 3-phase cycle (`(turn_count / 6) % 3`):
+  - **Phase 0 (self-chase):** Favours the type that *beats its own last played card* (`65%`), spiralling Rock → Paper → Scissors on its own. Falls back to balanced on turn 1 when it has no prior card.
   - **Phase 1:** Mirrors the player's last played card type (`60%`).
   - **Phase 2:** Counters the player's last played card type (`65%`).
-  - **Phase 3:** Strong Paper bias (`60%` Paper, `20%` others).
 
 #### `hatter_mimic`
 - **Behavior:** Deceptive advertiser.
@@ -143,7 +142,8 @@ For training AI agents to defeat these strategies:
 | Enemy Strategy | Best Counter Strategy |
 |----------------|----------------------|
 | `rock_bias` / `iron_tortoise` | Play **Paper** heavy. |
-| `paper_bias` / `mad_hatter` (Phase 3) | Play **Scissors** heavy. |
+| `paper_bias` | Play **Scissors** heavy. |
+| `mad_hatter` (Phase 0, self-chase) | Its next throw beats its own last card. Beat *that*: play what loses to its last card. |
 | `scissors_bias` / `guillotine_duke` | Play **Rock** heavy. Avoid Paper when Duke prepares. |
 | `dice_imp` / `avoid_last` | Predict that the enemy will *not* repeat its last card type. |
 | `echo` / `blood_magpie` | If the enemy lost, expect them to play the same card. Play the counter to it. |
